@@ -1,0 +1,57 @@
+/* Design tokens — the single source of truth for every color in the app.
+ * Previously duplicated independently in CampaignTrackerDashboard.jsx and
+ * AuthCard.jsx, each in its own <style> block (risk of the two drifting
+ * apart); centralized here and loaded once (see main.jsx) so every screen
+ * shares one definition.
+ *
+ * Chrome ("Slate") replaced the original warm-editorial identity (cream
+ * base, marigold accent) — chosen from three validated directions
+ * presented for comparison. Named by role, not by color literal
+ * (--accent, not --marigold): a variable called "marigold" holding an
+ * indigo hex is exactly the kind of stale name that causes confusion
+ * later. The ad-type, data-accent, and status-live tokens are the
+ * data-color system from the previous pass — re-validated below against
+ * the new
+ * --base, not just carried over (see the comment in tabs/OverviewTab.jsx
+ * for how the ad-type set itself was built).
+ */
+:root {
+  /* Chrome */
+  --ink: #12172b;
+  --muted: #5b6478;
+  --base: #f3f5f9;
+  --surface: #ffffff;
+  --line: #e1e5ee;
+  --accent: #5546e5;
+  --accent-soft: #e7e4fb;
+  --secondary: #0e9f8e;
+  --secondary-soft: #dbf3ef;
+  --alert: #b23a2a;
+
+  /* Status — a semantic channel of its own, deliberately not shared with
+   * any --ad-* series color (a stacked-chart color and a status label can
+   * appear near each other; conflating them would make either ambiguous). */
+  --status-live: #128a1e;
+
+  /* Single-series data accent (e.g. the region breakdown bar chart) — not
+   * --accent: a brand accent doubling as a data color is exactly the
+   * collision the categorical palette below was built to avoid. Also not
+   * a plain blue: the obvious choice for a bar chart sits too close to
+   * the new indigo --accent to tell apart at a glance (Delta E 9.0,
+   * below the normal-vision floor — checked, not assumed) once the
+   * brand accent itself became indigo. Reused from the ad-type set
+   * (--ad-video) since the two never appear in the same view. */
+  --data-accent: #a13868;
+
+  /* Ad-type categorical palette — six series, validated as a set (adjacent
+   * CVD Delta E >= 8, normal-vision Delta E >= 15, contrast >= 3:1 on
+   * --base) rather than picked by eye. Order matches catalog.ad_types
+   * insert order (db/init/01_catalog.sql), the sequence they are
+   * stacked/legended in. */
+  --ad-social: #a8451c; /* Social Media */
+  --ad-influencer: #0f8a6c; /* Influencer */
+  --ad-google: #4c5fc7; /* Google Ads */
+  --ad-display: #ad8300; /* Display */
+  --ad-video: #a13868; /* Video */
+  --ad-performance: #049c90; /* Performance */
+}
