@@ -1,0 +1,123 @@
+.campaign-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.campaign-detail-header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.campaign-detail-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  background: color-mix(in srgb, var(--stripe) 16%, var(--surface-2));
+  color: color-mix(in srgb, var(--stripe) 70%, black);
+}
+
+:root[data-theme="dark"] .campaign-detail-avatar {
+  color: color-mix(in srgb, var(--stripe) 70%, white);
+}
+
+.campaign-detail-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.campaign-detail-title-row h1 {
+  font-size: 20px;
+}
+
+.campaign-detail-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.campaign-detail-subtitle a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.campaign-detail-flag-reason {
+  color: var(--crit);
+}
+
+.campaign-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.campaign-detail-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 8px;
+}
+
+.campaign-detail-stepper-count {
+  font-size: 12.5px;
+  color: var(--muted);
+  min-width: 46px;
+  text-align: center;
+}
+
+.campaign-detail-body {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 24px;
+  align-items: start;
+}
+
+.campaign-detail-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+
+.campaign-detail-tab {
+  border: none;
+  background: transparent;
+  padding: 10px 4px;
+  margin-right: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.campaign-detail-tab-active {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
+
+.campaign-detail-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 980px) {
+  .campaign-detail-body {
+    grid-template-columns: 1fr;
+  }
+}

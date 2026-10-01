@@ -1,0 +1,26 @@
+.overview-lede {
+  font-size: 13.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.overview-ribbons {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  margin-top: 24px;
+  min-width: 0;
+}
+
+.overview-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 28px;
+}
+
+@media (max-width: 900px) {
+  .overview-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

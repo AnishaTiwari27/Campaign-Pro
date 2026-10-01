@@ -1,0 +1,90 @@
+.area-chart {
+  position: relative;
+  width: 100%;
+}
+
+.area-chart svg {
+  display: block;
+}
+
+.area-chart-gridline {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.area-chart-median-line {
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+}
+
+.area-chart-crosshair {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.area-chart-y-labels {
+  position: absolute;
+  top: 16px;
+  left: 6px;
+  bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.area-chart-y-labels span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--surface) 75%, transparent);
+  padding: 0 2px;
+}
+
+.area-chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.area-chart-legend-swatch {
+  width: 14px;
+  height: 2px;
+  display: inline-block;
+}
+
+.area-chart-legend-line {
+  background: var(--accent);
+}
+
+.area-chart-legend-dashed {
+  background: repeating-linear-gradient(to right, var(--muted) 0 4px, transparent 4px 8px);
+}
+
+.area-chart-tooltip {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  background: var(--ink);
+  color: var(--surface);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: var(--elevation-2);
+  z-index: 2;
+}
+
+.area-chart-tooltip-value {
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.area-chart-tooltip-meta {
+  opacity: 0.8;
+  margin-top: 2px;
+}

@@ -1,0 +1,139 @@
+.tile {
+  scroll-snap-align: start;
+  flex: 0 0 196px;
+  width: 196px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.tile:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--elevation-2);
+  border-color: color-mix(in srgb, var(--stripe) 45%, var(--line));
+}
+
+.tile-art {
+  position: relative;
+  height: 72px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--stripe) 26%, var(--surface-2)),
+    color-mix(in srgb, var(--stripe) 7%, var(--surface-2))
+  );
+}
+
+/* A soft diagonal sheen so the block reads as artwork, not a flat swatch. */
+.tile-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.14) 0%, transparent 42%);
+  pointer-events: none;
+}
+
+.tile-initials {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--stripe) 78%, black);
+}
+
+:root[data-theme="dark"] .tile-initials {
+  color: color-mix(in srgb, var(--stripe) 72%, white);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .tile-initials {
+    color: color-mix(in srgb, var(--stripe) 72%, white);
+  }
+}
+
+.tile-status {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 1;
+}
+
+.tile-flag-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--crit);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--crit) 22%, transparent);
+}
+
+.tile-body {
+  min-width: 0;
+}
+
+.tile-name {
+  font-weight: 700;
+  font-size: 13.5px;
+  letter-spacing: -0.01em;
+}
+
+.tile-subtitle {
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.tile-flag-reason {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--crit);
+  background: var(--crit-soft);
+  padding: 3px 7px;
+  border-radius: var(--radius-sm);
+}
+
+.tile-stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.tile-stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.tile-stat {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tile-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.tile-action-btn {
+  width: 100%;
+  padding: 0 6px;
+}

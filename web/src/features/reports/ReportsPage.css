@@ -1,0 +1,79 @@
+.reports-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.report-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  flex-wrap: wrap;
+}
+
+.report-row-main {
+  min-width: 0;
+}
+
+.report-row-title-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-row-name {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.report-row-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.report-row-last-run {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 4px;
+}
+
+.report-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.report-toggle {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.report-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: var(--elevation-1);
+  transition: transform 140ms ease;
+}
+
+.report-toggle-on {
+  background: var(--accent);
+}
+
+.report-toggle-on .report-toggle-knob {
+  transform: translateX(16px);
+}

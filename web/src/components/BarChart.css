@@ -1,0 +1,66 @@
+.bar-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bar-chart-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 70px;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.bar-chart-row:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.bar-chart-row:disabled {
+  cursor: default;
+}
+
+.bar-chart-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bar-chart-sublabel {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.bar-chart-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.bar-chart-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.bar-chart-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--ink);
+  opacity: 0.55;
+}
+
+.bar-chart-value {
+  font-size: 12px;
+  text-align: right;
+  color: var(--ink-2);
+}

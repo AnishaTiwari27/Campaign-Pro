@@ -1,0 +1,79 @@
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.settings-panel {
+  padding: 18px;
+}
+
+.settings-panel h4 {
+  font-size: 14px;
+  margin-bottom: 14px;
+}
+
+.settings-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row dt {
+  color: var(--muted);
+}
+
+.settings-row dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+.settings-capitalize {
+  text-transform: capitalize;
+}
+
+.settings-segmented {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  gap: 2px;
+}
+
+.settings-segmented-opt {
+  border: none;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.settings-segmented-opt-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--elevation-1);
+}
+
+@media (max-width: 860px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}

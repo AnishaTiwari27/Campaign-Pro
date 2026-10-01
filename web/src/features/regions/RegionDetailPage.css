@@ -1,0 +1,46 @@
+.region-stat-rail {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin: 18px 0;
+}
+
+.region-stat-rail .stat-cell {
+  background: var(--surface);
+  padding: 14px 16px;
+}
+
+.region-detail-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.region-panel {
+  padding: 18px;
+}
+
+.region-panel h4 {
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+.region-detail-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .region-stat-rail {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .region-detail-body {
+    grid-template-columns: 1fr;
+  }
+}

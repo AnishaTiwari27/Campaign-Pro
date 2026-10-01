@@ -1,0 +1,120 @@
+.ribbon {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Without this a flex item sizes to its content, so the fixed-width tiles
+     would widen the page instead of scrolling inside the track. */
+  min-width: 0;
+}
+
+.ribbon-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ribbon-heading {
+  min-width: 0;
+}
+
+.ribbon-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
+.ribbon-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ribbon-count-accent {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ribbon-count-warn {
+  background: var(--warn-soft);
+  color: var(--warn);
+}
+
+.ribbon-count-crit {
+  background: var(--crit-soft);
+  color: var(--crit);
+}
+
+.ribbon-count-good {
+  background: var(--good-soft);
+  color: var(--good);
+}
+
+.ribbon-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.ribbon-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ribbon-nav {
+  display: flex;
+  gap: 4px;
+}
+
+.ribbon-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.ribbon-nav-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ribbon-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.ribbon-track {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 2px 2px 6px;
+  scrollbar-width: thin;
+}
+
+.ribbon-empty {
+  padding: 22px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}

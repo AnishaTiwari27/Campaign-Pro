@@ -1,0 +1,59 @@
+.data-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.data-table {
+  min-width: 900px;
+}
+
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+.data-table-row {
+  cursor: pointer;
+}
+
+.data-table-row:hover {
+  background: var(--surface-2);
+}
+
+.data-table-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.data-table-sort-arrow {
+  color: var(--accent);
+}
+
+.data-table-checkbox-col {
+  width: 36px;
+}
+
+.data-table-compact td,
+.data-table-compact th {
+  padding: 7px 10px;
+}
+
+.data-table-comfortable td,
+.data-table-comfortable th {
+  padding: 12px;
+}

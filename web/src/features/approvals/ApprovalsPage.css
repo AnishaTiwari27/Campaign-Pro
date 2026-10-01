@@ -1,0 +1,121 @@
+.approvals-subhead {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.approval-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.approval-card {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px 18px 24px;
+  flex-wrap: wrap;
+}
+
+.approval-card-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--stripe);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.approval-card-main {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.approval-card-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  background: color-mix(in srgb, var(--stripe) 16%, var(--surface-2));
+  color: color-mix(in srgb, var(--stripe) 70%, black);
+}
+
+:root[data-theme="dark"] .approval-card-avatar {
+  color: color-mix(in srgb, var(--stripe) 70%, white);
+}
+
+.approval-card-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.approval-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approval-card-name {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.approval-card-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.approval-card-flag-reason {
+  font-size: 12px;
+  color: var(--crit);
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.approval-card-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(90px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+  max-width: 460px;
+}
+
+.approval-fact-label {
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-bottom: 2px;
+}
+
+.approval-fact-value {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.approval-fact-value-crit {
+  color: var(--crit);
+}
+
+.approval-card-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .approval-card-facts {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

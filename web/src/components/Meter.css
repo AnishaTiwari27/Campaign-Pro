@@ -1,0 +1,73 @@
+.meter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meter {
+  position: relative;
+  flex: 1;
+  min-width: 48px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.meter-lg {
+  height: 10px;
+  overflow: visible;
+}
+
+.meter-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+.meter-good .meter-fill {
+  background: var(--good);
+}
+
+.meter-warn .meter-fill {
+  background: var(--warn);
+}
+
+.meter-over .meter-fill {
+  background: var(--crit);
+}
+
+.meter-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--ink-2);
+  opacity: 0.5;
+}
+
+.meter-label {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 34px;
+  text-align: right;
+}
+
+.meter-label-good {
+  color: var(--good);
+}
+
+.meter-label-warn {
+  color: var(--warn);
+}
+
+.meter-label-over {
+  color: var(--crit);
+}
+
+.budget-meter {
+  padding-top: 6px;
+}

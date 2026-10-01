@@ -1,0 +1,37 @@
+.performance-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.performance-insights {
+  padding: 16px;
+}
+
+.performance-insights h4 {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.performance-insights-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.performance-insight-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.performance-insight-value {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+@media (max-width: 700px) {
+  .performance-insights-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

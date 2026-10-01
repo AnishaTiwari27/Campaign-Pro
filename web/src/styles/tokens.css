@@ -1,0 +1,124 @@
+/* Design tokens. Auto theme follows prefers-color-scheme; an explicit
+   choice is applied via [data-theme] on :root and persisted in
+   localStorage (see app/useTheme.ts). */
+
+:root {
+  /* base palette (light) */
+  --base: #f2f4f9;
+  --surface: #ffffff;
+  --surface-2: #e9ecf4;
+  --surface-3: #dfe4f0;
+  --ink: #0e1326;
+  --ink-2: #303852;
+  --muted: #596180;
+  --line: #dde2ee;
+  --line-strong: #c6cddf;
+
+  --accent: #4a3ad8;
+  --accent-soft: #e6e3fb;
+  --good: #0f7a1c;
+  --good-soft: rgba(15, 122, 28, 0.1);
+  --warn: #8a5c00;
+  --warn-soft: rgba(138, 92, 0, 0.1);
+  --crit: #b0301c;
+  --crit-soft: rgba(176, 48, 28, 0.1);
+
+  /* ad-type colors */
+  --ad-social: #a8451c;
+  --ad-influencer: #0f8a6c;
+  --ad-google-ads: #4c5fc7;
+  --ad-display: #ad8300;
+  --ad-video: #a13868;
+  --ad-performance: #049c90;
+
+  --radius-sm: 6px;
+  --radius-md: 9px;
+  --radius-lg: 13px;
+  --radius-xl: 18px;
+
+  --elevation-1: 0 1px 2px rgba(14, 19, 38, 0.06), 0 1px 1px rgba(14, 19, 38, 0.04);
+  --elevation-2: 0 4px 10px rgba(14, 19, 38, 0.08), 0 2px 4px rgba(14, 19, 38, 0.05);
+  --elevation-3: 0 12px 28px rgba(14, 19, 38, 0.14), 0 4px 10px rgba(14, 19, 38, 0.08);
+
+  --focus-ring: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent);
+
+  --font-display: "Archivo", "IBM Plex Sans", system-ui, sans-serif;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --base: #0a0d18;
+    --surface: #111527;
+    --surface-2: #161b30;
+    --surface-3: #1c2238;
+    --ink: #e9ecf8;
+    --ink-2: #b7bcd6;
+    --muted: #878fb0;
+    --line: #242a45;
+    --line-strong: #33395c;
+
+    --accent: #9a8cff;
+    --accent-soft: rgba(154, 140, 255, 0.16);
+    --good: #45d06f;
+    --good-soft: rgba(69, 208, 111, 0.16);
+    --warn: #e0a825;
+    --warn-soft: rgba(224, 168, 37, 0.16);
+    --crit: #ff8a74;
+    --crit-soft: rgba(255, 138, 116, 0.16);
+
+    --ad-social: #bb5e09;
+    --ad-influencer: #09a178;
+    --ad-google-ads: #5455fb;
+    --ad-display: #b78d00;
+    --ad-video: #cd0877;
+    --ad-performance: #03a89a;
+
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
+    --elevation-2: 0 4px 10px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.22);
+    --elevation-3: 0 12px 28px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.3);
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --base: #0a0d18;
+  --surface: #111527;
+  --surface-2: #161b30;
+  --surface-3: #1c2238;
+  --ink: #e9ecf8;
+  --ink-2: #b7bcd6;
+  --muted: #878fb0;
+  --line: #242a45;
+  --line-strong: #33395c;
+
+  --accent: #9a8cff;
+  --accent-soft: rgba(154, 140, 255, 0.16);
+  --good: #45d06f;
+  --good-soft: rgba(69, 208, 111, 0.16);
+  --warn: #e0a825;
+  --warn-soft: rgba(224, 168, 37, 0.16);
+  --crit: #ff8a74;
+  --crit-soft: rgba(255, 138, 116, 0.16);
+
+  --ad-social: #bb5e09;
+  --ad-influencer: #09a178;
+  --ad-google-ads: #5455fb;
+  --ad-display: #b78d00;
+  --ad-video: #cd0877;
+  --ad-performance: #03a89a;
+
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
+  --elevation-2: 0 4px 10px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.22);
+  --elevation-3: 0 12px 28px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.3);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}

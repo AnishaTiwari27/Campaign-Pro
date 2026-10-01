@@ -1,0 +1,128 @@
+.command-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 58px;
+  padding: 0 20px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.command-bar-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.command-bar-crumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.command-bar-crumb a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.command-bar-crumb a:hover {
+  color: var(--ink);
+}
+
+.command-bar-crumb-sep {
+  color: var(--line-strong);
+}
+
+.command-bar-sync {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .command-bar-sync {
+    display: flex;
+  }
+}
+
+.command-bar-sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.command-bar-search {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.command-bar-search:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.command-bar-search-label {
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .command-bar-search-label {
+    display: none;
+  }
+}
+
+.command-bar-kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+
+.command-bar-theme {
+  display: flex;
+  padding: 2px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  gap: 2px;
+}
+
+.command-bar-theme-opt {
+  border: none;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.command-bar-theme-opt-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--elevation-1);
+}
