@@ -230,6 +230,51 @@ func (ns NullCreativeKindT) Value() (driver.Value, error) {
 	return string(ns.CreativeKindT), nil
 }
 
+type CreatorTierT string
+
+const (
+	CreatorTierTNano  CreatorTierT = "nano"
+	CreatorTierTMicro CreatorTierT = "micro"
+	CreatorTierTMid   CreatorTierT = "mid"
+	CreatorTierTMacro CreatorTierT = "macro"
+	CreatorTierTMega  CreatorTierT = "mega"
+)
+
+func (e *CreatorTierT) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CreatorTierT(s)
+	case string:
+		*e = CreatorTierT(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CreatorTierT: %T", src)
+	}
+	return nil
+}
+
+type NullCreatorTierT struct {
+	CreatorTierT CreatorTierT `json:"creator_tier_t"`
+	Valid        bool         `json:"valid"` // Valid is true if CreatorTierT is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCreatorTierT) Scan(value interface{}) error {
+	if value == nil {
+		ns.CreatorTierT, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CreatorTierT.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCreatorTierT) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CreatorTierT), nil
+}
+
 type CurveShapeT string
 
 const (
@@ -271,6 +316,52 @@ func (ns NullCurveShapeT) Value() (driver.Value, error) {
 		return nil, nil
 	}
 	return string(ns.CurveShapeT), nil
+}
+
+type HookTypeT string
+
+const (
+	HookTypeTDemo         HookTypeT = "demo"
+	HookTypeTTestimonial  HookTypeT = "testimonial"
+	HookTypeTOffer        HookTypeT = "offer"
+	HookTypeTStory        HookTypeT = "story"
+	HookTypeTUnboxing     HookTypeT = "unboxing"
+	HookTypeTAnnouncement HookTypeT = "announcement"
+)
+
+func (e *HookTypeT) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = HookTypeT(s)
+	case string:
+		*e = HookTypeT(s)
+	default:
+		return fmt.Errorf("unsupported scan type for HookTypeT: %T", src)
+	}
+	return nil
+}
+
+type NullHookTypeT struct {
+	HookTypeT HookTypeT `json:"hook_type_t"`
+	Valid     bool      `json:"valid"` // Valid is true if HookTypeT is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullHookTypeT) Scan(value interface{}) error {
+	if value == nil {
+		ns.HookTypeT, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.HookTypeT.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullHookTypeT) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.HookTypeT), nil
 }
 
 type ReportCadenceT string
@@ -474,6 +565,7 @@ type Campaign struct {
 	FlagReason  pgtype.Text        `json:"flag_reason"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	CreatorID   pgtype.Text        `json:"creator_id"`
 }
 
 type Creative struct {
@@ -485,6 +577,26 @@ type Creative struct {
 	Reach         float64            `json:"reach"`
 	Ctr           float64            `json:"ctr"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	Language      pgtype.Text        `json:"language"`
+	HookType      NullHookTypeT      `json:"hook_type"`
+	Claim         pgtype.Text        `json:"claim"`
+	Festival      pgtype.Text        `json:"festival"`
+	AnalyzedAt    pgtype.Timestamptz `json:"analyzed_at"`
+}
+
+type Creator struct {
+	ID              string             `json:"id"`
+	Name            string             `json:"name"`
+	Role            string             `json:"role"`
+	Initials        string             `json:"initials"`
+	Category        string             `json:"category"`
+	Region          string             `json:"region"`
+	Tier            CreatorTierT       `json:"tier"`
+	Followers       int64              `json:"followers"`
+	PrimaryPlatform string             `json:"primary_platform"`
+	Languages       []string           `json:"languages"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Report struct {

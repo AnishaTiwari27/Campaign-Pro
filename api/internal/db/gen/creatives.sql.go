@@ -7,6 +7,8 @@ package gen
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const countCreativesByCampaign = `-- name: CountCreativesByCampaign :one
@@ -21,17 +23,22 @@ func (q *Queries) CountCreativesByCampaign(ctx context.Context, campaignID strin
 }
 
 const createCreative = `-- name: CreateCreative :one
-INSERT INTO creatives (campaign_id, headline, kind, duration_label, reach, ctr)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, campaign_id, headline, kind, duration_label, reach, ctr, created_at
+INSERT INTO creatives (campaign_id, headline, kind, duration_label, reach, ctr, language, hook_type, claim, festival, analyzed_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, campaign_id, headline, kind, duration_label, reach, ctr, created_at, language, hook_type, claim, festival, analyzed_at
 `
 
 type CreateCreativeParams struct {
-	CampaignID    string        `json:"campaign_id"`
-	Headline      string        `json:"headline"`
-	Kind          CreativeKindT `json:"kind"`
-	DurationLabel string        `json:"duration_label"`
-	Reach         float64       `json:"reach"`
-	Ctr           float64       `json:"ctr"`
+	CampaignID    string             `json:"campaign_id"`
+	Headline      string             `json:"headline"`
+	Kind          CreativeKindT      `json:"kind"`
+	DurationLabel string             `json:"duration_label"`
+	Reach         float64            `json:"reach"`
+	Ctr           float64            `json:"ctr"`
+	Language      pgtype.Text        `json:"language"`
+	HookType      NullHookTypeT      `json:"hook_type"`
+	Claim         pgtype.Text        `json:"claim"`
+	Festival      pgtype.Text        `json:"festival"`
+	AnalyzedAt    pgtype.Timestamptz `json:"analyzed_at"`
 }
 
 func (q *Queries) CreateCreative(ctx context.Context, arg CreateCreativeParams) (Creative, error) {
@@ -42,6 +49,11 @@ func (q *Queries) CreateCreative(ctx context.Context, arg CreateCreativeParams) 
 		arg.DurationLabel,
 		arg.Reach,
 		arg.Ctr,
+		arg.Language,
+		arg.HookType,
+		arg.Claim,
+		arg.Festival,
+		arg.AnalyzedAt,
 	)
 	var i Creative
 	err := row.Scan(
@@ -53,12 +65,55 @@ func (q *Queries) CreateCreative(ctx context.Context, arg CreateCreativeParams) 
 		&i.Reach,
 		&i.Ctr,
 		&i.CreatedAt,
+		&i.Language,
+		&i.HookType,
+		&i.Claim,
+		&i.Festival,
+		&i.AnalyzedAt,
 	)
 	return i, err
 }
 
+const listAllCreatives = `-- name: ListAllCreatives :many
+SELECT id, campaign_id, headline, kind, duration_label, reach, ctr, created_at, language, hook_type, claim, festival, analyzed_at FROM creatives
+`
+
+func (q *Queries) ListAllCreatives(ctx context.Context) ([]Creative, error) {
+	rows, err := q.db.Query(ctx, listAllCreatives)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Creative
+	for rows.Next() {
+		var i Creative
+		if err := rows.Scan(
+			&i.ID,
+			&i.CampaignID,
+			&i.Headline,
+			&i.Kind,
+			&i.DurationLabel,
+			&i.Reach,
+			&i.Ctr,
+			&i.CreatedAt,
+			&i.Language,
+			&i.HookType,
+			&i.Claim,
+			&i.Festival,
+			&i.AnalyzedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCreativesByCampaign = `-- name: ListCreativesByCampaign :many
-SELECT id, campaign_id, headline, kind, duration_label, reach, ctr, created_at FROM creatives WHERE campaign_id = $1 ORDER BY created_at ASC
+SELECT id, campaign_id, headline, kind, duration_label, reach, ctr, created_at, language, hook_type, claim, festival, analyzed_at FROM creatives WHERE campaign_id = $1 ORDER BY created_at ASC
 `
 
 func (q *Queries) ListCreativesByCampaign(ctx context.Context, campaignID string) ([]Creative, error) {
@@ -79,6 +134,11 @@ func (q *Queries) ListCreativesByCampaign(ctx context.Context, campaignID string
 			&i.Reach,
 			&i.Ctr,
 			&i.CreatedAt,
+			&i.Language,
+			&i.HookType,
+			&i.Claim,
+			&i.Festival,
+			&i.AnalyzedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -88,4 +148,90 @@ func (q *Queries) ListCreativesByCampaign(ctx context.Context, campaignID string
 		return nil, err
 	}
 	return items, nil
+}
+
+const listUnanalyzedCreatives = `-- name: ListUnanalyzedCreatives :many
+SELECT id, campaign_id, headline, kind, duration_label, reach, ctr, created_at, language, hook_type, claim, festival, analyzed_at FROM creatives WHERE analyzed_at IS NULL LIMIT $1
+`
+
+func (q *Queries) ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error) {
+	rows, err := q.db.Query(ctx, listUnanalyzedCreatives, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Creative
+	for rows.Next() {
+		var i Creative
+		if err := rows.Scan(
+			&i.ID,
+			&i.CampaignID,
+			&i.Headline,
+			&i.Kind,
+			&i.DurationLabel,
+			&i.Reach,
+			&i.Ctr,
+			&i.CreatedAt,
+			&i.Language,
+			&i.HookType,
+			&i.Claim,
+			&i.Festival,
+			&i.AnalyzedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateCreativeAnalysis = `-- name: UpdateCreativeAnalysis :one
+UPDATE creatives SET
+    language   = coalesce($1::text, language),
+    hook_type  = coalesce($2::hook_type_t, hook_type),
+    claim      = coalesce($3::text, claim),
+    festival   = coalesce($4::text, festival),
+    analyzed_at = now()
+WHERE id = $5
+RETURNING id, campaign_id, headline, kind, duration_label, reach, ctr, created_at, language, hook_type, claim, festival, analyzed_at
+`
+
+type UpdateCreativeAnalysisParams struct {
+	Language pgtype.Text   `json:"language"`
+	HookType NullHookTypeT `json:"hook_type"`
+	Claim    pgtype.Text   `json:"claim"`
+	Festival pgtype.Text   `json:"festival"`
+	ID       pgtype.UUID   `json:"id"`
+}
+
+// UpdateCreativeAnalysis is what the CreativeAnalyzer writes back after a
+// multimodal pass over the asset.
+func (q *Queries) UpdateCreativeAnalysis(ctx context.Context, arg UpdateCreativeAnalysisParams) (Creative, error) {
+	row := q.db.QueryRow(ctx, updateCreativeAnalysis,
+		arg.Language,
+		arg.HookType,
+		arg.Claim,
+		arg.Festival,
+		arg.ID,
+	)
+	var i Creative
+	err := row.Scan(
+		&i.ID,
+		&i.CampaignID,
+		&i.Headline,
+		&i.Kind,
+		&i.DurationLabel,
+		&i.Reach,
+		&i.Ctr,
+		&i.CreatedAt,
+		&i.Language,
+		&i.HookType,
+		&i.Claim,
+		&i.Festival,
+		&i.AnalyzedAt,
+	)
+	return i, err
 }

@@ -17,22 +17,27 @@ type Querier interface {
 	CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) (AuditEvent, error)
 	CreateCampaign(ctx context.Context, arg CreateCampaignParams) (Campaign, error)
 	CreateCreative(ctx context.Context, arg CreateCreativeParams) (Creative, error)
+	CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateReportRun(ctx context.Context, arg CreateReportRunParams) (ReportRun, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteReport(ctx context.Context, id pgtype.UUID) error
 	GetCampaign(ctx context.Context, id string) (Campaign, error)
+	GetCreator(ctx context.Context, id string) (Creator, error)
 	GetLastReportRun(ctx context.Context, reportID pgtype.UUID) (ReportRun, error)
 	GetReport(ctx context.Context, id pgtype.UUID) (Report, error)
 	GetUser(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	ListAllCreatives(ctx context.Context) ([]Creative, error)
 	ListAuditEventsByCampaign(ctx context.Context, campaignID string) ([]AuditEvent, error)
 	ListCampaigns(ctx context.Context) ([]Campaign, error)
+	ListCampaignsByCreator(ctx context.Context, creatorID pgtype.Text) ([]Campaign, error)
 	// ListCampaignsFiltered applies every /campaigns filter in one query;
 	// sort, pagination and derived fields (pace, cpm, index, trend) are done
 	// in Go since sqlc can't parameterize ORDER BY columns.
 	ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFilteredParams) ([]Campaign, error)
 	ListCreativesByCampaign(ctx context.Context, campaignID string) ([]Creative, error)
+	ListCreators(ctx context.Context) ([]Creator, error)
 	ListEnabledReports(ctx context.Context) ([]Report, error)
 	ListEnabledReportsByCadence(ctx context.Context, cadence ReportCadenceT) ([]Report, error)
 	ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error)
@@ -40,11 +45,16 @@ type Querier interface {
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
 	ListReports(ctx context.Context) ([]Report, error)
 	ListRunningCampaigns(ctx context.Context) ([]Campaign, error)
+	ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error)
 	ListUsers(ctx context.Context) ([]User, error)
+	SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error
 	TotalPendingSpend(ctx context.Context) (int64, error)
 	UpdateCampaignDecision(ctx context.Context, arg UpdateCampaignDecisionParams) (Campaign, error)
 	UpdateCampaignFlag(ctx context.Context, arg UpdateCampaignFlagParams) (Campaign, error)
 	UpdateCampaignStatus(ctx context.Context, arg UpdateCampaignStatusParams) (Campaign, error)
+	// UpdateCreativeAnalysis is what the CreativeAnalyzer writes back after a
+	// multimodal pass over the asset.
+	UpdateCreativeAnalysis(ctx context.Context, arg UpdateCreativeAnalysisParams) (Creative, error)
 	// UpdateReport applies whichever fields are non-null; every field is
 	// independently optional so a PATCH can change just one of them.
 	UpdateReport(ctx context.Context, arg UpdateReportParams) (Report, error)
