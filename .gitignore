@@ -11,3 +11,7 @@ playwright-report/
 # Local env overrides
 .env
 .env.local
+
+# Brand logos are fetched by scripts/fetch-logos.sh, not committed —
+# they're third-party marks and the script reproduces them.
+web/public/logos/

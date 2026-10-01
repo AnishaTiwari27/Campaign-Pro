@@ -26,6 +26,15 @@
   min-width: 0;
 }
 
+.spotlight-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 10px;
+}
+
+.spotlight-eyebrow-row .spotlight-eyebrow { margin-bottom: 0; }
+
 .spotlight-eyebrow {
   font-size: 11.5px;
   font-weight: 700;

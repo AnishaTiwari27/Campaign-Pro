@@ -26,6 +26,10 @@ export interface Campaign {
   approval: Approval;
   curveShape: CurveShape;
   flagReason?: string;
+  /** Resolves the brand's logo in /logos; absent for people and unknown brands. */
+  brandDomain?: string;
+  /** Set for person-subject campaigns; keys the creator's visual identity. */
+  creatorId?: string;
   createdAt: string;
   updatedAt: string;
   pace: number;

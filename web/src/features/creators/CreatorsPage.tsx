@@ -5,6 +5,7 @@ import { SkeletonRows } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
 import { TierBadge, IndexBar, ConsistencyDots, formatFollowers } from "./CreatorBits";
+import { SubjectImage } from "../../components/SubjectImage";
 import "./CreatorsPage.css";
 
 export function CreatorsPage() {
@@ -44,7 +45,7 @@ export function CreatorsPage() {
           {items.map((c) => (
             <button key={c.id} type="button" className="creator-row" onClick={() => navigate(`/creators/${c.id}`)}>
               <span className="creator-identity">
-                <span className="creator-avatar">{c.initials}</span>
+                <SubjectImage name={c.name} initials={c.initials} kind="person" seed={c.id} size={34} />
                 <span className="creator-identity-text">
                   <span className="creator-name">{c.name}</span>
                   <span className="creator-meta">

@@ -28,6 +28,8 @@ type CampaignDTO struct {
 	Approval      string  `json:"approval"`
 	CurveShape    string  `json:"curveShape"`
 	FlagReason    string  `json:"flagReason,omitempty"`
+	BrandDomain   string  `json:"brandDomain,omitempty"`
+	CreatorID     string  `json:"creatorId,omitempty"`
 	CreatedAt     string  `json:"createdAt"`
 	UpdatedAt     string  `json:"updatedAt"`
 	Pace          float64 `json:"pace"`
@@ -44,6 +46,7 @@ func campaignDTO(r service.CampaignRow) CampaignDTO {
 		Platform: r.Platform, Status: string(r.Status), DaysRunning: r.DaysRunning,
 		Reach: r.Reach, Spend: r.Spend, Budget: r.Budget, Frequency: r.Frequency,
 		Approval: string(r.Approval), CurveShape: string(r.CurveShape), FlagReason: r.FlagReason,
+		BrandDomain: r.BrandDomain, CreatorID: r.CreatorID,
 		CreatedAt: r.CreatedAt.Format(rfc3339), UpdatedAt: r.UpdatedAt.Format(rfc3339),
 		Pace: r.Pace, PaceClass: string(r.PaceClass), CPM: r.CPM, Index: r.Index,
 		CategoryIndex: r.CategoryIndex,

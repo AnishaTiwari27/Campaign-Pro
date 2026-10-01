@@ -11,6 +11,7 @@ import { Pagination } from "../../components/Pagination";
 import { Pill } from "../../components/Pill";
 import { ApprovalTag } from "../../components/Tag";
 import { AdTypeTag, adTypeStripeStyle } from "../../components/AdTypeTag";
+import { SubjectImage } from "../../components/SubjectImage";
 import { PaceMeter } from "../../components/Meter";
 import { SkeletonRows } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
@@ -67,7 +68,7 @@ export function CampaignsPage() {
         render: (c) => (
           <div className="campaign-subject" style={adTypeStripeStyle(c.adType)}>
             <span className="campaign-subject-stripe" />
-            <span className="campaign-subject-initials">{c.initials}</span>
+            <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={28} />
             <span className="campaign-subject-text">
               <span className="campaign-subject-name truncate">{c.name}</span>
               <span className="campaign-subject-hint">Open →</span>

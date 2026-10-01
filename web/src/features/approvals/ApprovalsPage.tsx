@@ -4,6 +4,7 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { Pill } from "../../components/Pill";
 import { FlaggedTag } from "../../components/Tag";
 import { AdTypeTag, adTypeStripeStyle } from "../../components/AdTypeTag";
+import { SubjectImage } from "../../components/SubjectImage";
 import { SkeletonRows } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { formatIndex, formatMoney, formatReach, formatPct, timeAgo } from "../../lib/format";
@@ -41,7 +42,7 @@ export function ApprovalsPage() {
             <div key={c.id} className="approval-card card" style={adTypeStripeStyle(c.adType)}>
               <div className="approval-card-stripe" />
               <div className="approval-card-main">
-                <span className="approval-card-avatar">{c.initials}</span>
+                <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={40} />
                 <div className="approval-card-body">
                   <div className="approval-card-title-row">
                     <span className="approval-card-name">{c.name}</span>

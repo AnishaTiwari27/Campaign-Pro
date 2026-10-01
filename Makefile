@@ -7,13 +7,14 @@ DATABASE_URL ?= postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@loca
 PORT ?= 8090
 MIGRATIONS := api/internal/db/migrations
 
-.PHONY: help dev dev-api dev-web dev-docker db-create migrate migrate-down seed test test-go test-web test-e2e lint fmt generate
+.PHONY: help dev dev-api dev-web dev-docker db-create migrate migrate-down seed logos test test-go test-web test-e2e lint fmt generate
 
 help:
 	@echo "make dev          - run api (:$(PORT)) and web (:5173) together"
 	@echo "make db-create    - create the local database + role"
 	@echo "make migrate      - apply migrations"
 	@echo "make seed         - truncate and reseed demo data"
+	@echo "make logos        - fetch brand logos into web/public/logos"
 	@echo "make test         - go tests + vitest + playwright"
 	@echo "make lint         - go vet + gofmt check + eslint"
 	@echo "make generate     - regenerate sqlc code"
@@ -45,6 +46,9 @@ migrate:
 
 migrate-down:
 	migrate -path $(MIGRATIONS) -database "$(DATABASE_URL)" down 1
+
+logos:
+	./scripts/fetch-logos.sh
 
 seed:
 	cd api && DATABASE_URL="$(DATABASE_URL)" go run ./seed

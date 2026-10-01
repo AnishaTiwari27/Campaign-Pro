@@ -42,23 +42,7 @@
   pointer-events: none;
 }
 
-.tile-initials {
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 23px;
-  letter-spacing: -0.02em;
-  color: color-mix(in srgb, var(--stripe) 78%, black);
-}
-
-:root[data-theme="dark"] .tile-initials {
-  color: color-mix(in srgb, var(--stripe) 72%, white);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .tile-initials {
-    color: color-mix(in srgb, var(--stripe) 72%, white);
-  }
-}
+.tile-image { z-index: 1; }
 
 .tile-status {
   position: absolute;

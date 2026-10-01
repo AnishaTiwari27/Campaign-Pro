@@ -117,6 +117,13 @@ func creatorSeeds() []creatorSeed {
 	}
 }
 
+var brandDomains = map[string]string{
+	"Lakmé": "lakmeindia.com", "boAt": "boat-lifestyle.com", "Myntra": "myntra.com",
+	"Dream11": "dream11.com", "CRED": "cred.club", "Nykaa": "nykaa.com",
+	"Tanishq": "tanishq.co.in", "PhonePe": "phonepe.com", "Urban Company": "urbancompany.com",
+	"Mamaearth": "mamaearth.in", "Zepto": "zeptonow.com", "Lenskart": "lenskart.com",
+}
+
 var seedSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
 
 func slugOf(s string) string {
@@ -147,6 +154,7 @@ func seedCreators(ctx context.Context, pool *pgxpool.Pool, st *store.Store) int 
 				AdType: cc.adType, Platform: cc.platform, Status: cc.status,
 				DaysRunning: cc.daysRunning, Reach: cc.reach, Spend: cc.spend, Budget: cc.budget,
 				Frequency: cc.frequency, Approval: cc.approval, CurveShape: cc.curve,
+				BrandDomain: brandDomains[cc.brand],
 			})
 			if err != nil {
 				log.Fatalf("create creator campaign %s: %v", campaignID, err)

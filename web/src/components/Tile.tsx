@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import type { Campaign } from "../api/types";
 import { Pill } from "./Pill";
 import { adTypeStripeStyle } from "./AdTypeTag";
+import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
 import "./Tile.css";
 
@@ -36,7 +37,15 @@ export function Tile({
       }}
     >
       <div className="tile-art">
-        <span className="tile-initials">{campaign.initials}</span>
+        <SubjectImage
+          name={campaign.name}
+          initials={campaign.initials}
+          kind={campaign.subjectType}
+          domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
+          seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
+          size={46}
+          className="tile-image"
+        />
         <span className="tile-status">
           <Pill status={campaign.status} />
         </span>

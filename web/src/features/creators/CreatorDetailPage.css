@@ -1,20 +1,5 @@
 .creator-detail-head { display: flex; align-items: flex-start; gap: 14px; }
 
-.creator-detail-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 17px;
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-
 .creator-detail-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .creator-detail-title h1 { font-size: 21px; }
 .creator-detail-sub { font-size: 13px; color: var(--muted); margin-top: 4px; }

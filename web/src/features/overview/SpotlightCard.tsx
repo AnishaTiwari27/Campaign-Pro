@@ -3,6 +3,7 @@ import type { Campaign } from "../../api/types";
 import { Pill } from "../../components/Pill";
 import { ApprovalTag } from "../../components/Tag";
 import { adTypeStripeStyle } from "../../components/AdTypeTag";
+import { SubjectImage } from "../../components/SubjectImage";
 import { AreaChart } from "../../components/AreaChart";
 import { reachCurve } from "../../lib/metrics";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
@@ -20,7 +21,17 @@ export function SpotlightCard({ campaign, medAll, categoryMedian }: { campaign: 
       <span className="spotlight-stripe" />
       <div className="spotlight-main">
         <div className="spotlight-header">
-          <div className="spotlight-eyebrow">{eyebrow}</div>
+          <div className="spotlight-eyebrow-row">
+            <SubjectImage
+              name={campaign.name}
+              initials={campaign.initials}
+              kind={campaign.subjectType}
+              domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
+          seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
+              size={38}
+            />
+            <div className="spotlight-eyebrow">{eyebrow}</div>
+          </div>
           <div className="spotlight-title-row">
             <h2>{campaign.name}</h2>
             <Pill status={campaign.status} />

@@ -7,6 +7,7 @@ import { BarChart } from "../../components/BarChart";
 import { Pill } from "../../components/Pill";
 import { formatMoney, formatReach } from "../../lib/format";
 import { ConsistencyDots, IndexBar, TierBadge, formatFollowers } from "./CreatorBits";
+import { SubjectImage } from "../../components/SubjectImage";
 import "./CreatorDetailPage.css";
 
 export function CreatorDetailPage() {
@@ -50,7 +51,7 @@ export function CreatorDetailPage() {
     <div className="creator-detail-page">
       <div className="page-header">
         <div className="creator-detail-head">
-          <span className="creator-detail-avatar">{data.initials}</span>
+          <SubjectImage name={data.name} initials={data.initials} kind="person" seed={data.id} size={52} />
           <div>
             <div className="creator-detail-title">
               <h1>{data.name}</h1>

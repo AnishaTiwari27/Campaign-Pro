@@ -6,7 +6,8 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { useKeyboardShortcuts } from "../../lib/keyboard";
 import { Pill } from "../../components/Pill";
 import { ApprovalTag, FlaggedTag } from "../../components/Tag";
-import { AdTypeTag, adTypeStripeStyle } from "../../components/AdTypeTag";
+import { AdTypeTag } from "../../components/AdTypeTag";
+import { SubjectImage } from "../../components/SubjectImage";
 import { EmptyState } from "../../components/EmptyState";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { ApiError } from "../../api/client";
@@ -77,9 +78,14 @@ export function CampaignDetailPage() {
     <div className="campaign-detail-page">
       <div className="campaign-detail-header">
         <div className="campaign-detail-header-main">
-          <span className="campaign-detail-avatar" style={adTypeStripeStyle(campaign.adType)}>
-            {campaign.initials}
-          </span>
+          <SubjectImage
+            name={campaign.name}
+            initials={campaign.initials}
+            kind={campaign.subjectType}
+            domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
+            seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
+            size={52}
+          />
           <div>
             <div className="campaign-detail-title-row">
               <h1>{campaign.name}</h1>

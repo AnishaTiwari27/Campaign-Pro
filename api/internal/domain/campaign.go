@@ -74,8 +74,10 @@ type Campaign struct {
 	// CreatorID is set when the subject is a person, linking the campaign
 	// to the creator who ran it. Empty for brand campaigns.
 	CreatorID string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	// BrandDomain resolves the campaign's brand logo; empty when unknown.
+	BrandDomain string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (c Campaign) IsRunning() bool { return c.Status != StatusScheduled }

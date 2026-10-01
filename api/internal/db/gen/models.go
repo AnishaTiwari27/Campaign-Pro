@@ -566,6 +566,7 @@ type Campaign struct {
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 	CreatorID   pgtype.Text        `json:"creator_id"`
+	BrandDomain pgtype.Text        `json:"brand_domain"`
 }
 
 type Creative struct {

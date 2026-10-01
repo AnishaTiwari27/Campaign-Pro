@@ -67,6 +67,7 @@ func toDomainCampaign(c gen.Campaign) domain.Campaign {
 		CurveShape:  domain.CurveShape(c.CurveShape),
 		FlagReason:  textOrEmpty(c.FlagReason),
 		CreatorID:   textOrEmpty(c.CreatorID),
+		BrandDomain: textOrEmpty(c.BrandDomain),
 		CreatedAt:   timeOf(c.CreatedAt),
 		UpdatedAt:   timeOf(c.UpdatedAt),
 	}

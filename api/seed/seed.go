@@ -34,6 +34,7 @@ type campaignSeed struct {
 	frequency                float64
 	approval                 domain.Approval
 	curveShape               domain.CurveShape
+	brandDomain              string
 }
 
 func main() {
@@ -63,6 +64,7 @@ func main() {
 			Category: c.category, Region: c.region, AdType: c.adType, Platform: c.platform,
 			Status: c.status, DaysRunning: c.daysRunning, Reach: c.reach, Spend: c.spend, Budget: c.budget,
 			Frequency: c.frequency, Approval: c.approval, CurveShape: c.curveShape,
+			BrandDomain: c.brandDomain,
 		})
 		if err != nil {
 			log.Fatalf("create campaign %s: %v", c.id, err)
@@ -246,22 +248,22 @@ func seedReports(ctx context.Context, pool *pgxpool.Pool, st *store.Store) error
 // least once.
 func campaignSeeds() []campaignSeed {
 	return []campaignSeed{
-		{"dream11", "Dream11", domain.SubjectBrand, "", "D1", "Sports", "Pan-India", domain.AdVideo, "YouTube", domain.StatusLive, 18, 180, 9800000, 12000000, 2.6, domain.ApprovalApproved, domain.CurveFast},
-		{"phonepe", "PhonePe", domain.SubjectBrand, "", "PP", "Fintech", "Pan-India", domain.AdGoogleAds, "Google Search", domain.StatusLive, 20, 65, 4200000, 6000000, 1.8, domain.ApprovalApproved, domain.CurveSteady},
-		{"cred", "CRED", domain.SubjectBrand, "", "CR", "Fintech", "Delhi NCR", domain.AdSocial, "Instagram", domain.StatusLive, 6, 22, 1800000, 4000000, 1.5, domain.ApprovalPending, domain.CurveFast},
-		{"amul", "Amul", domain.SubjectBrand, "", "AM", "FMCG", "Pan-India", domain.AdDisplay, "Google Display", domain.StatusEnded, 30, 95, 5200000, 6000000, 3.1, domain.ApprovalApproved, domain.CurveSlow},
-		{"zepto", "Zepto", domain.SubjectBrand, "", "ZP", "E-commerce", "Mumbai", domain.AdPerformance, "Google Search", domain.StatusLive, 10, 16, 900000, 2500000, 2.0, domain.ApprovalApproved, domain.CurveSteady},
-		{"myntra", "Myntra", domain.SubjectBrand, "", "MY", "Fashion", "Bengaluru", domain.AdSocial, "Instagram", domain.StatusLive, 14, 48, 4300000, 4500000, 2.2, domain.ApprovalApproved, domain.CurveSteady},
-		{"boat", "boAt", domain.SubjectBrand, "", "BO", "Technology", "Pan-India", domain.AdVideo, "YouTube", domain.StatusLive, 16, 72, 4600000, 6500000, 2.5, domain.ApprovalApproved, domain.CurveFast},
-		{"swiggy", "Swiggy", domain.SubjectBrand, "", "SW", "Services", "Bengaluru", domain.AdPerformance, "Google Search", domain.StatusLive, 12, 55, 8500000, 8000000, 2.1, domain.ApprovalApproved, domain.CurveFast},
-		{"tanishq", "Tanishq", domain.SubjectBrand, "", "TQ", "Luxury", "Delhi NCR", domain.AdDisplay, "Google Display", domain.StatusEnded, 25, 40, 3200000, 4000000, 1.9, domain.ApprovalRejected, domain.CurveSlow},
-		{"licious", "Licious", domain.SubjectBrand, "", "LC", "FMCG", "South Zone", domain.AdSocial, "Instagram", domain.StatusLive, 9, 18, 1200000, 3000000, 1.7, domain.ApprovalApproved, domain.CurveSteady},
-		{"blinkit", "Blinkit", domain.SubjectBrand, "", "BL", "E-commerce", "Delhi NCR", domain.AdGoogleAds, "Google Search", domain.StatusLive, 11, 150, 5000000, 9000000, 2.3, domain.ApprovalPending, domain.CurveFast},
-		{"lenskart", "Lenskart", domain.SubjectBrand, "", "LK", "Fashion", "West Zone", domain.AdVideo, "YouTube", domain.StatusLive, 17, 38, 9700000, 10000000, 2.0, domain.ApprovalApproved, domain.CurveSteady},
-		{"mamaearth", "Mamaearth", domain.SubjectBrand, "", "MA", "Beauty", "Mumbai", domain.AdSocial, "Instagram", domain.StatusLive, 8, 15, 700000, 2000000, 1.4, domain.ApprovalPending, domain.CurveSlow},
-		{"nykaa", "Nykaa", domain.SubjectBrand, "", "NK", "Beauty", "Mumbai", domain.AdSocial, "Meta Ads", domain.StatusLive, 13, 60, 4400000, 6000000, 2.1, domain.ApprovalApproved, domain.CurveSteady},
-		{"rapido", "Rapido", domain.SubjectBrand, "", "RP", "Services", "South Zone", domain.AdDisplay, "Google Display", domain.StatusLive, 15, 30, 2600000, 4000000, 1.6, domain.ApprovalApproved, domain.CurveSteady},
-		{"urban-company", "Urban Company", domain.SubjectBrand, "", "UC", "Services", "Bengaluru", domain.AdPerformance, "Meta Ads", domain.StatusEnded, 28, 52, 4700000, 5500000, 2.0, domain.ApprovalApproved, domain.CurveSlow},
-		{"ethos-watches", "Ethos Watches", domain.SubjectBrand, "", "EW", "Luxury", "Delhi NCR", domain.AdDisplay, "Google Display", domain.StatusScheduled, 0, 0, 0, 5000000, 0, domain.ApprovalApproved, domain.CurveSteady},
+		{"dream11", "Dream11", domain.SubjectBrand, "", "D1", "Sports", "Pan-India", domain.AdVideo, "YouTube", domain.StatusLive, 18, 180, 9800000, 12000000, 2.6, domain.ApprovalApproved, domain.CurveFast, "dream11.com"},
+		{"phonepe", "PhonePe", domain.SubjectBrand, "", "PP", "Fintech", "Pan-India", domain.AdGoogleAds, "Google Search", domain.StatusLive, 20, 65, 4200000, 6000000, 1.8, domain.ApprovalApproved, domain.CurveSteady, "phonepe.com"},
+		{"cred", "CRED", domain.SubjectBrand, "", "CR", "Fintech", "Delhi NCR", domain.AdSocial, "Instagram", domain.StatusLive, 6, 22, 1800000, 4000000, 1.5, domain.ApprovalPending, domain.CurveFast, "cred.club"},
+		{"amul", "Amul", domain.SubjectBrand, "", "AM", "FMCG", "Pan-India", domain.AdDisplay, "Google Display", domain.StatusEnded, 30, 95, 5200000, 6000000, 3.1, domain.ApprovalApproved, domain.CurveSlow, "amul.com"},
+		{"zepto", "Zepto", domain.SubjectBrand, "", "ZP", "E-commerce", "Mumbai", domain.AdPerformance, "Google Search", domain.StatusLive, 10, 16, 900000, 2500000, 2.0, domain.ApprovalApproved, domain.CurveSteady, "zeptonow.com"},
+		{"myntra", "Myntra", domain.SubjectBrand, "", "MY", "Fashion", "Bengaluru", domain.AdSocial, "Instagram", domain.StatusLive, 14, 48, 4300000, 4500000, 2.2, domain.ApprovalApproved, domain.CurveSteady, "myntra.com"},
+		{"boat", "boAt", domain.SubjectBrand, "", "BO", "Technology", "Pan-India", domain.AdVideo, "YouTube", domain.StatusLive, 16, 72, 4600000, 6500000, 2.5, domain.ApprovalApproved, domain.CurveFast, "boat-lifestyle.com"},
+		{"swiggy", "Swiggy", domain.SubjectBrand, "", "SW", "Services", "Bengaluru", domain.AdPerformance, "Google Search", domain.StatusLive, 12, 55, 8500000, 8000000, 2.1, domain.ApprovalApproved, domain.CurveFast, "swiggy.com"},
+		{"tanishq", "Tanishq", domain.SubjectBrand, "", "TQ", "Luxury", "Delhi NCR", domain.AdDisplay, "Google Display", domain.StatusEnded, 25, 40, 3200000, 4000000, 1.9, domain.ApprovalRejected, domain.CurveSlow, "tanishq.co.in"},
+		{"licious", "Licious", domain.SubjectBrand, "", "LC", "FMCG", "South Zone", domain.AdSocial, "Instagram", domain.StatusLive, 9, 18, 1200000, 3000000, 1.7, domain.ApprovalApproved, domain.CurveSteady, "licious.in"},
+		{"blinkit", "Blinkit", domain.SubjectBrand, "", "BL", "E-commerce", "Delhi NCR", domain.AdGoogleAds, "Google Search", domain.StatusLive, 11, 150, 5000000, 9000000, 2.3, domain.ApprovalPending, domain.CurveFast, "blinkit.com"},
+		{"lenskart", "Lenskart", domain.SubjectBrand, "", "LK", "Fashion", "West Zone", domain.AdVideo, "YouTube", domain.StatusLive, 17, 38, 9700000, 10000000, 2.0, domain.ApprovalApproved, domain.CurveSteady, "lenskart.com"},
+		{"mamaearth", "Mamaearth", domain.SubjectBrand, "", "MA", "Beauty", "Mumbai", domain.AdSocial, "Instagram", domain.StatusLive, 8, 15, 700000, 2000000, 1.4, domain.ApprovalPending, domain.CurveSlow, "mamaearth.in"},
+		{"nykaa", "Nykaa", domain.SubjectBrand, "", "NK", "Beauty", "Mumbai", domain.AdSocial, "Meta Ads", domain.StatusLive, 13, 60, 4400000, 6000000, 2.1, domain.ApprovalApproved, domain.CurveSteady, "nykaa.com"},
+		{"rapido", "Rapido", domain.SubjectBrand, "", "RP", "Services", "South Zone", domain.AdDisplay, "Google Display", domain.StatusLive, 15, 30, 2600000, 4000000, 1.6, domain.ApprovalApproved, domain.CurveSteady, "rapido.bike"},
+		{"urban-company", "Urban Company", domain.SubjectBrand, "", "UC", "Services", "Bengaluru", domain.AdPerformance, "Meta Ads", domain.StatusEnded, 28, 52, 4700000, 5500000, 2.0, domain.ApprovalApproved, domain.CurveSlow, "urbancompany.com"},
+		{"ethos-watches", "Ethos Watches", domain.SubjectBrand, "", "EW", "Luxury", "Delhi NCR", domain.AdDisplay, "Google Display", domain.StatusScheduled, 0, 0, 0, 5000000, 0, domain.ApprovalApproved, domain.CurveSteady, "ethoswatches.com"},
 	}
 }

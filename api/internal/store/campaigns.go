@@ -120,6 +120,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c domain.Campaign) (domain.C
 		Approval:    gen.ApprovalStatusT(c.Approval),
 		CurveShape:  gen.CurveShapeT(c.CurveShape),
 		FlagReason:  textParam(c.FlagReason),
+		BrandDomain: textParam(c.BrandDomain),
 	})
 	if err != nil {
 		return domain.Campaign{}, err

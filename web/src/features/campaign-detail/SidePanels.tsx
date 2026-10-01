@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Campaign, CategoryBenchmark } from "../../api/types";
 import { BudgetMeter } from "../../components/Meter";
+import { SubjectImage } from "../../components/SubjectImage";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
 import "./SidePanels.css";
 
@@ -58,7 +59,7 @@ export function SimilarPanel({ similar }: { similar: Campaign[] }) {
           {similar.map((c) => (
             <li key={c.id}>
               <Link to={`/campaigns/${c.id}`} className="similar-item">
-                <span className="similar-item-initials">{c.initials}</span>
+                <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={28} />
                 <span className="similar-item-body">
                   <span className="similar-item-name truncate">{c.name}</span>
                   <span className="similar-item-meta">
