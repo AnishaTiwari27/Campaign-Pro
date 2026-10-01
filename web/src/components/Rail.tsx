@@ -7,6 +7,7 @@ import {
   IconBenchmarks,
   IconCampaigns,
   IconOverview,
+  IconCreators,
   IconRegions,
   IconReports,
   IconSettings,
@@ -46,6 +47,7 @@ export function Rail() {
 
       <div className="rail-group">
         <div className="rail-group-label">Analysis</div>
+        <NavItem to="/creators" icon={<IconCreators />} label="Creators" />
         <NavItem to="/regions" icon={<IconRegions />} label="Regions" />
         <NavItem to="/benchmarks" icon={<IconBenchmarks />} label="Benchmarks" />
       </div>

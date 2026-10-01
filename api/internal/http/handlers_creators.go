@@ -33,6 +33,7 @@ type CreatorPerformanceDTO struct {
 	TierIndex        float64 `json:"tierIndex"`
 	CostPerLakh      float64 `json:"costPerLakh"`
 	Consistency      float64 `json:"consistency"`
+	ConsistencyN     int     `json:"consistencyN"`
 	AudienceReachPct float64 `json:"audienceReachPct"`
 	Flagged          int     `json:"flagged"`
 }
@@ -55,7 +56,7 @@ func creatorPerformanceDTO(p domain.CreatorPerformance) CreatorPerformanceDTO {
 		CreatorDTO: creatorDTO(p.Creator), Campaigns: p.Campaigns, LiveCampaigns: p.LiveCampaigns,
 		TotalReach: p.TotalReach, TotalSpend: p.TotalSpend, AvgReach: p.AvgReach,
 		TierMedian: p.TierMedian, TierIndex: p.TierIndex, CostPerLakh: p.CostPerLakh,
-		Consistency: p.Consistency, AudienceReachPct: p.AudienceReachPct, Flagged: p.Flagged,
+		Consistency: p.Consistency, ConsistencyN: p.ConsistencyN, AudienceReachPct: p.AudienceReachPct, Flagged: p.Flagged,
 	}
 }
 

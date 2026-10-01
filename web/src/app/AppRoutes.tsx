@@ -5,6 +5,8 @@ import { CampaignsPage } from "../features/campaigns/CampaignsPage";
 import { CampaignDetailPage } from "../features/campaign-detail/CampaignDetailPage";
 import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
+import { CreatorsPage } from "../features/creators/CreatorsPage";
+import { CreatorDetailPage } from "../features/creators/CreatorDetailPage";
 import { RegionsPage } from "../features/regions/RegionsPage";
 import { RegionDetailPage } from "../features/regions/RegionDetailPage";
 import { BenchmarksPage } from "../features/benchmarks/BenchmarksPage";
@@ -21,6 +23,8 @@ export function AppRoutes() {
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />
         <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="creators" element={<CreatorsPage />} />
+        <Route path="creators/:id" element={<CreatorDetailPage />} />
         <Route path="regions" element={<RegionsPage />} />
         <Route path="regions/:id" element={<RegionDetailPage />} />
         <Route path="benchmarks" element={<BenchmarksPage />} />

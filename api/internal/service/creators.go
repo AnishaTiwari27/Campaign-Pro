@@ -67,6 +67,7 @@ func performanceFor(cr domain.Creator, camps []domain.Campaign, tierMedian float
 	perf.TierIndex = domain.Index(perf.AvgReach, tierMedian)
 	perf.CostPerLakh = domain.CostPerLakhReach(perf.TotalSpend, perf.TotalReach)
 	perf.Consistency = domain.Consistency(reaches)
+	perf.ConsistencyN = len(reaches)
 	perf.AudienceReachPct = domain.AudienceReachPct(perf.AvgReach, cr.Followers)
 	return perf
 }

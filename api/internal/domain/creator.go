@@ -75,16 +75,20 @@ type Creator struct {
 // CreatorPerformance is everything the roster and detail views need, all
 // derived from the creator's own campaigns.
 type CreatorPerformance struct {
-	Creator          Creator
-	Campaigns        int
-	LiveCampaigns    int
-	TotalReach       float64
-	TotalSpend       int64
-	AvgReach         float64
-	TierMedian       float64 // median campaign reach across this creator's tier
-	TierIndex        float64 // AvgReach / TierMedian — "1.6x for their tier"
-	CostPerLakh      float64 // ₹ per 1L reach — comparable across tiers
-	Consistency      float64 // 0-1; how repeatable their delivery is
+	Creator       Creator
+	Campaigns     int
+	LiveCampaigns int
+	TotalReach    float64
+	TotalSpend    int64
+	AvgReach      float64
+	TierMedian    float64 // median campaign reach across this creator's tier
+	TierIndex     float64 // AvgReach / TierMedian — "1.6x for their tier"
+	CostPerLakh   float64 // ₹ per 1L reach — comparable across tiers
+	Consistency   float64 // 0-1; how repeatable their delivery is
+	// ConsistencyN is how many campaigns that score came from. Below 2 the
+	// score is not meaningful and callers should present it as unknown
+	// rather than as a perfect 1.
+	ConsistencyN     int
 	AudienceReachPct float64 // avg reach as a share of follower base
 	Flagged          int
 }

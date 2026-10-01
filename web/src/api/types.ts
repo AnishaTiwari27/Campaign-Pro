@@ -183,7 +183,7 @@ export interface ReportRun {
 }
 
 export interface SearchResult {
-  kind: "section" | "campaign" | "region" | "action";
+  kind: "section" | "campaign" | "creator" | "region" | "action";
   id: string;
   title: string;
   subtitle?: string;
@@ -231,3 +231,51 @@ export const CADENCE_OPTIONS: { value: Cadence; label: string }[] = [
   { value: "monthly_1_9", label: "First of the month 9:00 AM IST" },
   { value: "on_flag", label: "Within 15 min of a flag" },
 ];
+
+export type Tier = "nano" | "micro" | "mid" | "macro" | "mega";
+
+export interface Creator {
+  id: string;
+  name: string;
+  role: string;
+  initials: string;
+  category: string;
+  region: string;
+  tier: Tier;
+  tierLabel: string;
+  followers: number;
+  primaryPlatform: string;
+  languages: string[];
+}
+
+export interface CreatorPerformance extends Creator {
+  campaigns: number;
+  liveCampaigns: number;
+  totalReach: number;
+  totalSpend: number;
+  avgReach: number;
+  /** Median campaign reach across this creator's tier — their baseline. */
+  tierMedian: number;
+  /** avgReach / tierMedian. 1.0 is exactly typical for their size. */
+  tierIndex: number;
+  costPerLakh: number;
+  /** 0-1; how repeatable their delivery is across campaigns. */
+  consistency: number;
+  /** Campaigns the score came from. Below 2 it isn't measurable. */
+  consistencyN: number;
+  /** Avg reach as a share of follower base. >100% means content travelled. */
+  audienceReachPct: number;
+  flagged: number;
+}
+
+export interface LanguageReach {
+  language: string;
+  reach: number;
+  count: number;
+}
+
+export interface CreatorDetail extends CreatorPerformance {
+  campaignRows: Campaign[];
+  languageBreakdown: LanguageReach[];
+  tierPeers: number;
+}

@@ -1,0 +1,72 @@
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tier-badge-nano  { background: var(--surface-3); color: var(--muted); }
+.tier-badge-micro { background: var(--good-soft); color: var(--good); }
+.tier-badge-mid   { background: var(--accent-soft); color: var(--accent); }
+.tier-badge-macro { background: var(--warn-soft); color: var(--warn); }
+.tier-badge-mega  { background: var(--crit-soft); color: var(--crit); }
+
+.index-bar-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 72px;
+}
+
+.index-bar-value { font-size: 13px; font-weight: 700; }
+.index-over  { color: var(--good); }
+.index-under { color: var(--muted); }
+
+.index-bar {
+  position: relative;
+  width: 72px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+/* The 1.0x baseline sits at the midpoint of a 0-2x scale. */
+.index-bar-baseline {
+  position: absolute;
+  left: 50%;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--line-strong);
+  z-index: 1;
+}
+
+.index-bar-fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; }
+.index-bar-over  { background: var(--good); }
+.index-bar-under { background: var(--muted); opacity: 0.55; }
+
+.consistency { display: inline-flex; gap: 3px; }
+
+.consistency-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+
+.consistency-dot-good { background: var(--good); }
+.consistency-dot-warn { background: var(--warn); }
+.consistency-dot-crit { background: var(--crit); }
+
+.consistency-unknown {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}

@@ -94,3 +94,14 @@ export function IconChevronDown(props: SVGProps<SVGSVGElement>) {
     </Base>
   );
 }
+
+export function IconCreators(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <circle cx="7" cy="6.5" r="2.6" />
+      <path d="M2.6 15.2c0-2.4 2-4.1 4.4-4.1s4.4 1.7 4.4 4.1" />
+      <path d="M12.4 4.4a2.6 2.6 0 010 4.6" />
+      <path d="M13.6 11.4c1.2.6 1.9 1.8 1.9 3.3" />
+    </Base>
+  );
+}

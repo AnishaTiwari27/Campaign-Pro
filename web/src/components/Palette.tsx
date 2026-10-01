@@ -11,6 +11,8 @@ function targetFor(r: SearchResult): string {
       return `/${r.id}`;
     case "campaign":
       return `/campaigns/${r.id}`;
+    case "creator":
+      return `/creators/${r.id}`;
     case "region":
       return `/regions/${encodeURIComponent(r.id)}`;
     case "action":
@@ -23,6 +25,7 @@ function targetFor(r: SearchResult): string {
 const GROUP_TITLES: Record<SearchResult["kind"], string> = {
   section: "Go to",
   campaign: "Campaigns",
+  creator: "Creators",
   region: "Regions",
   action: "Actions",
 };
@@ -56,7 +59,7 @@ export function Palette() {
   useEffect(() => setActiveIndex(0), [items.length]);
 
   const groups = useMemo(() => {
-    const order: SearchResult["kind"][] = ["section", "campaign", "region", "action"];
+    const order: SearchResult["kind"][] = ["section", "campaign", "creator", "region", "action"];
     return order.map((kind) => ({ kind, items: items.filter((i) => i.kind === kind) })).filter((g) => g.items.length > 0);
   }, [items]);
 

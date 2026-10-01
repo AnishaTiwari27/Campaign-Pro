@@ -9,7 +9,7 @@ import (
 )
 
 type SearchResult struct {
-	Kind     string // "section" | "campaign" | "region" | "action"
+	Kind     string // "section" | "campaign" | "creator" | "region" | "action"
 	ID       string
 	Title    string
 	Subtitle string
@@ -17,7 +17,7 @@ type SearchResult struct {
 
 var paletteSections = []struct{ id, title string }{
 	{"overview", "Overview"}, {"campaigns", "Campaigns"}, {"approvals", "Approvals"},
-	{"regions", "Regions"}, {"benchmarks", "Benchmarks"}, {"reports", "Reports"}, {"settings", "Settings"},
+	{"creators", "Creators"}, {"regions", "Regions"}, {"benchmarks", "Benchmarks"}, {"reports", "Reports"}, {"settings", "Settings"},
 }
 
 // Search backs the command palette: "Go to" sections always show; campaigns,
@@ -51,6 +51,22 @@ func (c *Campaigns) Search(ctx context.Context, q string) ([]SearchResult, error
 				Kind: "campaign", ID: camp.ID, Title: camp.Name,
 				Subtitle: fmt.Sprintf("%s · %s", camp.Region, domain.FormatReach(camp.Reach)),
 			})
+		}
+	}
+
+	if creators, err := c.Store.ListCreators(ctx); err == nil {
+		for _, cr := range creators {
+			if len(results) >= 40 {
+				break
+			}
+			if strings.Contains(strings.ToLower(cr.Name), needle) ||
+				strings.Contains(strings.ToLower(cr.Role), needle) ||
+				strings.Contains(strings.ToLower(strings.Join(cr.Languages, " ")), needle) {
+				results = append(results, SearchResult{
+					Kind: "creator", ID: cr.ID, Title: cr.Name,
+					Subtitle: fmt.Sprintf("%s · %s tier · %s", cr.Role, domain.TierLabel(cr.Tier), strings.Join(cr.Languages, ", ")),
+				})
+			}
 		}
 	}
 
