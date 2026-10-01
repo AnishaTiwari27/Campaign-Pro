@@ -37,12 +37,13 @@ func main() {
 	overview := service.NewOverview(campaigns)
 	mailer := service.LogMailer{Logger: logger}
 	reports := service.NewReports(st, campaigns, mailer)
+	creators := service.NewCreators(st, campaigns)
 	anomaly := service.NewAnomalyDetector(campaigns, logger)
 
 	bg := worker.New(anomaly, reports, logger, 30*time.Second)
 	go bg.Run(ctx)
 
-	router := httpapi.NewRouter(st, campaigns, overview, reports, anomaly, cfg.AdminEmail, logger)
+	router := httpapi.NewRouter(st, campaigns, overview, reports, creators, anomaly, cfg.AdminEmail, logger)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

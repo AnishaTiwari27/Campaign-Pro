@@ -66,6 +66,7 @@ func toDomainCampaign(c gen.Campaign) domain.Campaign {
 		Approval:    domain.Approval(c.Approval),
 		CurveShape:  domain.CurveShape(c.CurveShape),
 		FlagReason:  textOrEmpty(c.FlagReason),
+		CreatorID:   textOrEmpty(c.CreatorID),
 		CreatedAt:   timeOf(c.CreatedAt),
 		UpdatedAt:   timeOf(c.UpdatedAt),
 	}
@@ -88,6 +89,11 @@ func toDomainCreative(c gen.Creative) domain.Creative {
 		DurationLabel: c.DurationLabel,
 		Reach:         c.Reach,
 		CTR:           c.Ctr,
+		Language:      textOrEmpty(c.Language),
+		HookType:      string(c.HookType.HookTypeT),
+		Claim:         textOrEmpty(c.Claim),
+		Festival:      textOrEmpty(c.Festival),
+		AnalyzedAt:    timeOf(c.AnalyzedAt),
 		CreatedAt:     timeOf(c.CreatedAt),
 	}
 }
@@ -160,4 +166,18 @@ func toDomainReportRuns(rs []gen.ReportRun) []domain.ReportRun {
 		out[i] = toDomainReportRun(r)
 	}
 	return out
+}
+
+func hookTypeParam(s string) gen.NullHookTypeT {
+	if s == "" {
+		return gen.NullHookTypeT{}
+	}
+	return gen.NullHookTypeT{HookTypeT: gen.HookTypeT(s), Valid: true}
+}
+
+func timestampParam(t time.Time) pgtype.Timestamptz {
+	if t.IsZero() {
+		return pgtype.Timestamptz{}
+	}
+	return pgtype.Timestamptz{Time: t, Valid: true}
 }

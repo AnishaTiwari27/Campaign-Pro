@@ -12,8 +12,8 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func NewRouter(s *store.Store, campaigns *service.Campaigns, overview *service.OverviewService, reports *service.Reports, anomaly *service.AnomalyDetector, adminEmail string, logger *slog.Logger) http.Handler {
-	h := &Handlers{Campaigns: campaigns, Overview: overview, Reports: reports, Anomaly: anomaly, Logger: logger}
+func NewRouter(s *store.Store, campaigns *service.Campaigns, overview *service.OverviewService, reports *service.Reports, creators *service.Creators, anomaly *service.AnomalyDetector, adminEmail string, logger *slog.Logger) http.Handler {
+	h := &Handlers{Campaigns: campaigns, Overview: overview, Reports: reports, Creators: creators, Anomaly: anomaly, Logger: logger}
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -47,6 +47,11 @@ func NewRouter(s *store.Store, campaigns *service.Campaigns, overview *service.O
 			r.Post("/{id}/decision", h.Decision)
 			r.Post("/{id}/pause", h.Pause)
 			r.Post("/{id}/notes", h.AddNote)
+		})
+
+		r.Route("/creators", func(r chi.Router) {
+			r.Get("/", h.ListCreators)
+			r.Get("/{id}", h.GetCreator)
 		})
 
 		r.Route("/regions", func(r chi.Router) {

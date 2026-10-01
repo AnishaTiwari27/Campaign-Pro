@@ -84,6 +84,8 @@ func main() {
 		}
 	}
 
+	creatorCampaigns := seedCreators(ctx, pool, st)
+
 	if err := seedReports(ctx, pool, st); err != nil {
 		log.Fatalf("seed reports: %v", err)
 	}
@@ -95,12 +97,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("anomaly detection: %v", err)
 	}
-	fmt.Printf("Seeded %d campaigns, %d reports. %d campaign(s) newly flagged by anomaly detection.\n",
-		len(campaigns), 3, len(flagged))
+	fmt.Printf("Seeded %d brand + %d creator campaigns across %d creators, %d reports. %d flagged by anomaly detection.\n",
+		len(campaigns), creatorCampaigns, len(creatorSeeds()), 3, len(flagged))
 }
 
 func reset(ctx context.Context, pool *pgxpool.Pool) error {
-	_, err := pool.Exec(ctx, `TRUNCATE audit_events, creatives, report_runs, reports, campaigns, users RESTART IDENTITY CASCADE`)
+	_, err := pool.Exec(ctx, `TRUNCATE audit_events, creatives, report_runs, reports, campaigns, creators, users RESTART IDENTITY CASCADE`)
 	return err
 }
 
@@ -261,12 +263,5 @@ func campaignSeeds() []campaignSeed {
 		{"rapido", "Rapido", domain.SubjectBrand, "", "RP", "Services", "South Zone", domain.AdDisplay, "Google Display", domain.StatusLive, 15, 30, 2600000, 4000000, 1.6, domain.ApprovalApproved, domain.CurveSteady},
 		{"urban-company", "Urban Company", domain.SubjectBrand, "", "UC", "Services", "Bengaluru", domain.AdPerformance, "Meta Ads", domain.StatusEnded, 28, 52, 4700000, 5500000, 2.0, domain.ApprovalApproved, domain.CurveSlow},
 		{"ethos-watches", "Ethos Watches", domain.SubjectBrand, "", "EW", "Luxury", "Delhi NCR", domain.AdDisplay, "Google Display", domain.StatusScheduled, 0, 0, 0, 5000000, 0, domain.ApprovalApproved, domain.CurveSteady},
-		{"rohan-malhotra", "Rohan Malhotra", domain.SubjectPerson, "Actor", "RM", "Entertainment", "Mumbai", domain.AdInfluencer, "Instagram", domain.StatusLive, 3, 2, 350000, 3000000, 1.2, domain.ApprovalPending, domain.CurveSlow},
-		{"kabir-sehgal", "Kabir Sehgal", domain.SubjectPerson, "Cricketer", "KS", "Sports", "Pan-India", domain.AdInfluencer, "Instagram", domain.StatusEnded, 22, 85, 6100000, 7000000, 2.4, domain.ApprovalRejected, domain.CurveFast},
-		{"aanya-verma", "Aanya Verma", domain.SubjectPerson, "Singer", "AV", "Music", "Mumbai", domain.AdVideo, "YouTube", domain.StatusEnded, 20, 58, 4900000, 5500000, 2.6, domain.ApprovalRejected, domain.CurveSteady},
-		{"vikram-oberoi", "Vikram Oberoi", domain.SubjectPerson, "CEO, Northgate", "VO", "Business", "Bengaluru", domain.AdSocial, "LinkedIn", domain.StatusLive, 19, 26, 2100000, 3500000, 1.6, domain.ApprovalApproved, domain.CurveSteady},
-		{"meher-kapoor", "Meher Kapoor", domain.SubjectPerson, "Creator", "MK", "Influencer", "Delhi NCR", domain.AdInfluencer, "Instagram", domain.StatusLive, 7, 20, 1100000, 2500000, 1.5, domain.ApprovalPending, domain.CurveFast},
-		{"simran-bakshi", "Simran Bakshi", domain.SubjectPerson, "Actor", "SB", "Entertainment", "Delhi NCR", domain.AdVideo, "YouTube", domain.StatusLive, 12, 50, 3400000, 5000000, 2.0, domain.ApprovalApproved, domain.CurveSteady},
-		{"dev-ahuja", "Dev Ahuja", domain.SubjectPerson, "Founder, Finlytics", "DA", "Business", "Pan-India", domain.AdSocial, "LinkedIn", domain.StatusScheduled, 0, 0, 0, 3000000, 0, domain.ApprovalApproved, domain.CurveSteady},
 	}
 }

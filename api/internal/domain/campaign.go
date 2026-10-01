@@ -71,8 +71,11 @@ type Campaign struct {
 	Approval    Approval
 	CurveShape  CurveShape
 	FlagReason  string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	// CreatorID is set when the subject is a person, linking the campaign
+	// to the creator who ran it. Empty for brand campaigns.
+	CreatorID string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func (c Campaign) IsRunning() bool { return c.Status != StatusScheduled }
@@ -86,7 +89,13 @@ type Creative struct {
 	DurationLabel string
 	Reach         float64
 	CTR           float64
-	CreatedAt     time.Time
+	// Set by the CreativeAnalyzer; empty until an asset has been analyzed.
+	Language   string
+	HookType   string
+	Claim      string
+	Festival   string
+	AnalyzedAt time.Time
+	CreatedAt  time.Time
 }
 
 type AuditEvent struct {

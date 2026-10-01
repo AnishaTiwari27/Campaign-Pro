@@ -27,6 +27,11 @@ func (s *Store) CreateCreative(ctx context.Context, c domain.Creative) (domain.C
 		DurationLabel: c.DurationLabel,
 		Reach:         c.Reach,
 		Ctr:           c.CTR,
+		Language:      textParam(c.Language),
+		HookType:      hookTypeParam(c.HookType),
+		Claim:         textParam(c.Claim),
+		Festival:      textParam(c.Festival),
+		AnalyzedAt:    timestampParam(c.AnalyzedAt),
 	})
 	if err != nil {
 		return domain.Creative{}, err

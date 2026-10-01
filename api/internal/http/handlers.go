@@ -13,6 +13,7 @@ type Handlers struct {
 	Campaigns *service.Campaigns
 	Overview  *service.OverviewService
 	Reports   *service.Reports
+	Creators  *service.Creators
 	Anomaly   *service.AnomalyDetector
 	Logger    *slog.Logger
 }
