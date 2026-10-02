@@ -3,7 +3,6 @@ import { expect, test, type Page } from "@playwright/test";
 // Every screen now sits behind a session, so each test signs in first.
 // Credentials come from `make seed`.
 const APPROVER = "anishatiwari695@gmail.com";
-const ANALYST = "analyst@campaigntracker.test";
 const PASSWORD = "demo-password-change-me";
 
 async function signIn(page: Page, email: string) {
