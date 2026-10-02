@@ -99,7 +99,9 @@ fixtures.
 ## API
 
 Everything is under `/api` and returns JSON. Validation errors are
-`400 {error, field}`; a non-approver hitting a decision endpoint gets `403`.
+`400 {error, field}`; a non-approver hitting a decision endpoint gets `403`;
+an approver trying to approve a campaign whose budget state forbids it gets
+`409` with the reason to show them (see **Approval guard**).
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -149,6 +151,7 @@ rupees**. Defined once in `services/campaigns/`, mirrored in
 | **Region rollup** | Per region: campaign count, live count, total reach, total spend, ad-type split sorted desc |
 | **Sparklines** | Sampled at days-ago offsets `[21,18,15,12,9,6,3,0]`; a campaign's value at an age is interpolated along its own curve. Growth = % change first→last |
 | **Anomalies** | pace ≥ 100 → "Over budget pace"; ≥ 95 → "Budget nearly exhausted"; category index ≥ 1.8 → "Reach outlier"; index ≤ 0.3 after ≥ 2 days → "Under-delivering". Checked in that priority order |
+| **Approval guard** | `ApprovalBlock` refuses an approval at pace ≥ 95 — the same two thresholds as the budget anomalies, from shared constants so the flag and the refusal cannot drift. The reach flags stay advisory |
 
 Two deliberate modelling notes:
 
@@ -158,6 +161,40 @@ Two deliberate modelling notes:
 - Anomaly flags are never seeded by hand. `make seed` writes campaigns and
   then runs the real detector, so the ~6 flagged campaigns are whatever the
   formulas actually produce from the seeded numbers.
+
+### The audit trail
+
+Every approve, reject, reopen, pause, resume and note writes an `audit_events`
+row through one store method, so the Activity tab and the trail are the same
+source of truth. Each row carries both `user_id` — the account, which is what
+answers "who approved this?" — and `actor`, the display label it was recorded
+under. Both, because a name can change and a trail that rewrites history is not
+a trail, while a label alone cannot be joined back to an account. The HTTP
+layer builds that pair once, in `actorOf`, and the store takes the user id as a
+required parameter so a caller cannot write an unattributed decision by
+omission. Rows the system wrote (anomaly flags) have no `user_id`.
+
+### Approval guard
+
+`can_approve` says whether the caller may decide; `campaigns.ApprovalBlock`
+says whether this campaign may be approved. Both are enforced server-side in
+`Decision` and `BulkDecision`.
+
+Only the budget conditions block. Approving a campaign that has already spent
+its budget ratifies an overspend, and approving one at 95% authorises a flight
+that stalls within days — in both cases the budget has to move before a
+sign-off means anything. The reach flags ("Reach outlier", "Under-delivering")
+are judgement calls an approver is entitled to make, so they stay advisory.
+**Reject**, **reopen** and **pause** are never blocked: they are how an
+approver responds to an over-budget campaign. A scheduled campaign has spent
+nothing, so its pre-flight sign-off — the case the queue exists for — is never
+blocked.
+
+A blocked single decision is `409` carrying the reason. A blocked bulk approve
+is all-or-nothing: nothing is approved and the response names the offenders, so
+the caller is never left guessing which of their selection went through. The
+UI disables Approve and says why on all four surfaces that offer it, from the
+same rule mirrored in `frontend/src/lib/metrics.ts`.
 
 ### Reports and scheduling
 

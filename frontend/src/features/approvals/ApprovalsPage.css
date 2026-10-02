@@ -96,6 +96,18 @@
   flex-shrink: 0;
 }
 
+/* Why Approve is disabled. A full-width row of the wrapping card, so it reads
+   as a note about the card rather than as another column of facts. */
+.approval-card-blocked {
+  flex-basis: 100%;
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--crit);
+}
+
 @media (max-width: 720px) {
   .approval-card-facts {
     grid-template-columns: repeat(2, 1fr);

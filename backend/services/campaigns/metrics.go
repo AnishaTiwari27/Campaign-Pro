@@ -3,6 +3,7 @@ package campaigns
 import (
 	"math"
 	"sort"
+	"strconv"
 )
 
 // curveWeights are the 8-point cumulative-reach-share series for each flight
@@ -346,15 +347,25 @@ type AnomalyResult struct {
 	Reason  string
 }
 
+// The two budget thresholds, named because both anomaly detection and the
+// approval guard key off them: a campaign must flag and refuse approval at
+// exactly the same pace, or the queue shows a warning the API disagrees with.
+const (
+	// PaceOverBudget is where spend has met or exceeded budget.
+	PaceOverBudget = 100.0
+	// PaceNearlyExhausted is where the remaining budget runs out within days.
+	PaceNearlyExhausted = 95.0
+)
+
 // DetectAnomaly applies the four flag conditions in priority order: an
 // over-budget campaign is more urgent to surface than a "trending" one, so
 // budget conditions are checked first.
 func DetectAnomaly(c Campaign, categoryIndex, indexVsAll float64) AnomalyResult {
 	pace := Pace(c.Spend, c.Budget)
 	switch {
-	case pace >= 100:
+	case pace >= PaceOverBudget:
 		return AnomalyResult{true, "Over budget pace"}
-	case pace >= 95:
+	case pace >= PaceNearlyExhausted:
 		return AnomalyResult{true, "Budget nearly exhausted"}
 	case categoryIndex >= 1.8:
 		return AnomalyResult{true, "Reach outlier"}
@@ -362,5 +373,34 @@ func DetectAnomaly(c Campaign, categoryIndex, indexVsAll float64) AnomalyResult 
 		return AnomalyResult{true, "Under-delivering"}
 	default:
 		return AnomalyResult{false, ""}
+	}
+}
+
+// ApprovalBlock explains why a campaign must not be approved, or returns ""
+// when nothing blocks it.
+//
+// Only the budget conditions block. Approving a campaign that has already
+// spent its budget ratifies an overspend that has happened, and approving one
+// at PaceNearlyExhausted authorises a flight that stalls within days — in
+// both cases the budget has to move before a sign-off means anything. The two
+// reach flags ("Reach outlier", "Under-delivering") are judgement calls an
+// approver is entitled to make, so they stay advisory: the queue shows the
+// flag and the decision is still theirs.
+//
+// Pace is 0 when budget is 0 or nothing has been spent, so a scheduled
+// campaign awaiting its pre-flight sign-off is never blocked — which is the
+// case the approval queue exists for.
+func ApprovalBlock(c Campaign) string {
+	pace := Pace(c.Spend, c.Budget)
+	paceStr := strconv.FormatFloat(pace, 'f', -1, 64) + "%"
+	switch {
+	case pace >= PaceOverBudget:
+		return "budget pace is " + paceStr +
+			" — spend has reached its budget. Raise the budget or pause the campaign before approving."
+	case pace >= PaceNearlyExhausted:
+		return "budget pace is " + paceStr +
+			" — the budget runs out within days. Raise the budget before approving."
+	default:
+		return ""
 	}
 }

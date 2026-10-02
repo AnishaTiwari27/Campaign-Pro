@@ -2,6 +2,7 @@ package campaigns
 
 import (
 	"math"
+	"strings"
 	"testing"
 )
 
@@ -283,5 +284,66 @@ func TestDetectAnomalyPriority(t *testing.T) {
 	tooNew.DaysRunning = 1
 	if got := DetectAnomaly(tooNew, 0, 0.1); got.Flagged {
 		t.Fatalf("expected no flag for day-1 campaign, got %+v", got)
+	}
+}
+
+func TestApprovalBlock(t *testing.T) {
+	base := mkCampaign("a", "Fintech", "Delhi NCR", AdSocial, StatusLive, 10, 0, 100, "")
+	base.DaysRunning = 5
+
+	cases := []struct {
+		name string
+		// wantPace is the percentage the message must quote; "" means the
+		// campaign must not be blocked at all.
+		spend, budget int64
+		wantPace      string
+	}{
+		{"over budget blocks", 120, 100, "120%"},
+		{"exactly at budget blocks", 100, 100, "100%"},
+		{"nearly exhausted blocks", 96, 100, "96%"},
+		{"at the threshold blocks", 95, 100, "95%"},
+		{"just under the threshold is fine", 94, 100, ""},
+		{"healthy pace is fine", 40, 100, ""},
+		{"nothing spent is fine", 0, 100, ""},
+		{"no budget set is fine", 0, 0, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			camp := base
+			camp.Spend, camp.Budget = c.spend, c.budget
+			got := ApprovalBlock(camp)
+			if c.wantPace == "" {
+				if got != "" {
+					t.Fatalf("spend %d of %d: expected no block, got %q", c.spend, c.budget, got)
+				}
+				return
+			}
+			if got == "" {
+				t.Fatalf("spend %d of %d: expected a block, got none", c.spend, c.budget)
+			}
+			// The approver has to be told what to fix, so the pace is part
+			// of the contract of the message, not decoration.
+			if !strings.Contains(got, c.wantPace) {
+				t.Fatalf("spend %d of %d: message %q should quote %s", c.spend, c.budget, got, c.wantPace)
+			}
+		})
+	}
+}
+
+// The guard and the flag must trip together: a campaign the queue shows as
+// "Over budget pace" must be one the API refuses to approve, and vice versa.
+func TestApprovalBlockAgreesWithBudgetFlags(t *testing.T) {
+	base := mkCampaign("a", "Fintech", "Delhi NCR", AdSocial, StatusLive, 10, 0, 100, "")
+	base.DaysRunning = 5
+
+	for spend := int64(0); spend <= 120; spend++ {
+		camp := base
+		camp.Spend = spend
+		reason := DetectAnomaly(camp, 0, 1).Reason
+		budgetFlagged := reason == "Over budget pace" || reason == "Budget nearly exhausted"
+		blocked := ApprovalBlock(camp) != ""
+		if budgetFlagged != blocked {
+			t.Fatalf("spend %d of 100: budget flag %q but blocked=%v", spend, reason, blocked)
+		}
 	}
 }

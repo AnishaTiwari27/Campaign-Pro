@@ -39,7 +39,13 @@ func TimeOf(t pgtype.Timestamptz) time.Time {
 	return t.Time
 }
 
+// UuidToString renders a NULL uuid as "" rather than as the zero UUID, so a
+// nullable column (audit_events.user_id) reads back as absent instead of as
+// a plausible-looking id that matches no user.
 func UuidToString(id pgtype.UUID) string {
+	if !id.Valid {
+		return ""
+	}
 	u := uuid.UUID(id.Bytes)
 	return u.String()
 }

@@ -8,6 +8,7 @@ import (
 	"campaigntrackerpro/services/campaigns"
 	"context"
 	"sort"
+	"strconv"
 	"strings"
 
 	"campaigntrackerpro/services/campaigns/internal/store"
@@ -271,9 +272,77 @@ func absF(f float64) float64 {
 	return f
 }
 
-// Decision applies approve/reject/reopen, enforcing can_approve server-side
-// and writing an audit event.
-func (c *Campaigns) Decision(ctx context.Context, id, action, actor string, canApprove bool) (campaigns.Campaign, error) {
+// Actor is who is performing a write, in the two forms the audit trail
+// needs: ID so "who approved this?" is answerable by join, and Name as the
+// display label the Activity tab renders. They travel together because an
+// event carrying only one of them is a trail with a hole in it.
+type Actor struct {
+	ID   string
+	Name string
+}
+
+// ApprovalBlockedError is returned when the caller may approve in principle
+// but this campaign's own state forbids it. It is distinct from ErrForbidden
+// (which is about the caller) and from ErrValidation (which is about the
+// request): the request is well-formed and permitted, and the campaign has
+// to change before it can be approved. Reason is written for the approver.
+type ApprovalBlockedError struct {
+	// Blocked maps campaign ID to the reason it cannot be approved. A
+	// single decision populates one entry; a bulk decision may name several.
+	Blocked map[string]string
+}
+
+func (e ApprovalBlockedError) Error() string {
+	if len(e.Blocked) == 1 {
+		for id, reason := range e.Blocked {
+			return "approval blocked for " + id + ": " + reason
+		}
+	}
+	return "approval blocked for " + strconv.Itoa(len(e.Blocked)) + " campaigns"
+}
+
+// Unwrap makes errors.Is(err, httpx.ErrConflict) true, so a handler that
+// forgets to pull out the specific reason still answers 409 rather than 500.
+func (e ApprovalBlockedError) Unwrap() error { return httpx.ErrConflict }
+
+// Reason is the message to show when exactly one campaign was blocked, which
+// is every single-campaign decision.
+func (e ApprovalBlockedError) Reason() string {
+	for _, reason := range e.Blocked {
+		return reason
+	}
+	return "this campaign cannot be approved in its current state"
+}
+
+// blockedIfApproving returns an ApprovalBlockedError naming every campaign in
+// ids that campaigns.ApprovalBlock refuses. It reads state before writing any
+// of it, so a bulk approve containing one over-budget campaign changes
+// nothing rather than approving the rest and leaving the caller to guess
+// which were skipped.
+func (c *Campaigns) blockedIfApproving(ctx context.Context, ids []string) error {
+	blocked := map[string]string{}
+	for _, id := range ids {
+		camp, err := c.Store.GetCampaign(ctx, id)
+		if err != nil {
+			return err
+		}
+		if reason := campaigns.ApprovalBlock(camp); reason != "" {
+			blocked[id] = reason
+		}
+	}
+	if len(blocked) > 0 {
+		return ApprovalBlockedError{Blocked: blocked}
+	}
+	return nil
+}
+
+// Decision applies approve/reject/reopen, enforcing can_approve server-side,
+// refusing an approval the campaign's budget state forbids, and writing an
+// audit event attributed to the acting user.
+//
+// Only approve is guarded. Rejecting or reopening an over-budget campaign is
+// always allowed — those are how an approver responds to one.
+func (c *Campaigns) Decision(ctx context.Context, id, action string, actor Actor, canApprove bool) (campaigns.Campaign, error) {
 	if !canApprove {
 		return campaigns.Campaign{}, ErrForbidden
 	}
@@ -289,17 +358,22 @@ func (c *Campaigns) Decision(ctx context.Context, id, action, actor string, canA
 	default:
 		return campaigns.Campaign{}, ErrValidation
 	}
+	if action == "approve" {
+		if err := c.blockedIfApproving(ctx, []string{id}); err != nil {
+			return campaigns.Campaign{}, err
+		}
+	}
 	camp, err := c.Store.UpdateCampaignDecision(ctx, id, approval)
 	if err != nil {
 		return campaigns.Campaign{}, err
 	}
-	if _, err := c.Store.CreateAuditEvent(ctx, id, actor, auditAction, "user"); err != nil {
+	if _, err := c.Store.CreateAuditEvent(ctx, id, actor.ID, actor.Name, auditAction, "user"); err != nil {
 		return campaigns.Campaign{}, err
 	}
 	return camp, nil
 }
 
-func (c *Campaigns) BulkDecision(ctx context.Context, ids []string, action, actor string, canApprove bool) ([]campaigns.Campaign, error) {
+func (c *Campaigns) BulkDecision(ctx context.Context, ids []string, action string, actor Actor, canApprove bool) ([]campaigns.Campaign, error) {
 	if !canApprove {
 		return nil, ErrForbidden
 	}
@@ -313,12 +387,17 @@ func (c *Campaigns) BulkDecision(ctx context.Context, ids []string, action, acto
 	default:
 		return nil, ErrValidation
 	}
+	if action == "approve" {
+		if err := c.blockedIfApproving(ctx, ids); err != nil {
+			return nil, err
+		}
+	}
 	camps, err := c.Store.BulkUpdateApproval(ctx, ids, approval)
 	if err != nil {
 		return nil, err
 	}
 	for _, id := range ids {
-		if _, err := c.Store.CreateAuditEvent(ctx, id, actor, auditAction, "user"); err != nil {
+		if _, err := c.Store.CreateAuditEvent(ctx, id, actor.ID, actor.Name, auditAction, "user"); err != nil {
 			return nil, err
 		}
 	}
@@ -326,7 +405,7 @@ func (c *Campaigns) BulkDecision(ctx context.Context, ids []string, action, acto
 }
 
 // Pause toggles live <-> paused; any other current status is a no-op error.
-func (c *Campaigns) Pause(ctx context.Context, id, actor string) (campaigns.Campaign, error) {
+func (c *Campaigns) Pause(ctx context.Context, id string, actor Actor) (campaigns.Campaign, error) {
 	camp, err := c.Store.GetCampaign(ctx, id)
 	if err != nil {
 		return campaigns.Campaign{}, err
@@ -345,20 +424,20 @@ func (c *Campaigns) Pause(ctx context.Context, id, actor string) (campaigns.Camp
 	if err != nil {
 		return campaigns.Campaign{}, err
 	}
-	if _, err := c.Store.CreateAuditEvent(ctx, id, actor, auditAction, "user"); err != nil {
+	if _, err := c.Store.CreateAuditEvent(ctx, id, actor.ID, actor.Name, auditAction, "user"); err != nil {
 		return campaigns.Campaign{}, err
 	}
 	return updated, nil
 }
 
-func (c *Campaigns) AddNote(ctx context.Context, id, text, actor string) (campaigns.AuditEvent, error) {
+func (c *Campaigns) AddNote(ctx context.Context, id, text string, actor Actor) (campaigns.AuditEvent, error) {
 	if strings.TrimSpace(text) == "" {
 		return campaigns.AuditEvent{}, ErrValidation
 	}
 	if _, err := c.Store.GetCampaign(ctx, id); err != nil {
 		return campaigns.AuditEvent{}, err
 	}
-	return c.Store.CreateAuditEvent(ctx, id, actor, text, "user")
+	return c.Store.CreateAuditEvent(ctx, id, actor.ID, actor.Name, text, "user")
 }
 
 func (c *Campaigns) Anomalies(ctx context.Context) ([]campaigns.Campaign, error) {

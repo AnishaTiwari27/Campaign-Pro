@@ -47,7 +47,8 @@ func (d *AnomalyDetector) Run(ctx context.Context) ([]campaigns.Campaign, error)
 			if err != nil {
 				return nil, err
 			}
-			if _, err := d.Campaigns.Store.CreateAuditEvent(ctx, c.ID, "Anomaly detection", result.Reason, "alert"); err != nil {
+			// No user id: the detector is the system actor, not a person.
+			if _, err := d.Campaigns.Store.CreateAuditEvent(ctx, c.ID, "", "Anomaly detection", result.Reason, "alert"); err != nil {
 				return nil, err
 			}
 			if !wasFlagged {
@@ -58,7 +59,7 @@ func (d *AnomalyDetector) Run(ctx context.Context) ([]campaigns.Campaign, error)
 			if _, err := d.Campaigns.Store.UpdateCampaignFlag(ctx, c.ID, ""); err != nil {
 				return nil, err
 			}
-			if _, err := d.Campaigns.Store.CreateAuditEvent(ctx, c.ID, "Anomaly detection", "Flag cleared", "sys"); err != nil {
+			if _, err := d.Campaigns.Store.CreateAuditEvent(ctx, c.ID, "", "Anomaly detection", "Flag cleared", "sys"); err != nil {
 				return nil, err
 			}
 			d.Logger.Info("anomaly cleared", "campaign", c.ID)

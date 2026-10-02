@@ -2,9 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/campaigns"
@@ -84,10 +87,15 @@ func (h *Handlers) Decision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	camp, err := h.svc.Decision(r.Context(), id, req.Action, user.Name, user.CanApprove())
+	camp, err := h.svc.Decision(r.Context(), id, req.Action, actorOf(user), user.CanApprove())
 	if err != nil {
 		if err == service.ErrValidation {
 			httpx.WriteValidationError(w, "action must be approve, reject or reopen", "action")
+			return
+		}
+		var blocked service.ApprovalBlockedError
+		if errors.As(err, &blocked) {
+			httpx.WriteConflict(w, "Can't approve: "+blocked.Reason())
 			return
 		}
 		httpx.WriteServiceError(w, h.logger, err)
@@ -112,10 +120,16 @@ func (h *Handlers) BulkDecision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	camps, err := h.svc.BulkDecision(r.Context(), req.IDs, req.Action, user.Name, user.CanApprove())
+	camps, err := h.svc.BulkDecision(r.Context(), req.IDs, req.Action, actorOf(user), user.CanApprove())
 	if err != nil {
 		if err == service.ErrValidation {
 			httpx.WriteValidationError(w, "action must be approve or reject", "action")
+			return
+		}
+		// Nothing was approved, so the message names what to deselect.
+		var blocked service.ApprovalBlockedError
+		if errors.As(err, &blocked) {
+			httpx.WriteConflict(w, bulkBlockedMessage(blocked))
 			return
 		}
 		httpx.WriteServiceError(w, h.logger, err)
@@ -131,7 +145,7 @@ func (h *Handlers) BulkDecision(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) Pause(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	user := currentUser(r)
-	camp, err := h.svc.Pause(r.Context(), id, user.Name)
+	camp, err := h.svc.Pause(r.Context(), id, actorOf(user))
 	if err != nil {
 		if err == service.ErrValidation {
 			httpx.WriteValidationError(w, "campaign must be live or paused to toggle", "")
@@ -155,7 +169,7 @@ func (h *Handlers) AddNote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	event, err := h.svc.AddNote(r.Context(), id, req.Text, user.Name)
+	event, err := h.svc.AddNote(r.Context(), id, req.Text, actorOf(user))
 	if err != nil {
 		if err == service.ErrValidation {
 			httpx.WriteValidationError(w, "text must not be empty", "text")
@@ -204,4 +218,26 @@ func currentUser(r *http.Request) identity.User {
 	v, _ := httpx.UserFromContext(r.Context())
 	u, _ := v.(identity.User)
 	return u
+}
+
+// actorOf is the one place the session's account becomes an audit actor, so
+// every write this service records carries the user id and not just a name.
+func actorOf(u identity.User) service.Actor {
+	return service.Actor{ID: u.ID, Name: u.Name}
+}
+
+// bulkBlockedMessage names the blocked campaigns rather than summarising,
+// because the caller has to deselect them by name to retry.
+func bulkBlockedMessage(blocked service.ApprovalBlockedError) string {
+	ids := make([]string, 0, len(blocked.Blocked))
+	for id := range blocked.Blocked {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	if len(ids) == 1 {
+		return "Nothing was approved. " + ids[0] + ": " + blocked.Blocked[ids[0]]
+	}
+	return "Nothing was approved. " + strconv.Itoa(len(ids)) +
+		" of the selected campaigns are over budget: " + strings.Join(ids, ", ") +
+		". Deselect them and try again."
 }

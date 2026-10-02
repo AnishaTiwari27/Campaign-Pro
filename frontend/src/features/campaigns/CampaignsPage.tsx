@@ -17,6 +17,7 @@ import { PaceMeter } from "../../components/Meter";
 import { SkeletonRows } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { formatMoney, formatReach } from "../../lib/format";
+import { approvalBlockOf } from "../../lib/metrics";
 import { exportUrl } from "../../api/client";
 import type { Campaign } from "../../api/types";
 import "./CampaignsPage.css";
@@ -96,12 +97,17 @@ export function CampaignsPage() {
       {
         key: "actions",
         label: "",
-        render: (c) =>
-          canApprove && c.approval === "pending" ? (
+        render: (c) => {
+          if (!canApprove || c.approval !== "pending") return null;
+          // Over budget: the server refuses the approval, so don't offer it.
+          const approvalBlock = approvalBlockOf(c.spend, c.budget);
+          return (
             <div className="campaign-row-actions">
               <button
                 type="button"
                 className="btn btn-sm btn-primary"
+                disabled={approvalBlock !== null}
+                title={approvalBlock ? `${approvalBlock} — raise the budget or pause the campaign first` : undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   decision.mutate({ id: c.id, action: "approve" });
@@ -120,7 +126,8 @@ export function CampaignsPage() {
                 Reject
               </button>
             </div>
-          ) : null,
+          );
+        },
       },
     ],
     [decision, canApprove],

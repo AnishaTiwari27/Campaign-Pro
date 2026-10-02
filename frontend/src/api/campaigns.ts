@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
-import { get, post } from "./client";
+import { ApiError, get, post } from "./client";
 import { queryKeys } from "./queryKeys";
 import type { Campaign, CampaignDetail, AuditEvent, ListParams, ListResponse, Overview } from "./types";
 import { toastNegative, toastPositive } from "../app/toastStore";
@@ -98,6 +98,15 @@ function invalidateAfterWrite(qc: QueryClient) {
 
 // --- mutations ---
 
+// A 409 is the server refusing a decision because of the campaign's own state
+// — over budget, most often. That reason is written for the approver and is
+// the only useful thing to show, so it replaces the generic failure message.
+// Anything else is a genuine fault and keeps the retry wording.
+function decisionErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.status === 409) return err.message;
+  return fallback;
+}
+
 export type DecisionAction = "approve" | "reject" | "reopen";
 
 export function useDecision() {
@@ -112,9 +121,9 @@ export function useDecision() {
       patchCampaignInCaches(qc, id, { approval });
       return { snapshot };
     },
-    onError: (_err, _vars, context) => {
+    onError: (err, _vars, context) => {
       if (context) restoreCampaignCaches(qc, context.snapshot);
-      toastNegative("Couldn't save that decision. Please try again.");
+      toastNegative(decisionErrorMessage(err, "Couldn't save that decision. Please try again."));
     },
     onSuccess: (_data, { action }) => {
       if (action === "approve") toastPositive("Campaign approved.");
@@ -137,9 +146,9 @@ export function useBulkDecision() {
       ids.forEach((id) => patchCampaignInCaches(qc, id, { approval }));
       return { snapshot };
     },
-    onError: (_err, _vars, context) => {
+    onError: (err, _vars, context) => {
       if (context) restoreCampaignCaches(qc, context.snapshot);
-      toastNegative("Couldn't save those decisions.");
+      toastNegative(decisionErrorMessage(err, "Couldn't save those decisions."));
     },
     onSuccess: (_data, { ids, action }) => {
       if (action === "approve") toastPositive(`${ids.length} campaign${ids.length === 1 ? "" : "s"} approved.`);

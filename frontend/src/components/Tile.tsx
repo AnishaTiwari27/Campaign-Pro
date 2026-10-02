@@ -5,6 +5,7 @@ import { adTypeStripeStyle } from "./AdTypeTag";
 import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
 import { useSession } from "../api/auth";
+import { approvalBlockOf } from "../lib/metrics";
 import "./Tile.css";
 
 export function Tile({
@@ -23,6 +24,9 @@ export function Tile({
   const navigate = useNavigate();
   const decision = useDecision();
   const { data: me } = useSession();
+  // The server refuses to approve an over-budget campaign, so the inline
+  // Approve is offered only where it would actually succeed.
+  const approvalBlock = approvalBlockOf(campaign.spend, campaign.budget);
 
   return (
     <div
@@ -73,7 +77,8 @@ export function Tile({
           <button
             type="button"
             className="btn btn-sm btn-primary tile-action-btn"
-            disabled={decision.isPending}
+            disabled={decision.isPending || approvalBlock !== null}
+            title={approvalBlock ? `${approvalBlock} — raise the budget or pause the campaign first` : undefined}
             onClick={() => decision.mutate({ id: campaign.id, action: "approve" })}
           >
             Approve

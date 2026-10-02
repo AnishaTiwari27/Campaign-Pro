@@ -12,6 +12,7 @@ import { SubjectImage } from "../../components/SubjectImage";
 import { EmptyState } from "../../components/EmptyState";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { ApiError } from "../../api/client";
+import { approvalBlockOf } from "../../lib/metrics";
 import { StatRail } from "./StatRail";
 import { PerformanceTab } from "./PerformanceTab";
 import { CreativesTab } from "./CreativesTab";
@@ -76,6 +77,9 @@ export function CampaignDetailPage() {
 
   const categoryBenchmark = benchmark?.categories.find((c) => c.category === campaign.category);
   const canPause = campaign.status === "live" || campaign.status === "paused";
+  // Over budget: the server refuses the approval, so don't offer it. Reject
+  // and Pause stay available — they're how an approver deals with this.
+  const approvalBlock = approvalBlockOf(campaign.spend, campaign.budget);
 
   return (
     <div className="campaign-detail-page">
@@ -138,7 +142,13 @@ export function CampaignDetailPage() {
 
           {!canApprove ? null : campaign.approval === "pending" ? (
             <>
-              <button type="button" className="btn btn-primary" onClick={() => decision.mutate({ id: campaign.id, action: "approve" })}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={approvalBlock !== null}
+                title={approvalBlock ? `${approvalBlock} — raise the budget or pause the campaign first` : undefined}
+                onClick={() => decision.mutate({ id: campaign.id, action: "approve" })}
+              >
                 Approve
               </button>
               <button type="button" className="btn btn-danger" onClick={() => decision.mutate({ id: campaign.id, action: "reject" })}>

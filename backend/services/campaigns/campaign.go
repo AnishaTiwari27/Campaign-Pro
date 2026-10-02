@@ -105,8 +105,13 @@ type Creative struct {
 type AuditEvent struct {
 	ID         int64
 	CampaignID string
-	Actor      string
-	Action     string
-	Kind       string
-	CreatedAt  time.Time
+	// UserID attributes the event to an account, and is what answers "who
+	// approved this?" — Actor is only the display label it was recorded
+	// under, which a later rename would not match. Empty for events the
+	// system wrote, such as anomaly flags.
+	UserID    string
+	Actor     string
+	Action    string
+	Kind      string
+	CreatedAt time.Time
 }

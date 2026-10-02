@@ -8,12 +8,15 @@ package service
 import (
 	"campaigntrackerpro/services/campaigns"
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/campaigns/internal/store"
 
 	"github.com/stretchr/testify/require"
@@ -50,6 +53,25 @@ func cleanup(t *testing.T, s *store.Store, ids ...string) {
 			_ = s.Exec(ctx, `DELETE FROM campaigns WHERE id = $1`, id)
 		}
 	})
+}
+
+// testActor creates a real user row, because audit_events.user_id is a
+// foreign key — a made-up id would make the attribution assertions pass
+// against a write the database would have rejected in production.
+func testActor(t *testing.T, s *store.Store) Actor {
+	t.Helper()
+	ctx := context.Background()
+	email := fmt.Sprintf("svctest-%s-%d@example.test", t.Name(), time.Now().UnixNano())
+	u, err := s.CreateUser(ctx, email, "Svctest Reviewer", "approver", true)
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		// The audit rows first: user_id has no ON DELETE, so the user row
+		// cannot go while anything still points at it. Not all of those rows
+		// hang off a campaign this test cleaned up.
+		_ = s.Exec(ctx, `DELETE FROM audit_events WHERE user_id = $1`, u.ID)
+		_ = s.Exec(ctx, `DELETE FROM users WHERE id = $1`, u.ID)
+	})
+	return Actor{ID: u.ID, Name: u.Name}
 }
 
 func TestCampaignsListFilterSortPage(t *testing.T) {
@@ -109,29 +131,119 @@ func TestCampaignsDecisionApproveRejectReopen(t *testing.T) {
 	_, err := s.CreateCampaign(ctx, mkTestCampaign(id, 20, 100, 1000, campaigns.ApprovalPending, campaigns.StatusLive))
 	require.NoError(t, err)
 
+	actor := testActor(t, s)
+
 	// Forbidden without can_approve.
-	_, err = c.Decision(ctx, id, "approve", "Someone", false)
+	_, err = c.Decision(ctx, id, "approve", actor, false)
 	require.ErrorIs(t, err, ErrForbidden)
 
 	// Invalid action.
-	_, err = c.Decision(ctx, id, "not-a-real-action", "Someone", true)
+	_, err = c.Decision(ctx, id, "not-a-real-action", actor, true)
 	require.ErrorIs(t, err, ErrValidation)
 
-	camp, err := c.Decision(ctx, id, "approve", "Reviewer", true)
+	camp, err := c.Decision(ctx, id, "approve", actor, true)
 	require.NoError(t, err)
 	require.Equal(t, campaigns.ApprovalApproved, camp.Approval)
 
-	camp, err = c.Decision(ctx, id, "reject", "Reviewer", true)
+	camp, err = c.Decision(ctx, id, "reject", actor, true)
 	require.NoError(t, err)
 	require.Equal(t, campaigns.ApprovalRejected, camp.Approval)
 
-	camp, err = c.Decision(ctx, id, "reopen", "Reviewer", true)
+	camp, err = c.Decision(ctx, id, "reopen", actor, true)
 	require.NoError(t, err)
 	require.Equal(t, campaigns.ApprovalPending, camp.Approval)
 
 	events, err := s.ListAuditEventsByCampaign(ctx, id)
 	require.NoError(t, err)
 	require.GreaterOrEqual(t, len(events), 3, "approve, reject and reopen should each write an audit event")
+
+	// The point of the trail: every decision is attributable to an account,
+	// not just to whatever display name was current at the time.
+	for _, e := range events {
+		require.Equal(t, actor.ID, e.UserID, "decision %q must record the acting user id", e.Action)
+		require.Equal(t, actor.Name, e.Actor)
+	}
+}
+
+// TestDecisionBlockedOverBudget covers the approval guard: the budget flags
+// refuse an approval, while reject and reopen stay available because they are
+// how an approver responds to an over-budget campaign.
+func TestDecisionBlockedOverBudget(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	c := NewCampaigns(s)
+	actor := testActor(t, s)
+
+	// 1000 of 1000 spent: pace 100.
+	id := "svctest-blocked-over"
+	cleanup(t, s, id)
+	_, err := s.CreateCampaign(ctx, mkTestCampaign(id, 20, 1000, 1000, campaigns.ApprovalPending, campaigns.StatusLive))
+	require.NoError(t, err)
+
+	_, err = c.Decision(ctx, id, "approve", actor, true)
+	var blocked ApprovalBlockedError
+	require.ErrorAs(t, err, &blocked)
+	require.Contains(t, blocked.Blocked, id)
+	require.Contains(t, blocked.Reason(), "100%")
+	require.ErrorIs(t, err, httpx.ErrConflict, "a missed check must still answer 409, not 500")
+
+	// The refusal wrote nothing.
+	after, err := s.GetCampaign(ctx, id)
+	require.NoError(t, err)
+	require.Equal(t, campaigns.ApprovalPending, after.Approval)
+
+	// Rejecting it is still allowed.
+	rejected, err := c.Decision(ctx, id, "reject", actor, true)
+	require.NoError(t, err)
+	require.Equal(t, campaigns.ApprovalRejected, rejected.Approval)
+
+	// 960 of 1000: pace 96, inside the "nearly exhausted" band.
+	nearID := "svctest-blocked-near"
+	cleanup(t, s, nearID)
+	_, err = s.CreateCampaign(ctx, mkTestCampaign(nearID, 20, 960, 1000, campaigns.ApprovalPending, campaigns.StatusLive))
+	require.NoError(t, err)
+	_, err = c.Decision(ctx, nearID, "approve", actor, true)
+	require.ErrorAs(t, err, &blocked)
+
+	// A scheduled campaign has spent nothing, so its pre-flight sign-off —
+	// the case the queue exists for — is never blocked.
+	schedID := "svctest-blocked-sched"
+	cleanup(t, s, schedID)
+	_, err = s.CreateCampaign(ctx, mkTestCampaign(schedID, 0, 0, 1000, campaigns.ApprovalPending, campaigns.StatusScheduled))
+	require.NoError(t, err)
+	approved, err := c.Decision(ctx, schedID, "approve", actor, true)
+	require.NoError(t, err)
+	require.Equal(t, campaigns.ApprovalApproved, approved.Approval)
+}
+
+// TestBulkDecisionBlockedIsAllOrNothing proves one over-budget campaign in a
+// selection approves none of them, so the caller is never left guessing which
+// of their selection went through.
+func TestBulkDecisionBlockedIsAllOrNothing(t *testing.T) {
+	s := testStore(t)
+	ctx := context.Background()
+	c := NewCampaigns(s)
+	actor := testActor(t, s)
+
+	okID, badID := "svctest-bulkblock-ok", "svctest-bulkblock-bad"
+	cleanup(t, s, okID, badID)
+	_, err := s.CreateCampaign(ctx, mkTestCampaign(okID, 20, 100, 1000, campaigns.ApprovalPending, campaigns.StatusLive))
+	require.NoError(t, err)
+	_, err = s.CreateCampaign(ctx, mkTestCampaign(badID, 20, 1100, 1000, campaigns.ApprovalPending, campaigns.StatusLive))
+	require.NoError(t, err)
+
+	_, err = c.BulkDecision(ctx, []string{okID, badID}, "approve", actor, true)
+	var blocked ApprovalBlockedError
+	require.ErrorAs(t, err, &blocked)
+	require.Contains(t, blocked.Blocked, badID)
+	require.NotContains(t, blocked.Blocked, okID)
+
+	// Neither was touched — not even the one that would have passed.
+	for _, id := range []string{okID, badID} {
+		camp, gerr := s.GetCampaign(ctx, id)
+		require.NoError(t, gerr)
+		require.Equal(t, campaigns.ApprovalPending, camp.Approval, "%s should be untouched", id)
+	}
 }
 
 func TestCampaignsPauseToggle(t *testing.T) {
@@ -144,11 +256,13 @@ func TestCampaignsPauseToggle(t *testing.T) {
 	_, err := s.CreateCampaign(ctx, mkTestCampaign(id, 20, 100, 1000, campaigns.ApprovalApproved, campaigns.StatusLive))
 	require.NoError(t, err)
 
-	camp, err := c.Pause(ctx, id, "Reviewer")
+	actor := testActor(t, s)
+
+	camp, err := c.Pause(ctx, id, actor)
 	require.NoError(t, err)
 	require.Equal(t, campaigns.StatusPaused, camp.Status)
 
-	camp, err = c.Pause(ctx, id, "Reviewer")
+	camp, err = c.Pause(ctx, id, actor)
 	require.NoError(t, err)
 	require.Equal(t, campaigns.StatusLive, camp.Status)
 
@@ -157,7 +271,7 @@ func TestCampaignsPauseToggle(t *testing.T) {
 	cleanup(t, s, endedID)
 	_, err = s.CreateCampaign(ctx, mkTestCampaign(endedID, 20, 100, 1000, campaigns.ApprovalApproved, campaigns.StatusEnded))
 	require.NoError(t, err)
-	_, err = c.Pause(ctx, endedID, "Reviewer")
+	_, err = c.Pause(ctx, endedID, actor)
 	require.ErrorIs(t, err, ErrValidation)
 }
 
@@ -173,15 +287,24 @@ func TestCampaignsBulkDecision(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	camps, err := c.BulkDecision(ctx, ids, "approve", "Reviewer", true)
+	actor := testActor(t, s)
+
+	camps, err := c.BulkDecision(ctx, ids, "approve", actor, true)
 	require.NoError(t, err)
 	require.Len(t, camps, 2)
 	for _, camp := range camps {
 		require.Equal(t, campaigns.ApprovalApproved, camp.Approval)
 	}
 
-	_, err = c.BulkDecision(ctx, ids, "approve", "Reviewer", false)
+	_, err = c.BulkDecision(ctx, ids, "approve", actor, false)
 	require.ErrorIs(t, err, ErrForbidden)
+
+	for _, id := range ids {
+		events, eerr := s.ListAuditEventsByCampaign(ctx, id)
+		require.NoError(t, eerr)
+		require.NotEmpty(t, events)
+		require.Equal(t, actor.ID, events[0].UserID, "a bulk decision is attributable too")
+	}
 }
 
 func TestAnomalyDetectorFlagsAndClears(t *testing.T) {

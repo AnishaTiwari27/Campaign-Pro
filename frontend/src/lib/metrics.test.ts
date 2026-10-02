@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cpmOf, indexOf, median, paceClassOf, paceOf, reachCurve, valueAtAge } from "./metrics";
+import { approvalBlockOf, cpmOf, indexOf, median, paceClassOf, paceOf, reachCurve, valueAtAge } from "./metrics";
 
 describe("reachCurve", () => {
   it("matches the fast preset", () => {
@@ -63,5 +63,27 @@ describe("median / indexOf", () => {
   it("computes index against a baseline", () => {
     expect(indexOf(140, 100)).toBeCloseTo(1.4);
     expect(indexOf(50, 0)).toBe(0);
+  });
+});
+
+// Mirrors services/campaigns/metrics_test.go's TestApprovalBlock. The boundary
+// cases are the contract: 95 blocks, 94 does not.
+describe("approvalBlockOf", () => {
+  it("blocks at and over budget", () => {
+    expect(approvalBlockOf(120, 100)).toContain("120%");
+    expect(approvalBlockOf(100, 100)).toContain("100%");
+  });
+  it("blocks the nearly-exhausted band down to its threshold", () => {
+    expect(approvalBlockOf(96, 100)).toContain("96%");
+    expect(approvalBlockOf(95, 100)).toContain("95%");
+  });
+  it("allows anything below the threshold", () => {
+    expect(approvalBlockOf(94, 100)).toBeNull();
+    expect(approvalBlockOf(40, 100)).toBeNull();
+  });
+  it("allows a campaign that has not spent, including one with no budget set", () => {
+    // A scheduled campaign awaiting pre-flight sign-off must never be blocked.
+    expect(approvalBlockOf(0, 100)).toBeNull();
+    expect(approvalBlockOf(0, 0)).toBeNull();
   });
 });

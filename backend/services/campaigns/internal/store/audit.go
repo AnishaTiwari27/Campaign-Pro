@@ -21,8 +21,13 @@ func (s *Store) ListAuditEventsByCampaign(ctx context.Context, campaignID string
 // CreateAuditEvent writes one audit row. Every approve, reject, reopen,
 // pause, resume, note and anomaly flag goes through this so the Activity
 // tab and the audit trail are always the same source of truth.
-func (s *Store) CreateAuditEvent(ctx context.Context, campaignID, actor, action, kind string) (campaigns.AuditEvent, error) {
-	return s.RecordEvent(ctx, campaignID, "", actor, action, kind, "campaign", campaignID)
+//
+// userID is what makes "who approved this?" answerable, since actor is only
+// a display label — it is a parameter rather than a default so a caller
+// cannot write an unattributed decision by omission. Pass "" only for the
+// system actor (anomaly detection), which is no user.
+func (s *Store) CreateAuditEvent(ctx context.Context, campaignID, userID, actor, action, kind string) (campaigns.AuditEvent, error) {
+	return s.RecordEvent(ctx, campaignID, userID, actor, action, kind, "campaign", campaignID)
 }
 
 // RecordEvent is the general form: any entity, attributed to a user id so

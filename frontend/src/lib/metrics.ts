@@ -43,6 +43,22 @@ export function paceClassOf(pace: number): PaceClass {
   return "good";
 }
 
+// The two budget thresholds that block an approval. Mirrors the Go constants
+// in services/campaigns/metrics.go — the server is the enforcement, this is
+// only so the UI can explain itself before the click rather than after it.
+export const PACE_OVER_BUDGET = 100;
+export const PACE_NEARLY_EXHAUSTED = 95;
+
+// approvalBlockOf mirrors campaigns.ApprovalBlock: the reason this campaign
+// cannot be approved, or null when nothing blocks it. Kept short — the server
+// returns the full sentence; this is button and tooltip text.
+export function approvalBlockOf(spend: number, budget: number): string | null {
+  const pace = paceOf(spend, budget);
+  if (pace >= PACE_OVER_BUDGET) return `Spend has reached ${pace}% of budget`;
+  if (pace >= PACE_NEARLY_EXHAUSTED) return `Budget is ${pace}% spent and runs out within days`;
+  return null;
+}
+
 export function cpmOf(spend: number, reachLakh: number, frequency: number): number {
   const impressions = reachLakh * 100000 * frequency;
   if (impressions <= 0) return 0;

@@ -72,6 +72,7 @@ func toDomainAuditEvent(e gen.AuditEvent) campaigns.AuditEvent {
 	return campaigns.AuditEvent{
 		ID:         e.ID,
 		CampaignID: database.TextOrEmpty(e.CampaignID),
+		UserID:     database.UuidToString(e.UserID),
 		Actor:      e.Actor,
 		Action:     e.Action,
 		Kind:       string(e.Kind),
