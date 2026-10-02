@@ -149,24 +149,25 @@ func sparklineDTO(s service.KPISparkline) SparklineDTO {
 }
 
 type OverviewDTO struct {
-	PendingCount     int           `json:"pendingCount"`
-	FlaggedCount     int           `json:"flaggedCount"`
-	PendingSpend     int64         `json:"pendingSpend"`
-	LiveCount        int           `json:"liveCount"`
-	LiveSparkline    SparklineDTO  `json:"liveSparkline"`
-	PendingSparkline SparklineDTO  `json:"pendingSparkline"`
-	ReachLive        float64       `json:"reachLive"`
-	ReachSparkline   SparklineDTO  `json:"reachSparkline"`
-	SpendWindow      int64         `json:"spendWindow"`
-	SpendSparkline   SparklineDTO  `json:"spendSparkline"`
-	ApprovedBudget   int64         `json:"approvedBudget"`
-	SpendPctBudget   float64       `json:"spendPctBudget"`
-	MedAll           float64       `json:"medAll"`
-	Spotlight        *CampaignDTO  `json:"spotlight,omitempty"`
-	NeedsDecision    []CampaignDTO `json:"needsDecision"`
-	Flagged          []CampaignDTO `json:"flagged"`
-	Movers           []CampaignDTO `json:"movers"`
-	People           []CampaignDTO `json:"people"`
+	PendingCount        int           `json:"pendingCount"`
+	FlaggedCount        int           `json:"flaggedCount"`
+	PendingSpend        int64         `json:"pendingSpend"`
+	LiveCount           int           `json:"liveCount"`
+	LiveSparkline       SparklineDTO  `json:"liveSparkline"`
+	PendingSparkline    SparklineDTO  `json:"pendingSparkline"`
+	ReachLive           float64       `json:"reachLive"`
+	ReachSparkline      SparklineDTO  `json:"reachSparkline"`
+	SpendWindow         int64         `json:"spendWindow"`
+	SpendSparkline      SparklineDTO  `json:"spendSparkline"`
+	ApprovedBudget      int64         `json:"approvedBudget"`
+	SpendPctBudget      float64       `json:"spendPctBudget"`
+	MedAll              float64       `json:"medAll"`
+	Spotlight           *CampaignDTO  `json:"spotlight,omitempty"`
+	SpotlightCandidates []CampaignDTO `json:"spotlightCandidates"`
+	NeedsDecision       []CampaignDTO `json:"needsDecision"`
+	Flagged             []CampaignDTO `json:"flagged"`
+	Movers              []CampaignDTO `json:"movers"`
+	People              []CampaignDTO `json:"people"`
 }
 
 func overviewDTO(o service.Overview) OverviewDTO {
@@ -177,7 +178,8 @@ func overviewDTO(o service.Overview) OverviewDTO {
 		ReachLive:        o.ReachLive, ReachSparkline: sparklineDTO(o.ReachSparkline),
 		SpendWindow: o.SpendWindow, SpendSparkline: sparklineDTO(o.SpendSparkline),
 		ApprovedBudget: o.ApprovedBudget, SpendPctBudget: o.SpendPctBudget, MedAll: o.MedAll,
-		NeedsDecision: campaignDTOs(o.NeedsDecision), Flagged: campaignDTOs(o.Flagged),
+		SpotlightCandidates: campaignDTOs(o.SpotlightCandidates),
+		NeedsDecision:       campaignDTOs(o.NeedsDecision), Flagged: campaignDTOs(o.Flagged),
 		Movers: campaignDTOs(o.Movers), People: campaignDTOs(o.People),
 	}
 	if o.Spotlight != nil {

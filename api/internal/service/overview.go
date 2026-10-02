@@ -27,10 +27,14 @@ type Overview struct {
 	SpendPctBudget   float64
 	MedAll           float64
 	Spotlight        *CampaignRow
-	NeedsDecision    []CampaignRow
-	Flagged          []CampaignRow
-	Movers           []CampaignRow
-	People           []CampaignRow
+	// SpotlightCandidates are the rest of the campaigns worth surfacing,
+	// best first, so the UI can cycle through them rather than fixing on
+	// one. Flagged campaigns by index, topped up with movers.
+	SpotlightCandidates []CampaignRow
+	NeedsDecision       []CampaignRow
+	Flagged             []CampaignRow
+	Movers              []CampaignRow
+	People              []CampaignRow
 }
 
 type OverviewService struct {
@@ -115,26 +119,64 @@ func (o *OverviewService) Get(ctx context.Context) (Overview, error) {
 	peopleRows := toRows(rowsByID, filterCampaigns(all, func(c domain.Campaign) bool { return c.SubjectType == domain.SubjectPerson }))
 	sortRowsDesc(peopleRows, func(r CampaignRow) float64 { return r.Reach })
 
+	candidates := spotlightCandidates(flaggedRows, moverRows, spotlightMax)
+
 	return Overview{
-		PendingCount:     int(pendingCount),
-		FlaggedCount:     len(flagged),
-		PendingSpend:     pendingSpend,
-		LiveCount:        liveCount,
-		LiveSparkline:    liveSpark,
-		PendingSparkline: liveSpark,
-		ReachLive:        reachLive,
-		ReachSparkline:   reachSpark,
-		SpendWindow:      spendWindow,
-		SpendSparkline:   spendSpark,
-		ApprovedBudget:   approvedBudget,
-		SpendPctBudget:   spendPct,
-		MedAll:           medAll,
-		Spotlight:        spotlight,
-		NeedsDecision:    pendingRows,
-		Flagged:          flaggedRows,
-		Movers:           moverRows,
-		People:           peopleRows,
+		PendingCount:        int(pendingCount),
+		FlaggedCount:        len(flagged),
+		PendingSpend:        pendingSpend,
+		LiveCount:           liveCount,
+		LiveSparkline:       liveSpark,
+		PendingSparkline:    liveSpark,
+		ReachLive:           reachLive,
+		ReachSparkline:      reachSpark,
+		SpendWindow:         spendWindow,
+		SpendSparkline:      spendSpark,
+		ApprovedBudget:      approvedBudget,
+		SpendPctBudget:      spendPct,
+		MedAll:              medAll,
+		Spotlight:           spotlight,
+		SpotlightCandidates: candidates,
+		NeedsDecision:       pendingRows,
+		Flagged:             flaggedRows,
+		Movers:              moverRows,
+		People:              peopleRows,
 	}, nil
+}
+
+// spotlightMax caps how many campaigns the overview will cycle through —
+// enough to be worth rotating, few enough that each one gets real screen
+// time before it comes round again.
+const spotlightMax = 6
+
+// spotlightCandidates ranks what deserves attention: anything anomaly
+// detection flagged, best index first, topped up with the strongest
+// over-performers when there aren't enough flags to fill the row.
+func spotlightCandidates(flagged, movers []CampaignRow, max int) []CampaignRow {
+	out := make([]CampaignRow, 0, max)
+	seen := map[string]bool{}
+
+	ranked := append([]CampaignRow(nil), flagged...)
+	sortRowsDesc(ranked, func(r CampaignRow) float64 { return r.Index })
+	for _, r := range ranked {
+		if len(out) == max {
+			return out
+		}
+		if !seen[r.ID] {
+			seen[r.ID] = true
+			out = append(out, r)
+		}
+	}
+	for _, r := range movers {
+		if len(out) == max {
+			return out
+		}
+		if !seen[r.ID] {
+			seen[r.ID] = true
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 func filterCampaigns(all []domain.Campaign, keep func(domain.Campaign) bool) []domain.Campaign {

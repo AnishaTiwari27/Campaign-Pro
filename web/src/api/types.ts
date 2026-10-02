@@ -116,6 +116,8 @@ export interface Overview {
   spendPctBudget: number;
   medAll: number;
   spotlight?: Campaign;
+  /** Ranked attention list the Overview cycles through. */
+  spotlightCandidates: Campaign[];
   needsDecision: Campaign[];
   flagged: Campaign[];
   movers: Campaign[];

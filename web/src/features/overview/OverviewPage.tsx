@@ -8,7 +8,7 @@ import { Tile } from "../../components/Tile";
 import { KpiTile } from "../../components/KpiTile";
 import { exportUrl } from "../../api/client";
 import { formatMoney, formatPct, formatReach } from "../../lib/format";
-import { SpotlightCard } from "./SpotlightCard";
+import { InFocus } from "./InFocus";
 import "./OverviewPage.css";
 
 export function OverviewPage() {
@@ -21,12 +21,9 @@ export function OverviewPage() {
     return <SkeletonBlock height={500} />;
   }
 
-  const spotlightCategoryMedian = data.spotlight
-    ? benchmark?.categories.find((c) => c.category === data.spotlight!.category)?.medianReach
-    : undefined;
-
   const hasAnything =
-    data.needsDecision.length + data.flagged.length + data.movers.length + data.people.length > 0 || !!data.spotlight;
+    data.needsDecision.length + data.flagged.length + data.movers.length + data.people.length > 0 ||
+    data.spotlightCandidates.length > 0;
 
   return (
     <div className="overview-page">
@@ -54,7 +51,7 @@ export function OverviewPage() {
         <EmptyState title="All quiet" description="No campaigns are waiting on you or flagged right now." />
       ) : (
         <>
-          {data.spotlight && <SpotlightCard campaign={data.spotlight} medAll={data.medAll} categoryMedian={spotlightCategoryMedian} />}
+          <InFocus candidates={data.spotlightCandidates} medAll={data.medAll} benchmarks={benchmark?.categories} />
 
           <div className="overview-ribbons">
             <Ribbon

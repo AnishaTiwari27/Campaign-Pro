@@ -19,7 +19,10 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
   const h = hash(seed);
   const hue = h % 360;
   const hue2 = (hue + 48) % 360;
-  const gradientId = `grad-${h.toString(36)}`;
+  const uid = h.toString(36);
+  const gradientId = `grad-${uid}`;
+  const clipId = `clip-${uid}`;
+  const radius = kind === "person" ? 32 : 14;
 
   return (
     <svg
@@ -35,12 +38,20 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
           <stop offset="0%" stopColor={`hsl(${hue} 62% 58%)`} />
           <stop offset="100%" stopColor={`hsl(${hue2} 58% 44%)`} />
         </linearGradient>
+        {/* The decorative arcs below extend past the avatar's edge; without
+            this they paint into the square corners of the viewBox and show
+            as hard straight edges. */}
+        <clipPath id={clipId}>
+          <rect width="64" height="64" rx={radius} />
+        </clipPath>
       </defs>
-      <rect width="64" height="64" rx={kind === "person" ? 32 : 14} fill={`url(#${gradientId})`} />
-      {/* Offset arcs give the block some depth so it reads as artwork
-          rather than a flat colour chip. */}
-      <circle cx="12" cy="10" r="26" fill="#fff" opacity="0.1" />
-      <circle cx="58" cy="56" r="20" fill="#000" opacity="0.08" />
+      <g clipPath={`url(#${clipId})`}>
+        <rect width="64" height="64" rx={radius} fill={`url(#${gradientId})`} />
+        {/* Offset arcs give the block some depth so it reads as artwork
+            rather than a flat colour chip. */}
+        <circle cx="12" cy="10" r="26" fill="#fff" opacity="0.1" />
+        <circle cx="58" cy="56" r="20" fill="#000" opacity="0.08" />
+      </g>
       <text
         x="32"
         y="33"
