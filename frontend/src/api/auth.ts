@@ -9,8 +9,11 @@ export function useSession() {
   return useQuery({
     queryKey: queryKeys.me(),
     queryFn: () => get<Me>("/me"),
-    retry: false,          // a 401 is an answer, not a failure to retry
+    retry: false, // a 401 is an answer, not a failure to retry
     staleTime: 5 * 60_000,
+    // Stated explicitly rather than inherited: re-checking the session on
+    // tab focus is what blanked the login form.
+    refetchOnWindowFocus: false,
   });
 }
 

@@ -7,9 +7,12 @@ import { SkeletonBlock } from "../components/Skeleton";
 // no authenticated screen ever mounts — and therefore never fires a
 // request — without a session.
 export function AuthGate({ children }: { children: ReactNode }) {
-  const { data: me, isLoading, isError } = useSession();
+  const { data: me, isError, isFetched } = useSession();
 
-  if (isLoading) {
+  // Only the very first check shows a placeholder. Keying off a fetch in
+  // progress would unmount whatever is on screen every time the session
+  // is re-checked, which discards anything typed into the login form.
+  if (!isFetched) {
     return (
       <div style={{ padding: 32 }}>
         <SkeletonBlock height={200} />
