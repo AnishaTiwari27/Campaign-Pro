@@ -20,16 +20,22 @@ type Querier interface {
 	CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateReportRun(ctx context.Context, arg CreateReportRunParams) (ReportRun, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteExpiredSessions(ctx context.Context) error
 	DeleteReport(ctx context.Context, id pgtype.UUID) error
+	DeleteSession(ctx context.Context, tokenHash []byte) error
+	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
 	GetCampaign(ctx context.Context, id string) (Campaign, error)
 	GetCreator(ctx context.Context, id string) (Creator, error)
 	GetLastReportRun(ctx context.Context, reportID pgtype.UUID) (ReportRun, error)
 	GetReport(ctx context.Context, id pgtype.UUID) (Report, error)
 	GetUser(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
+	GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error)
+	GetUserForAuth(ctx context.Context, email string) (GetUserForAuthRow, error)
 	ListAllCreatives(ctx context.Context) ([]Creative, error)
-	ListAuditEventsByCampaign(ctx context.Context, campaignID string) ([]AuditEvent, error)
+	ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error)
 	ListCampaigns(ctx context.Context) ([]Campaign, error)
 	ListCampaignsByCreator(ctx context.Context, creatorID pgtype.Text) ([]Campaign, error)
 	// ListCampaignsFiltered applies every /campaigns filter in one query;
@@ -47,8 +53,13 @@ type Querier interface {
 	ListRunningCampaigns(ctx context.Context) ([]Campaign, error)
 	ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error)
 	ListUsers(ctx context.Context) ([]User, error)
+	// SessionUser resolves a session to its user in one round trip, and only
+	// when the session has not expired.
+	SessionUser(ctx context.Context, tokenHash []byte) (SessionUserRow, error)
 	SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error
+	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	TotalPendingSpend(ctx context.Context) (int64, error)
+	TouchUserLogin(ctx context.Context, id pgtype.UUID) error
 	UpdateCampaignDecision(ctx context.Context, arg UpdateCampaignDecisionParams) (Campaign, error)
 	UpdateCampaignFlag(ctx context.Context, arg UpdateCampaignFlagParams) (Campaign, error)
 	UpdateCampaignStatus(ctx context.Context, arg UpdateCampaignStatusParams) (Campaign, error)

@@ -54,3 +54,14 @@ func (s *Store) CreateUser(ctx context.Context, email, name, role string, canApp
 	}
 	return toDomainUser(u), nil
 }
+
+// SetUserAgency marks a user as agency staff, who see every account.
+// Client users are scoped to the accounts granted to them instead.
+func (s *Store) SetUserAgency(ctx context.Context, userID string, isAgency bool) error {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Pool.Exec(ctx, `UPDATE users SET is_agency = $2 WHERE id = $1`, uid, isAgency)
+	return err
+}

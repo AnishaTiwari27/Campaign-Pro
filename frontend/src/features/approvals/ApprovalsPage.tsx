@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useCampaignsList, useDecision } from "../../api/campaigns";
+import { useSession } from "../../api/auth";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { Pill } from "../../components/Pill";
 import { FlaggedTag } from "../../components/Tag";
@@ -15,6 +16,8 @@ export function ApprovalsPage() {
 
   const { data, isLoading } = useCampaignsList({ approval: "pending", sort: "spend", dir: "desc", page: 1, per: 500 });
   const decision = useDecision();
+  const { data: me } = useSession();
+  const canApprove = me?.canApprove ?? false;
 
   const items = data?.items ?? [];
   const totalSpend = items.reduce((sum, c) => sum + c.spend, 0);
@@ -80,12 +83,16 @@ export function ApprovalsPage() {
                 <Link to={`/campaigns/${c.id}`} className="btn">
                   Open
                 </Link>
-                <button type="button" className="btn btn-danger" onClick={() => decision.mutate({ id: c.id, action: "reject" })}>
-                  Reject
-                </button>
-                <button type="button" className="btn btn-primary" onClick={() => decision.mutate({ id: c.id, action: "approve" })}>
-                  Approve
-                </button>
+                {canApprove && (
+                  <>
+                    <button type="button" className="btn btn-danger" onClick={() => decision.mutate({ id: c.id, action: "reject" })}>
+                      Reject
+                    </button>
+                    <button type="button" className="btn btn-primary" onClick={() => decision.mutate({ id: c.id, action: "approve" })}>
+                      Approve
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}

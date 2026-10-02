@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"campaigntrackerpro/platform/httpx"
-	"campaigntrackerpro/services/campaigns"
+	"campaigntrackerpro/services/identity"
 	"campaigntrackerpro/services/reports/internal/service"
 
 	"github.com/go-chi/chi/v5"
@@ -134,7 +134,7 @@ func (h *Handlers) RunReport(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) TestReport(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	v, _ := httpx.UserFromContext(r.Context())
-	user, _ := v.(campaigns.User)
+	user, _ := v.(identity.User)
 	if err := h.svc.Test(r.Context(), id, user.Email); err != nil {
 		httpx.WriteServiceError(w, h.logger, err)
 		return

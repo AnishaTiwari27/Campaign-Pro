@@ -199,8 +199,11 @@ export interface Me {
   id: string;
   name: string;
   email: string;
-  role: string;
+  role: "admin" | "approver" | "analyst" | "client" | "viewer";
+  /** Agency staff see every account; clients see only their own. */
+  isAgency: boolean;
   canApprove: boolean;
+  isClient: boolean;
 }
 
 export interface HealthSource {

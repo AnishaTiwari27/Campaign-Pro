@@ -4,6 +4,7 @@ import { Pill } from "./Pill";
 import { adTypeStripeStyle } from "./AdTypeTag";
 import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
+import { useSession } from "../api/auth";
 import "./Tile.css";
 
 export function Tile({
@@ -21,6 +22,7 @@ export function Tile({
 }) {
   const navigate = useNavigate();
   const decision = useDecision();
+  const { data: me } = useSession();
 
   return (
     <div
@@ -66,7 +68,7 @@ export function Tile({
         <span className="tile-stat mono">{stat}</span>
       </div>
 
-      {showDecide && (
+      {showDecide && me?.canApprove && (
         <div className="tile-actions" onClick={(e) => e.stopPropagation()}>
           <button
             type="button"

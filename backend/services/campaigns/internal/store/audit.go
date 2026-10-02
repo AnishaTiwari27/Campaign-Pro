@@ -1,14 +1,17 @@
 package store
 
 import (
-	"campaigntrackerpro/services/campaigns"
 	"context"
 
 	"campaigntrackerpro/db/gen"
+	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/services/campaigns"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (s *Store) ListAuditEventsByCampaign(ctx context.Context, campaignID string) ([]campaigns.AuditEvent, error) {
-	es, err := s.db.Queries.ListAuditEventsByCampaign(ctx, campaignID)
+	es, err := s.db.Queries.ListAuditEventsByCampaign(ctx, database.TextParam(campaignID))
 	if err != nil {
 		return nil, err
 	}
@@ -19,8 +22,28 @@ func (s *Store) ListAuditEventsByCampaign(ctx context.Context, campaignID string
 // pause, resume, note and anomaly flag goes through this so the Activity
 // tab and the audit trail are always the same source of truth.
 func (s *Store) CreateAuditEvent(ctx context.Context, campaignID, actor, action, kind string) (campaigns.AuditEvent, error) {
+	return s.RecordEvent(ctx, campaignID, "", actor, action, kind, "campaign", campaignID)
+}
+
+// RecordEvent is the general form: any entity, attributed to a user id so
+// "who approved this?" is answerable. actor stays the display label
+// because names change and a trail should not rewrite history.
+func (s *Store) RecordEvent(ctx context.Context, campaignID, userID, actor, action, kind, entityType, entityID string) (campaigns.AuditEvent, error) {
+	var uid pgtype.UUID
+	if userID != "" {
+		parsed, err := database.UuidParam(userID)
+		if err == nil {
+			uid = parsed
+		}
+	}
 	e, err := s.db.Queries.CreateAuditEvent(ctx, gen.CreateAuditEventParams{
-		CampaignID: campaignID, Actor: actor, Action: action, Kind: gen.AuditKindT(kind),
+		CampaignID: database.TextParam(campaignID),
+		Actor:      actor,
+		Action:     action,
+		Kind:       gen.AuditKindT(kind),
+		UserID:     uid,
+		EntityType: entityType,
+		EntityID:   database.TextParam(entityID),
 	})
 	if err != nil {
 		return campaigns.AuditEvent{}, err

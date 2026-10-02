@@ -13,7 +13,7 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (email, name, role, can_approve)
-VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, can_approve, created_at
+VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at
 `
 
 type CreateUserParams struct {
@@ -38,12 +38,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.Role,
 		&i.CanApprove,
 		&i.CreatedAt,
+		&i.PasswordHash,
+		&i.IsAgency,
+		&i.LastLoginAt,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, role, can_approve, created_at FROM users WHERE id = $1
+SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
@@ -56,12 +59,15 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
 		&i.Role,
 		&i.CanApprove,
 		&i.CreatedAt,
+		&i.PasswordHash,
+		&i.IsAgency,
+		&i.LastLoginAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, role, can_approve, created_at FROM users WHERE email = $1
+SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -74,12 +80,15 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Role,
 		&i.CanApprove,
 		&i.CreatedAt,
+		&i.PasswordHash,
+		&i.IsAgency,
+		&i.LastLoginAt,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, role, can_approve, created_at FROM users ORDER BY created_at ASC
+SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users ORDER BY created_at ASC
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -98,6 +107,9 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Role,
 			&i.CanApprove,
 			&i.CreatedAt,
+			&i.PasswordHash,
+			&i.IsAgency,
+			&i.LastLoginAt,
 		); err != nil {
 			return nil, err
 		}

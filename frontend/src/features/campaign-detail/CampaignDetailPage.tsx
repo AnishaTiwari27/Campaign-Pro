@@ -1,6 +1,7 @@
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useCampaignDetail, useDecision, usePause } from "../../api/campaigns";
 import { useBenchmark } from "../../api/overview";
+import { useSession } from "../../api/auth";
 import { useListParams } from "../../lib/useListParams";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { useKeyboardShortcuts } from "../../lib/keyboard";
@@ -41,6 +42,8 @@ export function CampaignDetailPage() {
   const { data: benchmark } = useBenchmark();
   const decision = useDecision();
   const pause = usePause();
+  const { data: me } = useSession();
+  const canApprove = me?.canApprove ?? false;
 
   useSetBreadcrumbs([
     { label: "Campaigns", href: `/campaigns${window.location.search}` },
@@ -127,13 +130,13 @@ export function CampaignDetailPage() {
             </button>
           </div>
 
-          {canPause && (
+          {canApprove && canPause && (
             <button type="button" className="btn" onClick={() => pause.mutate(campaign.id)}>
               {campaign.status === "live" ? "Pause" : "Resume"}
             </button>
           )}
 
-          {campaign.approval === "pending" ? (
+          {!canApprove ? null : campaign.approval === "pending" ? (
             <>
               <button type="button" className="btn btn-primary" onClick={() => decision.mutate({ id: campaign.id, action: "approve" })}>
                 Approve

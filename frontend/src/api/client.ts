@@ -1,6 +1,11 @@
 const BASE = "/api";
 
 export class ApiError extends Error {
+  /** True for 401 — the app should show the sign-in screen. */
+  get isUnauthorized() {
+    return this.status === 401;
+  }
+
   status: number;
   field?: string;
   constructor(status: number, message: string, field?: string) {

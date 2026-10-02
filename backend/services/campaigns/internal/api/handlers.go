@@ -9,6 +9,7 @@ import (
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/campaigns"
 	"campaigntrackerpro/services/campaigns/internal/service"
+	"campaigntrackerpro/services/identity"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -83,7 +84,7 @@ func (h *Handlers) Decision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	camp, err := h.svc.Decision(r.Context(), id, req.Action, user.Name, user.CanApprove)
+	camp, err := h.svc.Decision(r.Context(), id, req.Action, user.Name, user.CanApprove())
 	if err != nil {
 		if err == service.ErrValidation {
 			httpx.WriteValidationError(w, "action must be approve, reject or reopen", "action")
@@ -111,7 +112,7 @@ func (h *Handlers) BulkDecision(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := currentUser(r)
-	camps, err := h.svc.BulkDecision(r.Context(), req.IDs, req.Action, user.Name, user.CanApprove)
+	camps, err := h.svc.BulkDecision(r.Context(), req.IDs, req.Action, user.Name, user.CanApprove())
 	if err != nil {
 		if err == service.ErrValidation {
 			httpx.WriteValidationError(w, "action must be approve or reject", "action")
@@ -197,8 +198,10 @@ func (h *Handlers) ExportCSV(w http.ResponseWriter, r *http.Request) {
 
 // currentUser asserts the account the auth middleware loaded. platform
 // stores it as `any` so it needn't know this service's user type.
-func currentUser(r *http.Request) campaigns.User {
+// currentUser asserts the account the session middleware resolved.
+// platform stores it as an opaque principal so it needn't know this type.
+func currentUser(r *http.Request) identity.User {
 	v, _ := httpx.UserFromContext(r.Context())
-	u, _ := v.(campaigns.User)
+	u, _ := v.(identity.User)
 	return u
 }

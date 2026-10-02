@@ -19,6 +19,7 @@ import (
 	analytics "campaigntrackerpro/services/analytics/module"
 	campaigns "campaigntrackerpro/services/campaigns/module"
 	creators "campaigntrackerpro/services/creators/module"
+	identity "campaigntrackerpro/services/identity/module"
 	reports "campaigntrackerpro/services/reports/module"
 )
 
@@ -42,6 +43,7 @@ func main() {
 	// Dependency order is the service graph: campaigns owns the core data,
 	// everything else reads from it through a narrow interface.
 	campaignsMod := campaigns.New(db, logger)
+	identityMod := identity.New(db, auditBridge{campaignsMod}, cfg.SecureCookies, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
@@ -49,8 +51,8 @@ func main() {
 
 	go reportsMod.Run(ctx)
 
-	router := newRouter(analyticsMod.Health(), campaignsMod.LoadUser, cfg.AdminEmail, logger,
-		campaignsMod, creatorsMod, analyticsMod, reportsMod)
+	router := newRouter(analyticsMod.Health(), identityMod, logger,
+		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

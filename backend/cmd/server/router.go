@@ -18,7 +18,14 @@ type mountable interface {
 	Routes(r chi.Router)
 }
 
-func newRouter(health http.HandlerFunc, loadUser httpx.UserLoader, adminEmail string,
+// publicMountable serves routes that must work without a session — login
+// being the obvious one, since requiring a session to sign in is circular.
+type publicMountable interface {
+	PublicRoutes(r chi.Router)
+	Authenticator() httpx.SessionAuthenticator
+}
+
+func newRouter(health http.HandlerFunc, auth publicMountable,
 	logger *slog.Logger, modules ...mountable) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -35,11 +42,16 @@ func newRouter(health http.HandlerFunc, loadUser httpx.UserLoader, adminEmail st
 	r.Get("/health", health)
 
 	r.Route("/api", func(r chi.Router) {
-		r.Use(httpx.AuthMiddleware(loadUser, adminEmail, logger))
-		r.Get("/health", health)
-		for _, m := range modules {
-			m.Routes(r)
-		}
+		// Login sits outside the guard; everything else sits behind it.
+		auth.PublicRoutes(r)
+
+		r.Group(func(r chi.Router) {
+			r.Use(httpx.RequireSession(auth.Authenticator(), logger))
+			r.Get("/health", health)
+			for _, m := range modules {
+				m.Routes(r)
+			}
+		})
 	})
 
 	return r

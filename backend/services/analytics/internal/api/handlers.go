@@ -23,7 +23,6 @@ func New(svc *service.Analytics, db *database.DB, logger *slog.Logger) *Handlers
 }
 
 func (h *Handlers) Routes(r chi.Router) {
-	r.Get("/me", h.Me)
 	r.Get("/search", h.Search)
 	r.Get("/overview", h.GetOverview)
 	r.Get("/benchmark", h.GetBenchmark)

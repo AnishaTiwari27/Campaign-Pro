@@ -105,3 +105,13 @@ export function IconCreators(props: SVGProps<SVGSVGElement>) {
     </Base>
   );
 }
+
+export function IconLogout(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M11 13.5v1.4a1.2 1.2 0 01-1.2 1.2H4.2A1.2 1.2 0 013 14.9V3.1a1.2 1.2 0 011.2-1.2h5.6A1.2 1.2 0 0111 3.1v1.4" />
+      <path d="M14.2 9H6.8" />
+      <path d="M12.1 6.6L14.5 9l-2.4 2.4" />
+    </Base>
+  );
+}

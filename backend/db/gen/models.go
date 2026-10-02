@@ -496,8 +496,11 @@ func (ns NullSubjectTypeT) Value() (driver.Value, error) {
 type UserRoleT string
 
 const (
-	UserRoleTAdmin  UserRoleT = "admin"
-	UserRoleTViewer UserRoleT = "viewer"
+	UserRoleTAdmin    UserRoleT = "admin"
+	UserRoleTViewer   UserRoleT = "viewer"
+	UserRoleTApprover UserRoleT = "approver"
+	UserRoleTAnalyst  UserRoleT = "analyst"
+	UserRoleTClient   UserRoleT = "client"
 )
 
 func (e *UserRoleT) Scan(src interface{}) error {
@@ -537,11 +540,14 @@ func (ns NullUserRoleT) Value() (driver.Value, error) {
 
 type AuditEvent struct {
 	ID         int64              `json:"id"`
-	CampaignID string             `json:"campaign_id"`
+	CampaignID pgtype.Text        `json:"campaign_id"`
 	Actor      string             `json:"actor"`
 	Action     string             `json:"action"`
 	Kind       AuditKindT         `json:"kind"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UserID     pgtype.UUID        `json:"user_id"`
+	EntityType string             `json:"entity_type"`
+	EntityID   pgtype.Text        `json:"entity_id"`
 }
 
 type Campaign struct {
@@ -621,11 +627,23 @@ type ReportRun struct {
 	RowCount int32              `json:"row_count"`
 }
 
+type Session struct {
+	TokenHash []byte             `json:"token_hash"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UserAgent pgtype.Text        `json:"user_agent"`
+	Ip        pgtype.Text        `json:"ip"`
+}
+
 type User struct {
-	ID         pgtype.UUID        `json:"id"`
-	Email      string             `json:"email"`
-	Name       string             `json:"name"`
-	Role       UserRoleT          `json:"role"`
-	CanApprove bool               `json:"can_approve"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	ID           pgtype.UUID        `json:"id"`
+	Email        string             `json:"email"`
+	Name         string             `json:"name"`
+	Role         UserRoleT          `json:"role"`
+	CanApprove   bool               `json:"can_approve"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	PasswordHash pgtype.Text        `json:"password_hash"`
+	IsAgency     bool               `json:"is_agency"`
+	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
 }

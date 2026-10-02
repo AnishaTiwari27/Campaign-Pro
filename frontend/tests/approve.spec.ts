@@ -1,10 +1,25 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+// Every screen now sits behind a session, so each test signs in first.
+// Credentials come from `make seed`.
+const APPROVER = "anishatiwari695@gmail.com";
+const ANALYST = "analyst@campaigntracker.test";
+const PASSWORD = "demo-password-change-me";
+
+async function signIn(page: Page, email: string) {
+  await page.goto("/");
+  await page.fill("input[type=email]", email);
+  await page.fill("input[type=password]", PASSWORD);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.locator(".rail-user-name")).toBeVisible();
+}
 
 // The one end-to-end smoke test the spec calls for: approve a campaign
 // starting from Overview, and prove the decision propagates everywhere —
 // the approvals queue, the rail badge, and the overview's own counts.
 // Assumes a freshly seeded database (`make seed`), which leaves 5 pending.
 test("approving from overview updates the queue, the rail badge and the overview counts", async ({ page }) => {
+  await signIn(page, APPROVER);
   await page.goto("/overview");
 
   const lede = page.locator(".overview-lede");
@@ -48,10 +63,15 @@ test("approving from overview updates the queue, the rail badge and the overview
 // The "Your call" ribbon decides in place, so a decision never requires
 // leaving Overview at all.
 test("approving inline from the Your call ribbon updates the ribbon, badge and lede", async ({ page }) => {
+  await signIn(page, APPROVER);
   await page.goto("/overview");
 
   const ribbon = page.locator("section.ribbon").filter({ hasText: "Your call" });
   const tiles = ribbon.locator(".tile");
+
+  // count() does not auto-wait, so wait for the ribbon to have rendered
+  // before counting — otherwise this races the overview fetch.
+  await expect(tiles.first()).toBeVisible();
 
   const before = await tiles.count();
   expect(before, "seed the database before running e2e (make seed)").toBeGreaterThan(0);

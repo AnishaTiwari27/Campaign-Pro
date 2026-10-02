@@ -15,10 +15,17 @@ import (
 // Sentinel errors every service maps onto, so the HTTP layer can translate
 // them to statuses without importing any service.
 var (
-	ErrNotFound   = errors.New("not found")
-	ErrForbidden  = errors.New("forbidden")
-	ErrValidation = errors.New("validation")
+	ErrNotFound     = errors.New("not found")
+	ErrForbidden    = errors.New("forbidden")
+	ErrValidation   = errors.New("validation")
+	ErrUnauthorized = errors.New("unauthorized")
 )
+
+// WriteUnauthorized is distinct from forbidden on purpose: 401 tells the
+// browser to show the login screen, 403 means signed in but not allowed.
+func WriteUnauthorized(w http.ResponseWriter, message string) {
+	WriteJSON(w, http.StatusUnauthorized, Error{Error: message})
+}
 
 func WriteJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -52,6 +59,8 @@ func WriteServiceError(w http.ResponseWriter, logger *slog.Logger, err error) {
 	switch {
 	case errors.Is(err, ErrNotFound):
 		WriteNotFound(w, "not found")
+	case errors.Is(err, ErrUnauthorized):
+		WriteUnauthorized(w, "sign in to continue")
 	case errors.Is(err, ErrForbidden):
 		WriteForbidden(w, "you don't have permission to do that")
 	case errors.Is(err, ErrValidation):

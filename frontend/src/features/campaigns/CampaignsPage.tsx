@@ -5,6 +5,7 @@ import { useListParams } from "../../lib/useListParams";
 import { useUIStore } from "../../app/useUIStore";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { useLastFilterStore } from "../../app/lastFilterStore";
+import { useSession } from "../../api/auth";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable, type Column } from "../../components/DataTable";
 import { Pagination } from "../../components/Pagination";
@@ -32,6 +33,8 @@ export function CampaignsPage() {
   const selectMany = useUIStore((s) => s.selectMany);
   const clearSelection = useUIStore((s) => s.clearSelection);
   const decision = useDecision();
+  const { data: me } = useSession();
+  const canApprove = me?.canApprove ?? false;
   const bulkDecision = useBulkDecision();
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +97,7 @@ export function CampaignsPage() {
         key: "actions",
         label: "",
         render: (c) =>
-          c.approval === "pending" ? (
+          canApprove && c.approval === "pending" ? (
             <div className="campaign-row-actions">
               <button
                 type="button"
@@ -120,7 +123,7 @@ export function CampaignsPage() {
           ) : null,
       },
     ],
-    [decision],
+    [decision, canApprove],
   );
 
   return (
@@ -158,7 +161,7 @@ export function CampaignsPage() {
 
       <FilterBar params={params} onChange={setParams} shown={items.length} total={data?.total ?? 0} />
 
-      {selectedIds.size > 0 && (
+      {canApprove && selectedIds.size > 0 && (
         <div className="bulk-bar">
           <span>{selectedIds.size} selected</span>
           <button

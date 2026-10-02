@@ -71,7 +71,7 @@ func toDomainCreatives(cs []gen.Creative) []campaigns.Creative {
 func toDomainAuditEvent(e gen.AuditEvent) campaigns.AuditEvent {
 	return campaigns.AuditEvent{
 		ID:         e.ID,
-		CampaignID: e.CampaignID,
+		CampaignID: database.TextOrEmpty(e.CampaignID),
 		Actor:      e.Actor,
 		Action:     e.Action,
 		Kind:       string(e.Kind),

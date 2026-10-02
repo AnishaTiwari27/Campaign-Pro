@@ -11,30 +11,10 @@ import (
 
 type ctxKey int
 
-const userCtxKey ctxKey = iota
-
-// AuthMiddleware loads the seeded admin user onto every request's context.
-// It's a stub standing in for real SSO/session auth later; every handler
-// reads the caller via UserFromContext, so swapping this out later won't
-// touch handler code.
-// UserLoader resolves the acting account for a request. Defined as a
-// function so platform never depends on whichever service owns users.
-type UserLoader func(ctx context.Context, email string) (any, error)
-
-func AuthMiddleware(load UserLoader, adminEmail string, logger *slog.Logger) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			u, err := load(r.Context(), adminEmail)
-			if err != nil {
-				logger.Error("auth: seeded admin user not found", "email", adminEmail, "err", err)
-				WriteJSON(w, http.StatusInternalServerError, Error{Error: "server not configured"})
-				return
-			}
-			ctx := context.WithValue(r.Context(), userCtxKey, u)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
-}
+const (
+	userCtxKey ctxKey = iota
+	tokenCtxKey
+)
 
 // UserFromContext returns whatever the loader put there; callers assert
 // their own user type.

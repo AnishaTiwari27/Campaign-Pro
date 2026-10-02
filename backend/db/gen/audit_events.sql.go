@@ -7,18 +7,23 @@ package gen
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createAuditEvent = `-- name: CreateAuditEvent :one
-INSERT INTO audit_events (campaign_id, actor, action, kind)
-VALUES ($1, $2, $3, $4) RETURNING id, campaign_id, actor, action, kind, created_at
+INSERT INTO audit_events (campaign_id, actor, action, kind, user_id, entity_type, entity_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, campaign_id, actor, action, kind, created_at, user_id, entity_type, entity_id
 `
 
 type CreateAuditEventParams struct {
-	CampaignID string     `json:"campaign_id"`
-	Actor      string     `json:"actor"`
-	Action     string     `json:"action"`
-	Kind       AuditKindT `json:"kind"`
+	CampaignID pgtype.Text `json:"campaign_id"`
+	Actor      string      `json:"actor"`
+	Action     string      `json:"action"`
+	Kind       AuditKindT  `json:"kind"`
+	UserID     pgtype.UUID `json:"user_id"`
+	EntityType string      `json:"entity_type"`
+	EntityID   pgtype.Text `json:"entity_id"`
 }
 
 func (q *Queries) CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) (AuditEvent, error) {
@@ -27,6 +32,9 @@ func (q *Queries) CreateAuditEvent(ctx context.Context, arg CreateAuditEventPara
 		arg.Actor,
 		arg.Action,
 		arg.Kind,
+		arg.UserID,
+		arg.EntityType,
+		arg.EntityID,
 	)
 	var i AuditEvent
 	err := row.Scan(
@@ -36,15 +44,18 @@ func (q *Queries) CreateAuditEvent(ctx context.Context, arg CreateAuditEventPara
 		&i.Action,
 		&i.Kind,
 		&i.CreatedAt,
+		&i.UserID,
+		&i.EntityType,
+		&i.EntityID,
 	)
 	return i, err
 }
 
 const listAuditEventsByCampaign = `-- name: ListAuditEventsByCampaign :many
-SELECT id, campaign_id, actor, action, kind, created_at FROM audit_events WHERE campaign_id = $1 ORDER BY created_at DESC
+SELECT id, campaign_id, actor, action, kind, created_at, user_id, entity_type, entity_id FROM audit_events WHERE campaign_id = $1::text ORDER BY created_at DESC
 `
 
-func (q *Queries) ListAuditEventsByCampaign(ctx context.Context, campaignID string) ([]AuditEvent, error) {
+func (q *Queries) ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error) {
 	rows, err := q.db.Query(ctx, listAuditEventsByCampaign, campaignID)
 	if err != nil {
 		return nil, err
@@ -60,6 +71,9 @@ func (q *Queries) ListAuditEventsByCampaign(ctx context.Context, campaignID stri
 			&i.Action,
 			&i.Kind,
 			&i.CreatedAt,
+			&i.UserID,
+			&i.EntityType,
+			&i.EntityID,
 		); err != nil {
 			return nil, err
 		}

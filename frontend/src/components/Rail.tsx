@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { useMe } from "../api/misc";
+import { useSession, useLogout } from "../api/auth";
 import { usePendingCount } from "../api/overview";
 import {
   IconApprovals,
@@ -10,9 +10,18 @@ import {
   IconCreators,
   IconRegions,
   IconReports,
+  IconLogout,
   IconSettings,
 } from "./icons";
 import "./Rail.css";
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Admin",
+  approver: "Approver",
+  analyst: "Analyst",
+  client: "Client",
+  viewer: "Viewer",
+};
 
 function NavItem({ to, icon, label, badge }: { to: string; icon: ReactNode; label: string; badge?: number }) {
   return (
@@ -25,7 +34,8 @@ function NavItem({ to, icon, label, badge }: { to: string; icon: ReactNode; labe
 }
 
 export function Rail() {
-  const { data: me } = useMe();
+  const { data: me } = useSession();
+  const logout = useLogout();
   const { data: pendingCount } = usePendingCount();
 
   return (
@@ -62,13 +72,28 @@ export function Rail() {
       <div className="rail-footer">
         <NavItem to="/settings" icon={<IconSettings />} label="Settings" />
         {me && (
-          <NavLink to="/settings" className="rail-user-chip">
-            <span className="rail-user-initials">{me.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
-            <span className="rail-user-info">
-              <span className="rail-user-name truncate">{me.name}</span>
-              <span className="rail-user-role">{me.role === "admin" ? "Admin" : "Viewer"}{me.canApprove ? " · approver" : ""}</span>
-            </span>
-          </NavLink>
+          <div className="rail-user-row">
+            <NavLink to="/settings" className="rail-user-chip">
+              <span className="rail-user-initials">{me.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
+              <span className="rail-user-info">
+                <span className="rail-user-name truncate">{me.name}</span>
+                <span className="rail-user-role">
+                  {ROLE_LABEL[me.role] ?? me.role}
+                  {me.canApprove ? " · approver" : ""}
+                </span>
+              </span>
+            </NavLink>
+            <button
+              type="button"
+              className="rail-logout"
+              aria-label="Sign out"
+              title="Sign out"
+              disabled={logout.isPending}
+              onClick={() => logout.mutate()}
+            >
+              <IconLogout />
+            </button>
+          </div>
         )}
       </div>
     </nav>

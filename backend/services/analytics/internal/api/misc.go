@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"campaigntrackerpro/platform/httpx"
-	"campaigntrackerpro/services/campaigns"
 )
 
 func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
@@ -15,24 +14,6 @@ func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": searchDTOs(results)})
-}
-
-type meDTO struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	Email      string `json:"email"`
-	Role       string `json:"role"`
-	CanApprove bool   `json:"canApprove"`
-}
-
-func (h *Handlers) Me(w http.ResponseWriter, r *http.Request) {
-	v, ok := httpx.UserFromContext(r.Context())
-	user, _ := v.(campaigns.User)
-	if !ok {
-		httpx.WriteJSON(w, http.StatusInternalServerError, httpx.Error{Error: "no user in context"})
-		return
-	}
-	httpx.WriteJSON(w, http.StatusOK, meDTO{ID: user.ID, Name: user.Name, Email: user.Email, Role: user.Role, CanApprove: user.CanApprove})
 }
 
 // Health reports each data source's status for the Settings screen's "Data

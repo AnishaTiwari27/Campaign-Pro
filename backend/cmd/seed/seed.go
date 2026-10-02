@@ -17,6 +17,7 @@ import (
 	"campaigntrackerpro/services/campaigns"
 	campaignsmod "campaigntrackerpro/services/campaigns/module"
 	creatorsmod "campaigntrackerpro/services/creators/module"
+	identitymod "campaigntrackerpro/services/identity/module"
 	"campaigntrackerpro/services/reports"
 	reportsmod "campaigntrackerpro/services/reports/module"
 
@@ -62,9 +63,30 @@ func main() {
 	camp := campaignsmod.New(db, logger)
 	cre := creatorsmod.New(db, camp.Service(), logger)
 	rep := reportsmod.New(db, camp.Service(), camp.Detector(), nil, logger, time.Minute)
+	ident := identitymod.New(db, noopAuditor{}, false, logger)
 
-	if _, err := camp.Store().CreateUser(ctx, cfg.AdminEmail, "Anisha T.", "admin", true); err != nil {
-		log.Fatalf("create admin user: %v", err)
+	// Fixture logins. The password is deliberately a loud placeholder: it
+	// exists so a demo can be signed into, and should never survive
+	// contact with a real deployment.
+	const demoPassword = "demo-password-change-me"
+	for _, u := range []struct {
+		email, name, role string
+		agency, approve   bool
+	}{
+		{cfg.AdminEmail, "Anisha T.", "admin", true, true},
+		{"approver@campaigntracker.test", "Rhea Nair", "approver", true, true},
+		{"analyst@campaigntracker.test", "Arjun Rao", "analyst", true, false},
+	} {
+		created, err := camp.Store().CreateUser(ctx, u.email, u.name, u.role, u.approve)
+		if err != nil {
+			log.Fatalf("create user %s: %v", u.email, err)
+		}
+		if err := camp.Store().SetUserAgency(ctx, created.ID, u.agency); err != nil {
+			log.Fatalf("set agency flag for %s: %v", u.email, err)
+		}
+		if err := ident.SetPassword(ctx, created.ID, demoPassword); err != nil {
+			log.Fatalf("set password for %s: %v", u.email, err)
+		}
 	}
 
 	brandCampaigns := campaignSeeds()
@@ -275,4 +297,12 @@ func campaignSeeds() []campaignSeed {
 		{"urban-company", "Urban Company", campaigns.SubjectBrand, "", "UC", "Services", "Bengaluru", campaigns.AdPerformance, "Meta Ads", campaigns.StatusEnded, 28, 52, 4700000, 5500000, 2.0, campaigns.ApprovalApproved, campaigns.CurveSlow, "urbancompany.com"},
 		{"ethos-watches", "Ethos Watches", campaigns.SubjectBrand, "", "EW", "Luxury", "Delhi NCR", campaigns.AdDisplay, "Google Display", campaigns.StatusScheduled, 0, 0, 0, 5000000, 0, campaigns.ApprovalApproved, campaigns.CurveSteady, "ethoswatches.com"},
 	}
+}
+
+// noopAuditor satisfies identity's auditor dependency during seeding;
+// there is no point recording "signed in" for fixture password writes.
+type noopAuditor struct{}
+
+func (noopAuditor) Record(ctx context.Context, userID, actor, action, entityType, entityID string) error {
+	return nil
 }

@@ -126,6 +126,33 @@
   padding-top: 10px;
 }
 
+.rail-user-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.rail-user-row .rail-user-chip { flex: 1; min-width: 0; }
+
+.rail-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.rail-logout:hover {
+  background: var(--crit-soft);
+  color: var(--crit);
+}
+
 .rail-user-chip {
   display: flex;
   align-items: center;
@@ -195,5 +222,10 @@
   }
   .rail-user-chip {
     justify-content: center;
+  }
+  /* The icon rail has no room for both; the chip links to settings where
+     sign-out is also available. */
+  .rail-logout {
+    display: none;
   }
 }
