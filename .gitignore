@@ -15,3 +15,6 @@ playwright-report/
 # Brand logos are fetched by scripts/fetch-logos.sh, not committed —
 # they're third-party marks and the script reproduces them.
 frontend/public/logos/
+
+# Vite dependency pre-bundling cache
+.vite/

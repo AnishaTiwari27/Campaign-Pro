@@ -5,7 +5,7 @@ SHELL := /bin/bash
 # stack through docker-compose where Docker is available.
 DATABASE_URL ?= postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro?sslmode=disable
 PORT ?= 8090
-MIGRATIONS := db/migrations
+MIGRATIONS := backend/db/migrations
 
 .PHONY: help dev dev-api dev-web dev-docker db-create migrate migrate-down seed logos test test-go test-web test-e2e lint fmt generate
 
@@ -27,7 +27,7 @@ dev:
 	wait
 
 dev-api:
-	DATABASE_URL="$(DATABASE_URL)" PORT=$(PORT) go run ./cmd/server
+	cd backend && DATABASE_URL="$(DATABASE_URL)" PORT=$(PORT) go run ./cmd/server
 
 dev-web:
 	cd frontend && npm run dev
@@ -51,15 +51,15 @@ logos:
 	./scripts/fetch-logos.sh
 
 seed:
-	DATABASE_URL="$(DATABASE_URL)" go run ./cmd/seed
+	cd backend && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/seed
 
 generate:
-	sqlc generate
+	cd backend && sqlc generate
 
 test: test-go test-web test-e2e
 
 test-go:
-	DATABASE_URL="$(DATABASE_URL)" go test ./...
+	cd backend && DATABASE_URL="$(DATABASE_URL)" go test ./...
 
 test-web:
 	cd frontend && npm run test
@@ -69,9 +69,9 @@ test-e2e: seed
 	cd frontend && npx playwright test
 
 lint:
-	go vet ./...
-	@test -z "$$(gofmt -l .)" || (echo "gofmt needed:"; gofmt -l .; exit 1)
+	cd backend && go vet ./...
+	@test -z "$$(cd backend && gofmt -l .)" || (echo "gofmt needed:"; cd backend && gofmt -l .; exit 1)
 	cd frontend && npm run lint
 
 fmt:
-	gofmt -w .
+	cd backend && gofmt -w .

@@ -89,7 +89,7 @@ isolation. `store/` maps sqlc's generated structs onto domain types at the
 boundary, so no `pgtype` escapes it. `service/` composes the two. `http/` only
 parses requests and writes DTOs.
 
-`frontend/src/lib/metrics.ts` mirrors `services/campaigns/metrics.go` so the
+`frontend/src/lib/metrics.ts` mirrors `backend/services/campaigns/metrics.go` so the
 frontend can rebuild a campaign's reach curve for its chart without the API
 precomputing chart-shaped data. Both sides are tested against the same
 fixtures.
@@ -192,7 +192,7 @@ All of these are ignored while you're typing in a field (except `⌘K`).
 make test
 ```
 
-- **Go** — `services/campaigns` covers every formula and the IST cadence maths
+- **Go** — `backend/services/campaigns` covers every formula and the IST cadence maths
   with no database. `internal/service` runs against a real Postgres (there's
   no Docker here, so `DATABASE_URL` stands in for testcontainers); each test
   uses `svctest-`prefixed rows and cleans up after itself, so it's safe to run
@@ -215,33 +215,34 @@ is the only thing aware of all of them. See [docs/ARCHITECTURE.md](docs/ARCHITEC
 
 ```
 campaign-tracker-pro/
-  cmd/
-    server/              composition root: builds and mounts the modules
-    seed/                the campaign + creator fixture
-  platform/              shared by every service, aware of none of them
-    config/              env loading
-    database/            pool, generated query set, pgtype conversions
-    httpx/               JSON envelope, error→status, middleware
-    mail/                Mailer interface + log implementation
-    units/               Indian unit formatting (lakh / crore)
-    arch/                tests that enforce the dependency rules
-  services/
-    campaigns/           Campaign type, every metric formula, anomalies, CSV
-    creators/            tier bucketing and tier-normalised performance
-    analytics/           overview, benchmarks, regions, search (owns no tables)
-    reports/             cadence maths, scheduler, run history
-      <service>/
-        *.go             public contract — the only thing siblings may import
-        module/          factory: the only way to construct the service
-        internal/
-          api/           parse request → call service → write DTO
-          service/       use cases
-          store/         sqlc rows → contract types
-  db/
-    migrations/          golang-migrate SQL
-    queries/             sqlc sources
-    gen/                 sqlc output (do not edit)
-  frontend/
+  backend/               everything Go; its own module
+    cmd/
+      server/            composition root: builds and mounts the modules
+      seed/              the campaign + creator fixture
+    platform/            shared by every service, aware of none of them
+      config/            env loading
+      database/          pool, generated query set, pgtype conversions
+      httpx/             JSON envelope, error→status, middleware
+      mail/              Mailer interface + log implementation
+      units/             Indian unit formatting (lakh / crore)
+      arch/              tests that enforce the dependency rules
+    services/
+      campaigns/         Campaign type, every metric formula, anomalies, CSV
+      creators/          tier bucketing and tier-normalised performance
+      analytics/         overview, benchmarks, regions, search (owns no tables)
+      reports/           cadence maths, scheduler, run history
+        <service>/
+          *.go           public contract — the only thing siblings may import
+          module/        factory: the only way to construct the service
+          internal/
+            api/         parse request → call service → write DTO
+            service/     use cases
+            store/       sqlc rows → contract types
+    db/
+      migrations/        golang-migrate SQL
+      queries/           sqlc sources
+      gen/               sqlc output (do not edit)
+  frontend/              everything React; its own package
     src/
       app/               router, layout shell, providers, Zustand stores
       api/               typed client + TanStack Query hooks
@@ -253,7 +254,7 @@ campaign-tracker-pro/
   docs/                  ARCHITECTURE.md
 ```
 
-Two rules hold the structure up, both tested in `platform/arch`:
+Two rules hold the structure up, both tested in `backend/platform/arch`:
 **platform never imports a service**, and **a service uses a sibling's
 public contract, never its internals** — the latter enforced by the Go
 toolchain via `internal/`.

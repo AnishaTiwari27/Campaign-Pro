@@ -21,7 +21,7 @@ services:
 
   api:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@db:5432/campaign_tracker_pro?sslmode=disable

@@ -10,7 +10,7 @@ them.
                          └────────────────┬─────────────────┘
                                           │  /api proxied to :8090
                                           ▼
-   ┌──────────────────────────────────────────────────────────────────┐
+   ╔══ backend/ ══════════════════════════════════════════════════════╗
    │  cmd/server      composition root — builds and mounts modules    │
    └───────┬──────────────┬───────────────┬───────────────┬───────────┘
            ▼              ▼               ▼               ▼
@@ -30,7 +30,7 @@ them.
    ┌──────────────────────────────────────────────────────────────────┐
    │  platform/   config · database · httpx · mail · units · arch     │
    │              shared by every service, aware of none of them      │
-   └──────────────────────────────┬───────────────────────────────────┘
+   ╚══════════════════════════════╤═══════════════════════════════════╝
                                   ▼
                         ┌──────────────────┐
                         │   Postgres 16    │   db/ migrations · queries · gen
@@ -50,7 +50,7 @@ which the Go toolchain refuses to let any other service — or `cmd/server` —
 import. The only way in is the contract at the service root and the factory
 in `module/`.
 
-Both rules are tested in `platform/arch/boundaries_test.go`, and those tests
+Both rules are tested in `backend/platform/arch/boundaries_test.go`, and those tests
 have been verified to fail when violated rather than merely to pass.
 
 ## Why one process
@@ -65,7 +65,7 @@ already has a factory, its own store, and no reach into anyone else's code.
 ## Layering inside a service
 
 ```
-services/campaigns/
+backend/services/campaigns/
   campaign.go  metrics.go  contract.go  dto.go  csv.go   ← public contract
   module/                                                 ← factory
   internal/
@@ -87,7 +87,7 @@ declares the narrow interface it needs, and the composition root supplies
 something that satisfies it:
 
 ```go
-// services/creators/internal/service — creators says what it needs
+// backend/services/creators/internal/service — creators says what it needs
 type CampaignReader interface {
     All(ctx context.Context) ([]campaigns.Campaign, error)
     Enrich(ctx context.Context, all []campaigns.Campaign) map[string]campaigns.CampaignRow
@@ -116,7 +116,7 @@ truth to drift.
 
 ## Composition root
 
-`cmd/server/main.go` is the only file that knows all four services exist.
+`backend/cmd/server/main.go` is the only file that knows all four services exist.
 It builds the platform, then hands each factory its dependencies in graph
 order, then mounts whatever each module exposes:
 
@@ -133,7 +133,7 @@ platform need not know which service owns users.
 
 ## Data
 
-`db/` holds migrations, the sqlc query sources, and the generated code —
+`backend/db/` holds migrations, the sqlc query sources, and the generated code —
 one schema, shared. Each service's store runs only its own queries, which
 is enforced by the package being internal rather than by separate
 credentials.
