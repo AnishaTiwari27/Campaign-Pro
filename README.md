@@ -12,8 +12,9 @@ Go + chi + Postgres on the back, React + TypeScript + Vite on the front.
 ## Running it
 
 The verified path is native Postgres — the machine this was built on has no
-Docker, so `docker-compose.yml` and `api/Dockerfile` are written to spec but
-have never been executed. Use them as a starting point, not a tested artifact.
+Docker, so `docker-compose.yml` and `backend/Dockerfile` (reachable via
+`make dev-docker`) are written to spec but have never been executed. Use them
+as a starting point, not a tested artifact.
 
 **Prerequisites:** Go 1.25+, Node 20+, PostgreSQL 16, and
 [`golang-migrate`](https://github.com/golang-migrate/migrate) (`brew install golang-migrate`).
@@ -21,20 +22,33 @@ have never been executed. Use them as a starting point, not a tested artifact.
 
 ```bash
 make db-create   # creates the campaign_tracker_pro database + role
-make migrate     # applies api/internal/db/migrations
-make seed        # 24 campaigns, 3 reports, the admin user
+make migrate     # applies backend/db/migrations
+make seed        # 35 campaigns, 7 creators, 3 reports, 3 users
 make dev         # api on :8090, web on :5173
 ```
 
-Then open the web dev server (Vite prints the port — 5173 unless taken).
+Then open the web dev server (Vite prints the port — 5173 unless taken) and
+sign in. `make seed` writes three accounts, all sharing one password that is a
+deliberately loud placeholder and should never reach a real deployment:
+
+| Email | Role | Can approve? |
+|---|---|---|
+| `$ADMIN_EMAIL` (default `anishatiwari695@gmail.com`) | admin | yes |
+| `approver@campaigntracker.test` | approver | yes |
+| `analyst@campaigntracker.test` | analyst | no — every decision control is hidden, and the API returns `403` |
+
+Password for all three: `demo-password-change-me`.
 
 | Target | What it does |
 |---|---|
-| `make dev` | API and web together |
+| `make dev` | API and web together (`dev-api` / `dev-web` run one at a time) |
+| `make migrate` · `make migrate-down` | Apply migrations · roll back one |
 | `make seed` | Truncate and reseed demo data |
-| `make test` | Go tests, Vitest, Playwright |
-| `make lint` | `go vet`, `gofmt` check, ESLint |
-| `make generate` | Regenerate sqlc code from `internal/db/queries` |
+| `make logos` | Fetch brand logos once into `frontend/public/logos` |
+| `make test` | Go tests, Vitest, Playwright — **note this reseeds**, since `test-e2e` depends on `seed` |
+| `make lint` · `make fmt` | `go vet` + `gofmt` check + ESLint · rewrite with `gofmt` |
+| `make generate` | Regenerate sqlc code from `backend/db/queries` |
+| `make dev-docker` | The whole stack via docker-compose (untested — see above) |
 
 ### Configuration
 
@@ -44,50 +58,55 @@ Then open the web dev server (Vite prints the port — 5173 unless taken).
 | `PORT` | `8090` |
 | `TZ` | `Asia/Kolkata` |
 | `MAIL_MODE` | `log` (the only implementation; writes the send to the log) |
-| `ADMIN_EMAIL` | `anishatiwari695@gmail.com` — the seeded user auth loads onto every request |
+| `SECURE_COOKIES` | `false` — must be `true` anywhere served over HTTPS, so the session cookie is not sent in clear |
+| `ADMIN_EMAIL` | `anishatiwari695@gmail.com` — the email `make seed` gives the admin account. Read by the seeder only; the running server does not treat it as privileged |
 
 ---
 
 ## Architecture
 
 ```
-                      ┌──────────────────────────────┐
-  browser  ─────────▶ │  web (Vite dev server :5173) │
-                      │  React 18 · TS · Router v6   │
-                      │  TanStack Query · Zustand    │
-                      └───────────────┬──────────────┘
-                                      │ /api proxied to :8090
-                                      ▼
-                      ┌──────────────────────────────┐
-                      │  api (:8090)                 │
-                      │                              │
-                      │  http/     handlers, router, │
-                      │            auth, CORS, DTOs  │
-                      │     ▼                        │
-                      │  service/  use cases:        │
-                      │            campaigns,        │
-                      │            overview, reports,│
-                      │            anomalies, search │
-                      │     ▼           ▼            │
-                      │  domain/     store/          │
-                      │  formulas,   sqlc queries    │
-                      │  no deps     → domain types  │
-                      │                 │            │
-                      │  worker/  ticker: anomaly    │
-                      │           detection + report │
-                      │           scheduling         │
-                      └─────────────────┬────────────┘
-                                        ▼
-                               ┌──────────────────┐
-                               │  Postgres 16     │
-                               └──────────────────┘
+                ┌────────────────────────────────────┐
+  browser ────▶ │  frontend (Vite dev server :5173)  │
+                │  React 18 · TS · Router v6         │
+                │  TanStack Query · Zustand          │
+                └─────────────────┬──────────────────┘
+                                  │ /api proxied to :8090
+                                  ▼
+  ╔══ backend (:8090) ═══════════════════════════════════════════╗
+  ║  cmd/server   composition root — the only file that knows     ║
+  ║               all five services exist                         ║
+  ╟───────┬──────────┬──────────┬───────────┬────────────────────╢
+  ║   identity   campaigns   creators   analytics   reports       ║
+  ║   sessions,  the core    tier       overview,   cadence,      ║
+  ║   roles,     data +      metrics    benchmarks, scheduler,    ║
+  ║   login      formulas               regions,    run history   ║
+  ║                                     search                    ║
+  ║      each: contract · module/ (factory) · internal/{api,      ║
+  ║            service, store}                                    ║
+  ╟───────────────────────────────────────────────────────────────╢
+  ║  platform   config · database · httpx · mail · units · arch    ║
+  ║             shared by every service, aware of none of them     ║
+  ║  reports' worker ticks every 30s: anomaly detection, then      ║
+  ║  any report whose next occurrence has passed                   ║
+  ╚═══════════════════════════┬═══════════════════════════════════╝
+                              ▼
+                     ┌──────────────────┐
+                     │   Postgres 16    │
+                     └──────────────────┘
 ```
 
-**The layering rule:** `domain/` holds every metric formula and imports
-nothing but the standard library, so the formulas are unit-testable in
-isolation. `store/` maps sqlc's generated structs onto domain types at the
-boundary, so no `pgtype` escapes it. `service/` composes the two. `http/` only
-parses requests and writes DTOs.
+**The layering rule, per service:** the contract at the service root holds
+what crosses a boundary — the types siblings receive and every metric formula,
+importing nothing but the standard library so the formulas are unit-testable
+with no database. `internal/store` maps sqlc's generated structs onto contract
+types at the boundary, so no `pgtype` escapes it. `internal/service` composes
+the two and owns the sentinel errors. `internal/api` only parses requests and
+writes DTOs. Everything under `internal/` is unreachable from any other
+service, enforced by the Go toolchain rather than by convention.
+
+Full detail, including why this is one process rather than eight, is in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 `frontend/src/lib/metrics.ts` mirrors `backend/services/campaigns/metrics.go` so the
 frontend can rebuild a campaign's reach curve for its chart without the API
@@ -105,6 +124,8 @@ an approver trying to approve a campaign whose budget state forbids it gets
 
 | Method | Path | Purpose |
 |---|---|---|
+| POST | `/auth/login` | `{email, password}` → sets the session cookie. **The only route outside the session guard** — requiring a session to sign in would be circular |
+| POST | `/auth/logout` | Revokes the session server-side, then clears the cookie |
 | GET | `/campaigns` | List. Params: `q, type, category, region, adType, status, approval, range(7\|30), sort, dir, page, per`. Returns `{items, total, page, pages}` with pace, cpm, index and categoryIndex derived per row. |
 | GET | `/campaigns/:id` | Full record + creatives + audit + 5 similar + `position`/`total`/`prevId`/`nextId` within the caller's current filter+sort |
 | POST | `/campaigns/:id/decision` | `{action: approve\|reject\|reopen}` |
@@ -115,6 +136,7 @@ an approver trying to approve a campaign whose budget state forbids it gets
 | GET | `/campaigns/export.csv` | Same filters as the list, as a CSV download |
 | GET | `/overview` | KPIs, sparkline series, spotlight, and the four ribbons |
 | GET | `/benchmark` | Category benchmarks + MED_ALL |
+| GET | `/creators` · `/creators/:id` | The roster with tier-normalised performance; detail adds that creator's campaigns |
 | GET | `/regions` · `/regions/:id` | Rollups; detail adds campaigns by reach, category breakdown, pending count, budget share |
 | GET/POST | `/reports` | List (with each report's last run) · create from a filter snapshot |
 | GET/PATCH | `/reports/:id` | Read · edit name, enabled, cadence, recipients, columns |
@@ -122,19 +144,60 @@ an approver trying to approve a campaign whose budget state forbids it gets
 | POST | `/reports/:id/run` | Run now — emails real recipients, writes a run row |
 | POST | `/reports/:id/test` | Send a copy to the caller only; no run row |
 | GET | `/search?q=` | Command palette: sections, campaigns, regions, actions |
-| GET | `/me` · `/health` | Current user · data-source health |
+| GET | `/me` | The signed-in account: role, `isAgency`, `canApprove`, `isClient` |
+| GET | `/health` | Data-source health. Mounted twice: at `/health` **outside** the guard, so a readiness probe needs no credentials, and at `/api/health` behind it |
 
-**Auth** is a stub: middleware loads the seeded admin onto every request's
-context. Handlers read the caller via `UserFromContext` and `can_approve` is
-enforced server-side, so swapping in real SSO later doesn't touch handlers.
+### Auth and roles
+
+Sessions are real and server-side. `POST /auth/login` verifies the password,
+stores a session row and sets an HTTP-only cookie; `POST /auth/logout` deletes
+the row before clearing the cookie, so logout genuinely revokes access where a
+JWT would stay valid until expiry no matter what the user clicked. Only the
+token's hash is stored, so a dump of the table hands nobody a working session.
+Login failures return one message for both a wrong password and an unknown
+email, so the response cannot be used to enumerate accounts. Sessions last
+seven days (`identity.SessionTTL`).
+
+`httpx.RequireSession` resolves the cookie to a principal and puts it on the
+request context; handlers read it with `UserFromContext`. Platform takes the
+lookup as a `SessionAuthenticator` interface, so it never learns which service
+owns users.
+
+The role model lives in `backend/services/identity/identity.go`, and every
+permission is a method on `User` rather than a check scattered through
+handlers:
+
+| Role | Reads | Decides | Manages users |
+|---|---|---|---|
+| `admin` | everything | yes | intended, **not implemented** |
+| `approver` | everything | yes | no |
+| `analyst` | everything | no | no |
+| `client` | own account only — **not implemented** | never, by design | no |
+| `viewer` | legacy, behaves as `analyst`; kept so pre-migration rows stay meaningful | no | no |
+
+- `CanApprove()` is `isAgency && (admin || approver)`, enforced in the service
+  layer, not just hidden in the UI. A client never approves whatever else is
+  granted: sign-off is the agency's control over spend, and a client approving
+  their own campaign defeats it.
+- Two honest gaps. `CanManageUsers()` is defined and never called: there is no
+  user-management endpoint or screen, so accounts come from `make seed` only.
+  And `IsClient()` is called once, to populate `/me`, but nothing acts on what
+  it returns. Client scoping is designed and not built: restricting an external
+  user to their own accounts, suppressing benchmarks and stripping competitor
+  names all remain to do, and there is no `client` user in the seed. Today this
+  is an internal agency console with two effective permission levels — decide,
+  or read-only.
+- There is also no `created_by` on a campaign, so nothing can tell who
+  submitted one. Four-eyes approval — stopping someone signing off their own
+  submission — needs that column before it can be enforced.
 
 ---
 
 ## Metrics
 
 Units: **reach is stored in lakh** (1L = 100,000 people); **money is whole
-rupees**. Defined once in `services/campaigns/`, mirrored in
-`web/src/lib/`.
+rupees**. Defined once in `backend/services/campaigns/metrics.go`, mirrored in
+`frontend/src/lib/metrics.ts`.
 
 | Metric | Definition |
 |---|---|
@@ -159,8 +222,9 @@ Two deliberate modelling notes:
   each campaign's own reach curve backwards, and **spend is assumed to accrue
   on the same curve shape as reach** — the only timing model a campaign has.
 - Anomaly flags are never seeded by hand. `make seed` writes campaigns and
-  then runs the real detector, so the ~6 flagged campaigns are whatever the
-  formulas actually produce from the seeded numbers.
+  then runs the real detector, so the 6 flagged campaigns are whatever the
+  formulas actually produce from the seeded numbers — change a seeded budget
+  and that number changes with it.
 
 ### The audit trail
 
@@ -173,6 +237,12 @@ a trail, while a label alone cannot be joined back to an account. The HTTP
 layer builds that pair once, in `actorOf`, and the store takes the user id as a
 required parameter so a caller cannot write an unattributed decision by
 omission. Rows the system wrote (anomaly flags) have no `user_id`.
+
+Sign-ins, failed sign-ins and sign-outs land in the same table, written by
+identity through a one-method `Auditor` capability that the composition root
+satisfies with a bridge — so identity records security events without importing
+the service that owns the table. Those rows hang off no campaign, which is why
+`campaign_id` is nullable and `entity_type` / `entity_id` exist.
 
 ### Approval guard
 
@@ -229,17 +299,32 @@ All of these are ignored while you're typing in a field (except `⌘K`).
 make test
 ```
 
-- **Go** — `backend/services/campaigns` covers every formula and the IST cadence maths
-  with no database. `internal/service` runs against a real Postgres (there's
-  no Docker here, so `DATABASE_URL` stands in for testcontainers); each test
-  uses `svctest-`prefixed rows and cleans up after itself, so it's safe to run
-  alongside seeded data.
+`make test` runs all three suites, and reseeds on the way through — `test-e2e`
+depends on `seed`, so don't run it against anything you want to keep.
+
+- **Go** — `backend/services/campaigns` and `backend/services/reports` cover
+  every formula and the IST cadence maths with no database.
+  `backend/services/campaigns/internal/service` runs against a real Postgres
+  (there's no Docker here, so `DATABASE_URL` stands in for testcontainers);
+  each test uses `svctest-`prefixed rows and its own user, and cleans both up
+  after itself, so it's safe to run alongside seeded data.
+  `backend/platform/arch` enforces the two dependency rules, and those tests
+  have been verified to fail when violated rather than merely to pass.
 - **Vitest** — `frontend/src/lib/*.test.ts` checks the TypeScript mirrors of the
-  formulas and the Indian-unit formatting.
-- **Playwright** — one smoke test (`frontend/tests/approve.spec.ts`) approves a
-  campaign starting from Overview and asserts the decision reaches the
-  approvals queue, the rail badge and the overview counts. It drives the
-  Chrome for Testing build in the local Playwright cache; override with
+  formulas and the Indian-unit formatting, against the same boundary cases as
+  their Go counterparts.
+- **Playwright** — three specs in `frontend/tests`, run serially against a
+  freshly seeded database because they share one pending queue and would
+  otherwise race each other's counts. `auth.spec.ts` covers a signed-out
+  visitor getting the sign-in screen, a wrong password rejected without
+  revealing whether the account exists, logout revoking the session so Back
+  cannot restore it, and an analyst reading everything while shown no approval
+  controls. `approve.spec.ts` approves a campaign from Overview and from the
+  "Your call" ribbon, asserting the decision reaches the approvals queue, the
+  rail badge and the overview counts. `tabswitch.spec.ts` is the regression
+  test for focus-triggered refetches discarding what you had typed, on both the
+  sign-in form and the campaigns filters. They drive
+  the Chrome for Testing build in the local Playwright cache; override with
   `PLAYWRIGHT_CHROMIUM_PATH`, and point at a different origin with
   `E2E_BASE_URL`.
 
@@ -247,34 +332,37 @@ make test
 
 ## Repository layout
 
-T-shaped: one shared platform, four deep services, a composition root that
+T-shaped: one shared platform, five deep services, a composition root that
 is the only thing aware of all of them. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```
 campaign-tracker-pro/
   backend/               everything Go; its own module
+    Dockerfile           written to spec, never executed (no Docker here)
     cmd/
       server/            composition root: builds and mounts the modules
-      seed/              the campaign + creator fixture
+      seed/              the campaign, creator and account fixtures
     platform/            shared by every service, aware of none of them
       config/            env loading
       database/          pool, generated query set, pgtype conversions
-      httpx/             JSON envelope, error→status, middleware
+      httpx/             JSON envelope, error→status, session middleware
       mail/              Mailer interface + log implementation
       units/             Indian unit formatting (lakh / crore)
       arch/              tests that enforce the dependency rules
     services/
+      identity/          sessions, password auth, roles and permissions
       campaigns/         Campaign type, every metric formula, anomalies, CSV
       creators/          tier bucketing and tier-normalised performance
       analytics/         overview, benchmarks, regions, search (owns no tables)
       reports/           cadence maths, scheduler, run history
-        <service>/
-          *.go           public contract — the only thing siblings may import
-          module/        factory: the only way to construct the service
-          internal/
-            api/         parse request → call service → write DTO
-            service/     use cases
-            store/       sqlc rows → contract types
+
+      ...and inside each one:
+        *.go             public contract — the only thing siblings may import
+        module/          factory: the only way to construct the service
+        internal/        unreachable from any sibling, per the Go toolchain
+          api/           parse request → call service → write DTO
+          service/       use cases; owns the sentinel errors
+          store/         sqlc rows → contract types
     db/
       migrations/        golang-migrate SQL
       queries/           sqlc sources

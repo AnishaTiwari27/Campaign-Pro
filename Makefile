@@ -14,7 +14,7 @@ help:
 	@echo "make db-create    - create the local database + role"
 	@echo "make migrate      - apply migrations"
 	@echo "make seed         - truncate and reseed demo data"
-	@echo "make logos        - fetch brand logos into web/public/logos"
+	@echo "make logos        - fetch brand logos into frontend/public/logos"
 	@echo "make test         - go tests + vitest + playwright"
 	@echo "make lint         - go vet + gofmt check + eslint"
 	@echo "make generate     - regenerate sqlc code"

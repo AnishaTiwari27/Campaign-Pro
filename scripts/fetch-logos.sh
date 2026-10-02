@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fetches brand logos once into web/public/logos/ so the app serves them
+# Fetches brand logos once into frontend/public/logos/ so the app serves them
 # itself rather than hotlinking a third party on every render — that keeps
 # the UI working offline and avoids hammering someone else's endpoint.
 #
