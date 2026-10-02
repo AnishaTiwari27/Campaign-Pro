@@ -5,7 +5,7 @@ SHELL := /bin/bash
 # stack through docker-compose where Docker is available.
 DATABASE_URL ?= postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro?sslmode=disable
 PORT ?= 8090
-MIGRATIONS := api/internal/db/migrations
+MIGRATIONS := db/migrations
 
 .PHONY: help dev dev-api dev-web dev-docker db-create migrate migrate-down seed logos test test-go test-web test-e2e lint fmt generate
 
@@ -27,10 +27,10 @@ dev:
 	wait
 
 dev-api:
-	cd api && DATABASE_URL="$(DATABASE_URL)" PORT=$(PORT) go run ./cmd/server
+	DATABASE_URL="$(DATABASE_URL)" PORT=$(PORT) go run ./cmd/server
 
 dev-web:
-	cd web && npm run dev
+	cd frontend && npm run dev
 
 dev-docker:
 	docker compose up --build
@@ -51,27 +51,27 @@ logos:
 	./scripts/fetch-logos.sh
 
 seed:
-	cd api && DATABASE_URL="$(DATABASE_URL)" go run ./seed
+	DATABASE_URL="$(DATABASE_URL)" go run ./cmd/seed
 
 generate:
-	cd api && sqlc generate
+	sqlc generate
 
 test: test-go test-web test-e2e
 
 test-go:
-	cd api && DATABASE_URL="$(DATABASE_URL)" go test ./...
+	DATABASE_URL="$(DATABASE_URL)" go test ./...
 
 test-web:
-	cd web && npm run test
+	cd frontend && npm run test
 
 # Playwright drives the running dev servers, so seed first for a known state.
 test-e2e: seed
-	cd web && npx playwright test
+	cd frontend && npx playwright test
 
 lint:
-	cd api && go vet ./...
-	@test -z "$$(cd api && gofmt -l .)" || (echo "gofmt needed:"; cd api && gofmt -l .; exit 1)
-	cd web && npm run lint
+	go vet ./...
+	@test -z "$$(gofmt -l .)" || (echo "gofmt needed:"; gofmt -l .; exit 1)
+	cd frontend && npm run lint
 
 fmt:
-	cd api && gofmt -w .
+	gofmt -w .

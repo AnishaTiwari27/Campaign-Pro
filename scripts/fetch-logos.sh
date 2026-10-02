@@ -10,7 +10,7 @@
 # the UI falls back to a generated avatar for those brands.
 set -uo pipefail
 
-OUT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/web/public/logos"
+OUT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/frontend/public/logos"
 MIN_BYTES=${MIN_BYTES:-1200}
 mkdir -p "$OUT"
 

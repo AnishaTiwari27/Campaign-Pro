@@ -89,7 +89,7 @@ isolation. `store/` maps sqlc's generated structs onto domain types at the
 boundary, so no `pgtype` escapes it. `service/` composes the two. `http/` only
 parses requests and writes DTOs.
 
-`web/src/lib/metrics.ts` mirrors `api/internal/domain/metrics.go` so the
+`frontend/src/lib/metrics.ts` mirrors `services/campaigns/metrics.go` so the
 frontend can rebuild a campaign's reach curve for its chart without the API
 precomputing chart-shaped data. Both sides are tested against the same
 fixtures.
@@ -131,7 +131,7 @@ enforced server-side, so swapping in real SSO later doesn't touch handlers.
 ## Metrics
 
 Units: **reach is stored in lakh** (1L = 100,000 people); **money is whole
-rupees**. Defined once in `api/internal/domain/`, mirrored in
+rupees**. Defined once in `services/campaigns/`, mirrored in
 `web/src/lib/`.
 
 | Metric | Definition |
@@ -192,14 +192,14 @@ All of these are ignored while you're typing in a field (except `⌘K`).
 make test
 ```
 
-- **Go** — `internal/domain` covers every formula and the IST cadence maths
+- **Go** — `services/campaigns` covers every formula and the IST cadence maths
   with no database. `internal/service` runs against a real Postgres (there's
   no Docker here, so `DATABASE_URL` stands in for testcontainers); each test
   uses `svctest-`prefixed rows and cleans up after itself, so it's safe to run
   alongside seeded data.
-- **Vitest** — `web/src/lib/*.test.ts` checks the TypeScript mirrors of the
+- **Vitest** — `frontend/src/lib/*.test.ts` checks the TypeScript mirrors of the
   formulas and the Indian-unit formatting.
-- **Playwright** — one smoke test (`web/tests/approve.spec.ts`) approves a
+- **Playwright** — one smoke test (`frontend/tests/approve.spec.ts`) approves a
   campaign starting from Overview and asserts the decision reaches the
   approvals queue, the rail badge and the overview counts. It drives the
   Chrome for Testing build in the local Playwright cache; override with
@@ -210,23 +210,38 @@ make test
 
 ## Repository layout
 
+T-shaped: one shared platform, four deep services, a composition root that
+is the only thing aware of all of them. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ```
 campaign-tracker-pro/
-  api/
-    cmd/server/          entrypoint: router + worker
-    internal/
-      config/            env loading
-      db/
-        migrations/      golang-migrate SQL
-        queries/         sqlc source queries
-        gen/             sqlc output (do not edit)
-      domain/            types + every metric formula, no external deps
-      store/             sqlc → domain mapping
-      service/           campaigns, overview, reports, anomalies, search, CSV
-      http/              handlers, middleware, router, DTOs
-      worker/            anomaly + report ticker
-    seed/                the 24-campaign fixture
-  web/
+  cmd/
+    server/              composition root: builds and mounts the modules
+    seed/                the campaign + creator fixture
+  platform/              shared by every service, aware of none of them
+    config/              env loading
+    database/            pool, generated query set, pgtype conversions
+    httpx/               JSON envelope, error→status, middleware
+    mail/                Mailer interface + log implementation
+    units/               Indian unit formatting (lakh / crore)
+    arch/                tests that enforce the dependency rules
+  services/
+    campaigns/           Campaign type, every metric formula, anomalies, CSV
+    creators/            tier bucketing and tier-normalised performance
+    analytics/           overview, benchmarks, regions, search (owns no tables)
+    reports/             cadence maths, scheduler, run history
+      <service>/
+        *.go             public contract — the only thing siblings may import
+        module/          factory: the only way to construct the service
+        internal/
+          api/           parse request → call service → write DTO
+          service/       use cases
+          store/         sqlc rows → contract types
+  db/
+    migrations/          golang-migrate SQL
+    queries/             sqlc sources
+    gen/                 sqlc output (do not edit)
+  frontend/
     src/
       app/               router, layout shell, providers, Zustand stores
       api/               typed client + TanStack Query hooks
@@ -235,4 +250,10 @@ campaign-tracker-pro/
       lib/               format, metrics, keyboard, URL params
       styles/            tokens.css, base.css
     tests/               Playwright
+  docs/                  ARCHITECTURE.md
 ```
+
+Two rules hold the structure up, both tested in `platform/arch`:
+**platform never imports a service**, and **a service uses a sibling's
+public contract, never its internals** — the latter enforced by the Go
+toolchain via `internal/`.

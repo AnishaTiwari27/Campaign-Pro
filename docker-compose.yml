@@ -21,7 +21,7 @@ services:
 
   api:
     build:
-      context: ./api
+      context: .
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@db:5432/campaign_tracker_pro?sslmode=disable
@@ -42,7 +42,7 @@ services:
     environment:
       VITE_API_PROXY_TARGET: http://api:8090
     volumes:
-      - ./web:/app
+      - ./frontend:/app
       - web-node-modules:/app/node_modules
     ports:
       - "5173:5173"
