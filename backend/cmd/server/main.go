@@ -21,6 +21,7 @@ import (
 	creators "campaigntrackerpro/services/creators/module"
 	identity "campaigntrackerpro/services/identity/module"
 	reports "campaigntrackerpro/services/reports/module"
+	"campaigntrackerpro/web"
 )
 
 const workerTick = 30 * time.Second
@@ -31,6 +32,15 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// Schema first, before anything queries it. A deploy to a blank database
+	// has to come up working, and the alternative — remembering to run the
+	// migrate CLI by hand against production — is the kind of step that gets
+	// skipped exactly once.
+	if err := database.Migrate(cfg.DatabaseURL, logger); err != nil {
+		logger.Error("failed to migrate database", "err", err)
+		os.Exit(1)
+	}
 
 	pool, err := database.Connect(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -56,8 +66,16 @@ func main() {
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 
+	// Said once, loudly: an image built without the frontend serves a notice
+	// page on every route, and that is far easier to diagnose from a log line
+	// than from a browser.
+	if !web.Built() {
+		logger.Warn("no frontend build embedded — serving the placeholder notice; " +
+			"use the root Dockerfile or `make build-web` to embed the real app")
+	}
+
 	go func() {
-		logger.Info("server listening", "port", cfg.Port)
+		logger.Info("server listening", "port", cfg.Port, "frontend", web.Built())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Error("server error", "err", err)
 			os.Exit(1)

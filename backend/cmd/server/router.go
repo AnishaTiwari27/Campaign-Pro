@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"campaigntrackerpro/platform/httpx"
+	"campaigntrackerpro/web"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -53,6 +54,13 @@ func newRouter(health http.HandlerFunc, auth publicMountable,
 			}
 		})
 	})
+
+	// Everything that is not the API is the single-page app, served from the
+	// same origin so the SameSite=Lax session cookie is sent with every
+	// request. This is registered last and as the fallback, so it can never
+	// shadow a route a service owns. /api and /health are passed through as
+	// prefixes the SPA must not answer for, keeping their 404s JSON.
+	r.NotFound(web.Handler("/api", "/health").ServeHTTP)
 
 	return r
 }

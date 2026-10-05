@@ -1,0 +1,16 @@
+# Never ship or invalidate the cache on these.
+.git
+.github
+node_modules
+frontend/node_modules
+frontend/dist
+frontend/test-results
+frontend/tsconfig.tsbuildinfo
+backend/web/dist
+bin
+docs
+*.md
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml

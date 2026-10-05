@@ -1,0 +1,39 @@
+# Render Blueprint: the deploy as code, so the service can be recreated
+# without re-clicking the dashboard.
+#
+# Deliberately one web service and no database. Render's free Postgres
+# expires 30 days after creation and is then deleted, so the database lives
+# on Neon's free plan instead, which is permanent. DATABASE_URL is the Neon
+# connection string, entered once at Blueprint creation.
+#
+# Known free-plan trade-off: the service sleeps after ~15 minutes idle and
+# takes about a minute to wake. While it sleeps, the in-process worker is not
+# running, so scheduled reports do not fire on time and anomaly detection
+# only runs when someone is using the app. That is acceptable for demos and
+# is the thing to fix first when this becomes real.
+services:
+  - type: web
+    name: campaign-tracker-pro
+    runtime: docker
+    plan: free
+    # Closest Render region to the Indian market this app reports on.
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    # The build needs both halves of the repo, so the context is the root.
+    dockerContext: .
+    # Outside the session guard precisely so a probe needs no credentials.
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Neon's pooled connection string, including ?sslmode=require.
+      - key: DATABASE_URL
+        sync: false
+      # Served over HTTPS, so the session cookie must carry Secure.
+      - key: SECURE_COOKIES
+        value: "true"
+      # Every report cadence is computed in IST.
+      - key: TZ
+        value: Asia/Kolkata
+      # The only mailer implemented; it writes the send to the log.
+      - key: MAIL_MODE
+        value: log

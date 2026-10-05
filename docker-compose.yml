@@ -1,7 +1,10 @@
-# Written to the spec, but NOT verified: the machine this repo was built on
-# has no Docker. The verified path is the native one — see the Makefile and
-# README ("Running it"). Treat this file as a starting point, not a tested
-# artifact.
+# Runs the production image locally against a throwaway Postgres — the same
+# single container that gets deployed, so what you test here is what ships.
+#
+# Still unverified on this machine: it has no Docker. Treat a first run as a
+# test of this file as much as of the app.
+#
+#   docker compose up --build   then open http://localhost:8090
 services:
   db:
     image: postgres:16
@@ -19,36 +22,28 @@ services:
       timeout: 3s
       retries: 10
 
-  api:
+  app:
+    # One service, not two: the Go binary serves the API and the built
+    # frontend from the same origin. See the Dockerfile for why that matters.
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
     environment:
       DATABASE_URL: postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@db:5432/campaign_tracker_pro?sslmode=disable
       PORT: "8090"
       TZ: Asia/Kolkata
       MAIL_MODE: log
-      ADMIN_EMAIL: anishatiwari695@gmail.com
+      # Off here only because local compose is plain http. Any real deployment
+      # must set this true, or the session cookie goes out without Secure.
+      SECURE_COOKIES: "false"
     ports:
       - "8090:8090"
     depends_on:
       db:
         condition: service_healthy
-
-  web:
-    image: node:22-alpine
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    environment:
-      VITE_API_PROXY_TARGET: http://api:8090
-    volumes:
-      - ./frontend:/app
-      - web-node-modules:/app/node_modules
-    ports:
-      - "5173:5173"
-    depends_on:
-      - api
+    # The server migrates on boot, so a fresh volume comes up with a schema.
+    # To load demo data as well, once the stack is up:
+    #   docker compose exec app createuser -email you@example.com -name 'You'
 
 volumes:
   db-data:
-  web-node-modules:

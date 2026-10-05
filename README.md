@@ -44,7 +44,7 @@ Password for all three: `demo-password-change-me`.
 | `make dev` | API and web together (`dev-api` / `dev-web` run one at a time) |
 | `make migrate` · `make migrate-down` | Apply migrations · roll back one |
 | `make seed` | Truncate and reseed demo data |
-| `make logos` | Fetch brand logos once into `frontend/public/logos` |
+| `make logos` | Re-fetch brand logos into `frontend/public/logos`. They are committed, so this is only needed when adding a brand — a build must not depend on fetching them |
 | `make test` | Go tests, Vitest, Playwright — **note this reseeds**, since `test-e2e` depends on `seed` |
 | `make lint` · `make fmt` | `go vet` + `gofmt` check + ESLint · rewrite with `gofmt` |
 | `make generate` | Regenerate sqlc code from `backend/db/queries` |
@@ -276,6 +276,94 @@ across years. `on_flag` has no calendar schedule; the worker fires those
 reports immediately after anomaly detection newly flags something, well inside
 the "within 15 min" bound. An `on_flag` report's rows come from the flagged
 set rather than its saved filter snapshot.
+
+---
+
+## Deployment
+
+One container serves both halves. `npm run build` output is embedded into the
+Go binary (`backend/web`), which serves the API on `/api`, the health probe on
+`/health`, and the React app on everything else.
+
+This is not just tidy packaging. The session cookie is `SameSite=Lax` and the
+fetch client sends no cross-origin credentials, so hosting the frontend on a
+separate origin would break sign-in. Making that work would mean
+`SameSite=None` (weaker — that is what CSRF protection is), `AllowCredentials:
+true`, an origin allowlist and `credentials: "include"`. Same origin needs none
+of it, and because `client.ts` calls `/api` as a relative path, the frontend
+needs no build-time configuration at all.
+
+```
+make build          # frontend -> backend/web/dist -> ./bin/server
+./bin/server        # the whole app on one port
+```
+
+The same shape runs on any container host, so moving from a free tier to AWS
+(App Runner, ECS/Fargate, Elastic Beanstalk) is a hosting change, not a
+rewrite.
+
+### What the image does on boot
+
+1. **Applies migrations** from the embedded SQL, then serves. A deploy to a
+   blank database comes up with a schema and no separate tooling in the image.
+   It uses golang-migrate, the same tool as `make migrate`, so both share its
+   `schema_migrations` bookkeeping and cannot disagree. It takes a Postgres
+   advisory lock, so two instances starting together cannot both migrate.
+   This suits single-instance deployment; a multi-instance rollout should move
+   migration to a release-phase command so schema changes land before new code
+   serves traffic.
+2. **Logs whether a frontend is embedded** (`"frontend":true`). An image built
+   without one serves a notice page on every route, which is far easier to
+   diagnose from one log line than from a blank tab.
+
+### Required configuration
+
+| Env var | Production value |
+|---|---|
+| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require` |
+| `SECURE_COOKIES` | **`true`** — without it the session cookie ships without `Secure` |
+| `TZ` | `Asia/Kolkata` — every report cadence is computed in IST |
+| `PORT` | Whatever the platform injects; defaults to `8090` |
+
+### Creating the first account
+
+**Never run `make seed` against a deployment.** It begins with
+`TRUNCATE audit_events, creatives, report_runs, reports, campaigns, creators,
+users` — it is a fixture loader, and it would erase production.
+
+There is no user-management endpoint yet, so accounts are made with
+`cmd/createuser`, which creates exactly one and touches nothing else. Run it
+from your machine against the deployment's database:
+
+```bash
+DATABASE_URL='postgres://...' go run ./cmd/createuser \
+  -email you@example.com -name 'Your Name' -role admin
+```
+
+It prints a generated password once. Re-running it for an existing email
+re-passwords that account, which is also the only way back in if a password is
+lost, since there is no reset flow. The binary is in the image as
+`createuser` too, for hosts that give you a shell.
+
+### Render + Neon (the free path)
+
+[`render.yaml`](render.yaml) declares the web service. The database is
+deliberately **not** on Render: its free Postgres expires 30 days after
+creation and is then deleted. Neon's free plan is permanent, so
+`DATABASE_URL` points there.
+
+Known trade-off: Render's free tier sleeps after about 15 minutes idle and
+takes roughly a minute to wake. While it sleeps the in-process worker is not
+running, so scheduled reports do not fire on time and anomaly detection only
+runs while someone is using the app. Fine for demos; it is the first thing to
+fix when this becomes real.
+
+### Before scaling past one instance
+
+The anomaly detector and report scheduler run in-process on a 30-second
+ticker in `cmd/server/main.go`. Two instances means every scheduled report
+sends twice. Keep this at one instance until that work moves behind a lock or
+into a separate scheduler.
 
 ---
 

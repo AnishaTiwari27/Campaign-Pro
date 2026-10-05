@@ -7,13 +7,14 @@ DATABASE_URL ?= postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@loca
 PORT ?= 8090
 MIGRATIONS := backend/db/migrations
 
-.PHONY: help dev dev-api dev-web dev-docker db-create migrate migrate-down seed logos test test-go test-web test-e2e lint fmt generate
+.PHONY: help dev dev-api dev-web dev-docker db-create migrate migrate-down seed logos build build-web test test-go test-web test-e2e lint fmt generate
 
 help:
 	@echo "make dev          - run api (:$(PORT)) and web (:5173) together"
 	@echo "make db-create    - create the local database + role"
 	@echo "make migrate      - apply migrations"
 	@echo "make seed         - truncate and reseed demo data"
+	@echo "make build        - frontend + single binary with the app embedded"
 	@echo "make logos        - fetch brand logos into frontend/public/logos"
 	@echo "make test         - go tests + vitest + playwright"
 	@echo "make lint         - go vet + gofmt check + eslint"
@@ -52,6 +53,22 @@ logos:
 
 seed:
 	cd backend && DATABASE_URL="$(DATABASE_URL)" go run ./cmd/seed
+
+# Build the frontend and copy it where the Go binary embeds it from, so the
+# API port serves the real app. This is what the Docker build does, done
+# locally — useful for verifying the production shape without Docker.
+build-web:
+	cd frontend && npm run build
+	rm -rf backend/web/dist
+	mkdir -p backend/web/dist
+	cp -R frontend/dist/. backend/web/dist/
+	touch backend/web/dist/.gitkeep
+	@echo "embedded $$(find backend/web/dist -type f | wc -l | tr -d ' ') files; rebuild the server to pick them up"
+
+# Everything the production image contains: frontend embedded, one binary.
+build: build-web
+	cd backend && CGO_ENABLED=0 go build -o ../bin/server ./cmd/server
+	@echo "built ./bin/server"
 
 generate:
 	cd backend && sqlc generate

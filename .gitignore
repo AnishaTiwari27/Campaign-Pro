@@ -1,20 +1,15 @@
 node_modules/
-dist/
-.DS_Store
-*.log
-*.tsbuildinfo
 
-# Playwright
-test-results/
-playwright-report/
+# Frontend build output.
+frontend/dist/
+frontend/tsconfig.tsbuildinfo
+frontend/test-results/
 
-# Local env overrides
-.env
-.env.local
+# Local binaries from `make build`.
+bin/
 
-# Brand logos are fetched by scripts/fetch-logos.sh, not committed —
-# they're third-party marks and the script reproduces them.
-frontend/public/logos/
-
-# Vite dependency pre-bundling cache
-.vite/
+# The frontend build is copied here to be embedded in the binary (see
+# backend/web). Only the .gitkeep is tracked, so a build is never committed
+# and `go build` still works in a fresh checkout.
+backend/web/dist/*
+!backend/web/dist/.gitkeep
