@@ -320,7 +320,7 @@ rewrite.
 
 | Env var | Production value |
 |---|---|
-| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require` |
+| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require`. Either of Neon's strings works: migrations are routed around a pooled host automatically (see below), while the app's pool uses the URL as given |
 | `SECURE_COOKIES` | **`true`** — without it the session cookie ships without `Secure` |
 | `TZ` | `Asia/Kolkata` — every report cadence is computed in IST |
 | `PORT` | Whatever the platform injects; defaults to `8090` |
@@ -351,6 +351,15 @@ lost, since there is no reset flow. The binary is in the image as
 deliberately **not** on Render: its free Postgres expires 30 days after
 creation and is then deleted. Neon's free plan is permanent, so
 `DATABASE_URL` points there.
+
+**On connection pooling.** golang-migrate serialises migrations with a
+session-scoped `pg_advisory_lock`, and Neon's pooled endpoint is PgBouncer in
+transaction-pooling mode, which does not keep a session pinned to one backend
+connection — the lock and its unlock can land on different ones, leaving it
+held by an idle connection while migrations hang. Pooling is still right for
+ordinary traffic, so `migrateURL` rewrites only the migration connection onto
+Neon's direct host and leaves the app's pool using `DATABASE_URL` as given.
+That means either Neon string can be pasted in without it being a trap.
 
 Known trade-off: Render's free tier sleeps after about 15 minutes idle and
 takes roughly a minute to wake. While it sleeps the in-process worker is not

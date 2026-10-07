@@ -57,15 +57,38 @@ func Migrate(databaseURL string, logger *slog.Logger) error {
 	return nil
 }
 
-// migrateURL rewrites the scheme to the one golang-migrate's pgx/v5 driver
-// registers. The app's own DATABASE_URL is a standard postgres:// URL, and
-// asking operators to set a second variable in a different dialect would be
-// a trap.
+// migrateURL adapts the app's DATABASE_URL for the migrator. Operators set
+// one variable; getting a second one subtly wrong is a trap, so the two
+// adjustments needed are made here instead.
+//
+// First the scheme, to the one golang-migrate's pgx/v5 driver registers.
+//
+// Then the host, if it is one of Neon's pooled endpoints. golang-migrate
+// serialises migrations with a session-scoped pg_advisory_lock, and a pooled
+// endpoint is PgBouncer in transaction-pooling mode, which does not keep a
+// session on one backend connection: the lock and its unlock can land on
+// different connections, leaving the lock held by an idle one. Migrations
+// then hang or fail. Connection pooling is right for ordinary traffic, so the
+// app's own pool still uses the URL exactly as given — only migrations are
+// routed around the pooler.
 func migrateURL(databaseURL string) string {
+	url := databaseURL
 	for _, scheme := range []string{"postgresql://", "postgres://"} {
-		if strings.HasPrefix(databaseURL, scheme) {
-			return "pgx5://" + strings.TrimPrefix(databaseURL, scheme)
+		if strings.HasPrefix(url, scheme) {
+			url = "pgx5://" + strings.TrimPrefix(url, scheme)
+			break
 		}
 	}
-	return databaseURL
+	return directHost(url)
+}
+
+// directHost turns a Neon pooled host into its direct equivalent:
+// ep-x-123-pooler.region.aws.neon.tech -> ep-x-123.region.aws.neon.tech.
+// Scoped to neon.tech so no other provider's hostname is rewritten on the
+// strength of a substring.
+func directHost(url string) string {
+	if !strings.Contains(url, "neon.tech") || !strings.Contains(url, "-pooler.") {
+		return url
+	}
+	return strings.Replace(url, "-pooler.", ".", 1)
 }
