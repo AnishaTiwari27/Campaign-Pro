@@ -33,6 +33,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// Said before the connection is attempted, because the failure it causes
+	// names localhost and a user that exists only on a developer's machine,
+	// which reads as a database problem rather than a missing variable.
+	if cfg.DatabaseURLDefaulted {
+		logger.Warn("DATABASE_URL is not set — falling back to the local development database; " +
+			"set it to your managed Postgres URL if this is a deployment")
+	}
+
 	// Schema first, before anything queries it. A deploy to a blank database
 	// has to come up working, and the alternative — remembering to run the
 	// migrate CLI by hand against production — is the kind of step that gets
