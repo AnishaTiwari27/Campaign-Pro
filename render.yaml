@@ -23,9 +23,13 @@ services:
     dockerContext: .
     # Outside the session guard precisely so a probe needs no credentials.
     healthCheckPath: /health
-    autoDeploy: true
+    # Deploy on every push to main. (Replaces the deprecated autoDeploy,
+    # which a Blueprint sync now rejects outright.)
+    autoDeployTrigger: commit
     envVars:
-      # Neon's pooled connection string, including ?sslmode=require.
+      # Neon's connection string, including ?sslmode=require. Either the
+      # pooled or the direct one: migrations route around the pooler
+      # themselves (see platform/database/migrate.go).
       - key: DATABASE_URL
         sync: false
       # Served over HTTPS, so the session cookie must carry Secure.
