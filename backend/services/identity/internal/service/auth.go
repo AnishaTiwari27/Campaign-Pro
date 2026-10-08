@@ -29,10 +29,13 @@ type Auditor interface {
 type Auth struct {
 	store   *store.Store
 	auditor Auditor
+	// directory writes the users table, which campaigns owns. Nil where
+	// signup is not wired — createuser, for one, never registers anyone.
+	directory Directory
 }
 
-func New(s *store.Store, auditor Auditor) *Auth {
-	return &Auth{store: s, auditor: auditor}
+func New(s *store.Store, auditor Auditor, directory Directory) *Auth {
+	return &Auth{store: s, auditor: auditor, directory: directory}
 }
 
 // newToken returns 32 bytes of crypto/rand as URL-safe base64. Only the

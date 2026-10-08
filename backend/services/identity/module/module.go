@@ -22,10 +22,27 @@ type Module struct {
 	store   *store.Store
 }
 
-func New(db *database.DB, auditor service.Auditor, secureCookies bool, logger *slog.Logger) *Module {
+// Options are this service's deployment switches. A struct, because two
+// adjacent bool parameters are transposable without the compiler noticing.
+type Options struct {
+	// SecureCookies must be true anywhere served over HTTPS.
+	SecureCookies bool
+	// AllowSignup decides whether self-registration exists.
+	AllowSignup bool
+}
+
+// New wires the service. directory is how signup writes an account:
+// campaigns owns the users table, so it supplies that capability and may
+// be nil wherever signup is not needed.
+func New(db *database.DB, auditor service.Auditor, directory service.Directory,
+	opts Options, logger *slog.Logger) *Module {
 	st := store.New(db)
-	auth := service.New(st, auditor)
-	return &Module{auth: auth, handler: api.New(auth, secureCookies, logger), store: st}
+	auth := service.New(st, auditor, directory)
+	handler := api.New(auth, api.Options{
+		SecureCookies: opts.SecureCookies,
+		AllowSignup:   opts.AllowSignup,
+	}, logger)
+	return &Module{auth: auth, handler: handler, store: st}
 }
 
 // PublicRoutes mount outside the session guard: login cannot require one.

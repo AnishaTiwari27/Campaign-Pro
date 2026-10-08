@@ -6,6 +6,7 @@ package module
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"campaigntrackerpro/platform/database"
@@ -65,4 +66,44 @@ func (m *Module) Store() *store.Store { return m.store }
 // Campaigns owns the users table, so it supplies the loader.
 func (m *Module) LoadUser(ctx context.Context, email string) (any, error) {
 	return m.store.GetUserByEmail(ctx, email)
+}
+
+// UserDirectory hands out the account-creation capability that identity's
+// signup needs. Campaigns owns the users table, so the write lives here
+// and identity asks for it through an interface of its own — neither
+// service imports the other.
+func (m *Module) UserDirectory() userDirectory { return userDirectory{m.store} }
+
+// userDirectory is unexported on purpose: callers receive it, satisfy
+// identity's Directory with it, and cannot reach past these two methods.
+type userDirectory struct{ store *store.Store }
+
+func (d userDirectory) EmailTaken(ctx context.Context, email string) (bool, error) {
+	_, err := d.store.GetUserByEmail(ctx, email)
+	switch {
+	case err == nil:
+		return true, nil
+	case errors.Is(err, database.ErrNotFound):
+		return false, nil
+	default:
+		return false, err
+	}
+}
+
+// CreateUser writes the account and returns its ID. can_approve is derived
+// from the role here rather than taken from the caller, so the column and
+// identity's CanApprove() cannot be made to disagree about one account.
+func (d userDirectory) CreateUser(ctx context.Context, email, name, role string, isAgency bool) (string, error) {
+	// "admin" and "approver" are the user_role_t values that carry
+	// sign-off; the enum is defined in the migrations and mirrored by
+	// identity.Role.
+	canApprove := isAgency && (role == "admin" || role == "approver")
+	u, err := d.store.CreateUser(ctx, email, name, role, canApprove)
+	if err != nil {
+		return "", err
+	}
+	if err := d.store.SetUserAgency(ctx, u.ID, isAgency); err != nil {
+		return "", err
+	}
+	return u.ID, nil
 }

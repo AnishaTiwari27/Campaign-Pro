@@ -61,6 +61,11 @@ type Config struct {
 	// ManagedHost reports that a container platform's marker is present, so
 	// the defaults meant for a laptop are known to be wrong here.
 	ManagedHost bool
+	// AllowSignup decides whether the public signup page and endpoint
+	// exist. On by default, so a fresh deployment is usable without
+	// reaching for the database; set ALLOW_SIGNUP=false to close it once
+	// the accounts that should exist do.
+	AllowSignup bool
 }
 
 func Load() Config {
@@ -74,6 +79,7 @@ func Load() Config {
 		MailMode:             getenv("MAIL_MODE", "log"),
 		AdminEmail:           getenv("ADMIN_EMAIL", "anishatiwari695@gmail.com"),
 		SecureCookies:        getenv("SECURE_COOKIES", "false") == "true",
+		AllowSignup:          getenv("ALLOW_SIGNUP", "true") == "true",
 	}
 }
 

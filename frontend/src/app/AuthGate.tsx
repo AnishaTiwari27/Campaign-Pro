@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useSession } from "../api/auth";
-import { LoginPage } from "../features/auth/LoginPage";
+import { AuthPage } from "../features/auth/AuthPage";
 import { SkeletonBlock } from "../components/Skeleton";
 
 // Decides between the app and the sign-in screen. Sits above the router so
@@ -22,7 +22,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   // Any failure to resolve a session means sign in. A 401 is the normal
   // case, not an error state worth showing.
-  if (isError || !me) return <LoginPage />;
+  if (isError || !me) return <AuthPage />;
 
   return <>{children}</>;
 }

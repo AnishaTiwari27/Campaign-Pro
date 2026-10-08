@@ -153,3 +153,28 @@ func TestLoadManagedHost(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadAllowSignup(t *testing.T) {
+	cases := []struct {
+		name string
+		set  string
+		want bool
+	}{
+		{"unset means open, so a fresh deployment is usable", "", true},
+		{"\"false\" closes it", "false", false},
+		{"\"true\" opens it", "true", true},
+		// Anything else is a typo, and a typo in a switch that controls
+		// who may create an account should fail closed.
+		{"a typo fails closed", "ture", false},
+		{"TRUE is not true — the comparison is exact", "TRUE", false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			clearHostMarkers(t)
+			t.Setenv("ALLOW_SIGNUP", c.set)
+			if got := Load().AllowSignup; got != c.want {
+				t.Fatalf("AllowSignup = %t with ALLOW_SIGNUP=%q, want %t", got, c.set, c.want)
+			}
+		})
+	}
+}

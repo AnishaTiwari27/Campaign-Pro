@@ -79,7 +79,10 @@ func main() {
 	// Dependency order is the service graph: campaigns owns the core data,
 	// everything else reads from it through a narrow interface.
 	campaignsMod := campaigns.New(db, logger)
-	identityMod := identity.New(db, auditBridge{campaignsMod}, cfg.SecureCookies, logger)
+	// campaigns owns the users table, so it supplies the capability signup
+	// needs to write one. Neither service imports the other.
+	identityMod := identity.New(db, auditBridge{campaignsMod}, campaignsMod.UserDirectory(),
+		identity.Options{SecureCookies: cfg.SecureCookies, AllowSignup: cfg.AllowSignup}, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),

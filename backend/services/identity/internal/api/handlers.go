@@ -13,20 +13,90 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Options are the deployment-level switches this service's HTTP surface
+// needs. A struct rather than two bool parameters, which at a call site
+// are trivially transposed and compile either way.
+type Options struct {
+	// SecureCookies must be true anywhere served over HTTPS.
+	SecureCookies bool
+	// AllowSignup decides whether self-registration exists at all.
+	AllowSignup bool
+}
+
 type Handlers struct {
 	auth   *service.Auth
 	secure bool
+	signup bool
 	logger *slog.Logger
 }
 
-func New(auth *service.Auth, secureCookies bool, logger *slog.Logger) *Handlers {
-	return &Handlers{auth: auth, secure: secureCookies, logger: logger}
+func New(auth *service.Auth, opts Options, logger *slog.Logger) *Handlers {
+	return &Handlers{auth: auth, secure: opts.SecureCookies, signup: opts.AllowSignup, logger: logger}
 }
 
 // PublicRoutes mount outside the session guard — you cannot require a
 // session on the endpoint that creates one.
 func (h *Handlers) PublicRoutes(r chi.Router) {
 	r.Post("/auth/login", h.Login)
+	// Always present, so the sign-in screen can ask whether to offer a
+	// "create an account" link rather than guessing and showing one that
+	// leads nowhere.
+	r.Get("/auth/options", h.AuthOptions)
+	// Registered only when enabled: a disabled signup should not be an
+	// endpoint that exists and refuses, it should not be an endpoint.
+	if h.signup {
+		r.Post("/auth/signup", h.Signup)
+	}
+}
+
+type authOptionsDTO struct {
+	SignupEnabled bool `json:"signupEnabled"`
+	// Echoed so the form can enforce the same rule the server will, and
+	// the two cannot drift.
+	MinPasswordLength int `json:"minPasswordLength"`
+}
+
+// AuthOptions describes what the sign-in screen may offer. Public by
+// necessity: it is read before anyone has a session.
+func (h *Handlers) AuthOptions(w http.ResponseWriter, r *http.Request) {
+	httpx.WriteJSON(w, http.StatusOK, authOptionsDTO{
+		SignupEnabled:     h.signup,
+		MinPasswordLength: service.MinPasswordLength,
+	})
+}
+
+type signupRequest struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// Signup registers an account and returns it without a session. The new
+// user signs in next, which both proves the password works and keeps this
+// endpoint from being a way to mint sessions.
+func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
+	var req signupRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.WriteValidationError(w, "invalid JSON body", "")
+		return
+	}
+
+	user, err := h.auth.Signup(r.Context(), service.SignupInput{
+		Name: req.Name, Email: req.Email, Password: req.Password,
+	})
+	if err != nil {
+		if msg, field, ok := service.AsValidationError(err); ok {
+			httpx.WriteValidationError(w, msg, field)
+			return
+		}
+		if errors.Is(err, service.ErrEmailTaken) {
+			httpx.WriteConflict(w, err.Error())
+			return
+		}
+		httpx.WriteServiceError(w, h.logger, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusCreated, toDTO(user))
 }
 
 // Routes mount behind the guard.

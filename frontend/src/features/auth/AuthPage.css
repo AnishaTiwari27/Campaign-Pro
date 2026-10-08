@@ -1,0 +1,367 @@
+/* The sign-in and sign-up screen. One layout serves both: a brand panel
+   that explains what this is, and a form card. The panel is decoration
+   with a job — it is the only thing a first-time visitor sees before they
+   decide whether to create an account. */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* A centred flex item taller than the viewport is clipped at BOTH ends
+     and the top cannot be scrolled to. overflow plus margin:auto on the
+     item keeps it centred when it fits and scrollable when it does not. */
+  overflow-y: auto;
+  background:
+    radial-gradient(900px 480px at 12% -10%, var(--accent-soft), transparent 70%),
+    radial-gradient(700px 420px at 100% 110%, var(--accent-soft), transparent 65%),
+    var(--base);
+}
+
+.auth-shell {
+  margin: auto;
+  width: 100%;
+  max-width: 1020px;
+  /* Without this a flex item will not shrink below its content width, and
+     the 400px form card pushes the whole shell off a phone screen. */
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 28px;
+  align-items: center;
+}
+
+/* ---- brand panel -------------------------------------------------- */
+
+.auth-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--line);
+  background: linear-gradient(160deg, var(--surface) 0%, var(--surface-2) 100%);
+  box-shadow: var(--elevation-2);
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.auth-mark {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: -0.02em;
+}
+
+.auth-brand-text {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.auth-brand-sub {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.auth-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.auth-pitch h2 {
+  font-family: var(--font-display);
+  font-size: clamp(21px, 2.1vw, 27px);
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.auth-lede {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 44ch;
+}
+
+.auth-art {
+  width: 100%;
+  max-height: 200px;
+  height: auto;
+  display: block;
+  margin-inline: auto;
+}
+
+.auth-art-panel {
+  fill: var(--surface-2);
+  stroke: var(--line);
+}
+
+.auth-art-card {
+  fill: var(--surface);
+  stroke: var(--line-strong);
+}
+
+.auth-art-line {
+  fill: var(--line-strong);
+}
+
+.auth-art-line-strong {
+  fill: var(--muted);
+}
+
+.auth-art-trend {
+  stroke: var(--accent);
+  fill: none;
+}
+
+.auth-art-dot {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.auth-art-good {
+  fill: var(--good);
+}
+
+.auth-features {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.auth-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.auth-features strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 650;
+  margin-bottom: 2px;
+}
+
+.auth-features small {
+  display: block;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.auth-feature-badge {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.auth-feature-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.auth-foot {
+  font-size: 11.5px;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin: 0;
+}
+
+/* ---- form side ---------------------------------------------------- */
+
+.auth-main {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Shown only where the brand panel is not. */
+.auth-brand-compact {
+  display: none;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-form-head h1 {
+  font-size: 21px;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+
+.auth-form-head p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.auth-field > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.auth-hint {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.auth-field-error {
+  font-size: 11.5px;
+  color: var(--crit);
+}
+
+.auth-error,
+.auth-notice {
+  font-size: 12.5px;
+  line-height: 1.45;
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  margin: 0;
+}
+
+.auth-error {
+  color: var(--crit);
+  background: var(--crit-soft);
+}
+
+.auth-notice {
+  color: var(--good);
+  background: var(--good-soft);
+}
+
+.auth-submit {
+  height: 40px;
+  margin-top: 2px;
+}
+
+.auth-switch {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* A button, not an anchor: it changes what this screen shows, it does not
+   navigate anywhere. Styled as a link because that is what it reads as. */
+.auth-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.auth-link:hover {
+  text-decoration: underline;
+}
+
+.auth-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* ---- narrow screens ------------------------------------------------ */
+
+@media (max-width: 920px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+  }
+
+  /* The panel is the part that can go: the form is the page's job. */
+  .auth-aside {
+    display: none;
+  }
+
+  .auth-brand-compact {
+    display: flex;
+  }
+
+  .auth-page {
+    padding: 16px;
+  }
+
+  .auth-card {
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-card,
+  .auth-aside {
+    animation: auth-rise 0.32s ease-out both;
+  }
+
+  .auth-card {
+    animation-delay: 0.04s;
+  }
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

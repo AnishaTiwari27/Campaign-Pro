@@ -77,7 +77,10 @@ func main() {
 	db := database.New(pool)
 
 	camp := campaignsmod.New(db, logger)
-	ident := identitymod.New(db, noopAuditor{}, false, logger)
+	// No directory and no signup: this command creates accounts itself,
+	// through campaigns' store below, and only ever uses identity to set
+	// a password.
+	ident := identitymod.New(db, noopAuditor{}, nil, identitymod.Options{}, logger)
 
 	// can_approve mirrors the role, so the column and identity's CanApprove()
 	// cannot disagree about the same account.

@@ -53,3 +53,9 @@ services:
       # The only mailer implemented; it writes the send to the log.
       - key: MAIL_MODE
         value: log
+      # Public registration. Stated rather than left to the default, so
+      # closing it is editing a visible line instead of discovering that
+      # an unset variable meant "open". A self-registered account is an
+      # analyst: it reads, and decides nothing.
+      - key: ALLOW_SIGNUP
+        value: "true"

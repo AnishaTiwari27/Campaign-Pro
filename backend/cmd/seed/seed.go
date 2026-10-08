@@ -63,7 +63,7 @@ func main() {
 	camp := campaignsmod.New(db, logger)
 	cre := creatorsmod.New(db, camp.Service(), logger)
 	rep := reportsmod.New(db, camp.Service(), camp.Detector(), nil, logger, time.Minute)
-	ident := identitymod.New(db, noopAuditor{}, false, logger)
+	ident := identitymod.New(db, noopAuditor{}, nil, identitymod.Options{}, logger)
 
 	// Fixture logins. The password is deliberately a loud placeholder: it
 	// exists so a demo can be signed into, and should never survive

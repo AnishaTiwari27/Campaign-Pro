@@ -29,6 +29,31 @@ export function useLogin() {
   });
 }
 
+/** What the sign-in screen is allowed to offer. Public, so it resolves
+ *  before anyone has a session. */
+export type AuthOptions = { signupEnabled: boolean; minPasswordLength: number };
+
+// Asked once per load. If it fails, the screen falls back to sign-in only:
+// better to hide a working signup link than to show one that 404s.
+export function useAuthOptions() {
+  return useQuery({
+    queryKey: queryKeys.authOptions(),
+    queryFn: () => get<AuthOptions>("/auth/options"),
+    retry: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/** Registers an account. Deliberately returns no session — the new user
+ *  signs in next, which proves the password works. */
+export function useSignup() {
+  return useMutation({
+    mutationFn: (v: { name: string; email: string; password: string }) =>
+      post<Me>("/auth/signup", v),
+  });
+}
+
 export function useLogout() {
   const qc = useQueryClient();
   return useMutation({
