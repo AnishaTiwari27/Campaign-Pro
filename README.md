@@ -304,7 +304,13 @@ rewrite.
 
 ### What the image does on boot
 
-1. **Applies migrations** from the embedded SQL, then serves. A deploy to a
+1. **Checks configuration it cannot run without.** If `DATABASE_URL` is unset
+   on a managed host, the process logs that one sentence and exits 1 rather
+   than falling back to the development database and dialling a `localhost`
+   Postgres that is not there. A platform marker (`RENDER`, `FLY_APP_NAME`,
+   `DYNO`, `K_SERVICE`, and friends) is what distinguishes a deployment from
+   a laptop, where the fallback is a convenience and stays.
+2. **Applies migrations** from the embedded SQL, then serves. A deploy to a
    blank database comes up with a schema and no separate tooling in the image.
    It uses golang-migrate, the same tool as `make migrate`, so both share its
    `schema_migrations` bookkeeping and cannot disagree. It takes a Postgres
@@ -312,7 +318,10 @@ rewrite.
    This suits single-instance deployment; a multi-instance rollout should move
    migration to a release-phase command so schema changes land before new code
    serves traffic.
-2. **Logs whether a frontend is embedded** (`"frontend":true`). An image built
+3. **Logs the database it reached** — host, port, database and user, never the
+   password. A deploy quietly pointing at the wrong database is expensive to
+   notice any later than this.
+4. **Logs whether a frontend is embedded** (`"frontend":true`). An image built
    without one serves a notice page on every route, which is far easier to
    diagnose from one log line than from a blank tab.
 
@@ -320,7 +329,7 @@ rewrite.
 
 | Env var | Production value |
 |---|---|
-| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require`. Either of Neon's strings works: migrations are routed around a pooled host automatically (see below), while the app's pool uses the URL as given |
+| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require`. Either of Neon's strings works: migrations are routed around a pooled host automatically (see below), while the app's pool uses the URL as given. Enter it bare — surrounding quotes and stray whitespace are stripped on load, so a value pasted out of a shell command still works |
 | `SECURE_COOKIES` | **`true`** — without it the session cookie ships without `Secure` |
 | `TZ` | `Asia/Kolkata` — every report cadence is computed in IST |
 | `PORT` | Whatever the platform injects; defaults to `8090` |
@@ -351,6 +360,32 @@ lost, since there is no reset flow. The binary is in the image as
 deliberately **not** on Render: its free Postgres expires 30 days after
 creation and is then deleted. Neon's free plan is permanent, so
 `DATABASE_URL` points there.
+
+**Setting `DATABASE_URL`, the one manual step.** The key is declared
+`sync: false`, which means Render never reads its value from `render.yaml` —
+a secret in the repository is worse than a step in a runbook. Render prompts
+for it once, when the Blueprint first creates the service. It is *not* filled
+in by a later Blueprint sync, so a service that predates the file, or one
+where the prompt was skipped, runs with it empty:
+
+```
+ERROR  invalid configuration  err="DATABASE_URL is not set, and this process
+       is running on a managed host where the local development fallback
+       cannot work. ..."
+==> Exited with status 1
+```
+
+The fix is the service's **Environment** tab → add `DATABASE_URL` → paste the
+Neon string (no quotes) → save, which redeploys. A healthy boot says so:
+
+```
+INFO  schema up to date      version=5
+INFO  database connected     host=ep-….aws.neon.tech port=5432 database=neondb user=…
+INFO  server listening       port=10000 frontend=true
+```
+
+If `host` there is `localhost`, the variable did not take effect; nothing else
+in the log is worth reading first.
 
 **On connection pooling.** golang-migrate serialises migrations with a
 session-scoped `pg_advisory_lock`, and Neon's pooled endpoint is PgBouncer in

@@ -30,6 +30,18 @@ services:
       # Neon's connection string, including ?sslmode=require. Either the
       # pooled or the direct one: migrations route around the pooler
       # themselves (see platform/database/migrate.go).
+      #
+      # sync: false means Render never takes this value from this file. It is
+      # prompted for once when the Blueprint first creates the service, and
+      # lives thereafter under Environment on the service. A later Blueprint
+      # sync does NOT fill it in, so a service that predates this file, or one
+      # where the prompt was skipped, starts with it empty. The server now
+      # exits immediately on that, naming the variable, instead of dialling
+      # localhost (see platform/config.Validate).
+      #
+      # Paste it bare: no surrounding quotes. Render stores a value literally,
+      # and quotes carried over from a shell command are stripped on load
+      # rather than failing later as an unparseable DSN.
       - key: DATABASE_URL
         sync: false
       # Served over HTTPS, so the session cookie must carry Secure.

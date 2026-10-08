@@ -33,9 +33,18 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// Said before the connection is attempted, because the failure it causes
-	// names localhost and a user that exists only on a developer's machine,
-	// which reads as a database problem rather than a missing variable.
+	// Both said before the connection is attempted, because the failure it
+	// causes names localhost and a user that exists only on a developer's
+	// machine, which reads as a database problem rather than a missing
+	// variable.
+	//
+	// On a managed host the fallback cannot work at all, so that is fatal
+	// here rather than a warning followed by a confusing dial: a deploy
+	// should fail on the sentence that names the fix.
+	if err := cfg.Validate(); err != nil {
+		logger.Error("invalid configuration", "err", err)
+		os.Exit(1)
+	}
 	if cfg.DatabaseURLDefaulted {
 		logger.Warn("DATABASE_URL is not set — falling back to the local development database; " +
 			"set it to your managed Postgres URL if this is a deployment")
@@ -56,6 +65,15 @@ func main() {
 		os.Exit(1)
 	}
 	defer pool.Close()
+
+	// Positive confirmation of where the data actually lives. A deploy quietly
+	// pointing at the wrong database is expensive to notice later, and this is
+	// the cheapest possible way to rule it out. Taken from the parsed config,
+	// field by field, so the password cannot reach the log with it.
+	conn := pool.Config().ConnConfig
+	logger.Info("database connected",
+		"host", conn.Host, "port", conn.Port, "database", conn.Database, "user", conn.User)
+
 	db := database.New(pool)
 
 	// Dependency order is the service graph: campaigns owns the core data,
