@@ -12,7 +12,7 @@ async function signIn(page: Page, email: string, password = PASSWORD) {
 
 test("a signed-out visitor gets the sign-in screen, not the dashboard", async ({ page }) => {
   await page.goto("/overview");
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   // The dashboard must not render at all — not even briefly behind a modal.
   await expect(page.locator(".rail")).toHaveCount(0);
 });
@@ -35,12 +35,12 @@ test("signing out revokes the session, and back does not restore it", async ({ p
   await expect(page.locator(".rail-user-name")).toBeVisible();
 
   await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 
   // The session is gone server-side, so returning to a dashboard URL must
   // not get back in.
   await page.goto("/campaigns");
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 });
 
 test("an analyst can read everything but is shown no approval controls", async ({ page }) => {

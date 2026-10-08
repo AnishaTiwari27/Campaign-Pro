@@ -10,6 +10,7 @@ import { CreatorDetailPage } from "../features/creators/CreatorDetailPage";
 import { RegionsPage } from "../features/regions/RegionsPage";
 import { RegionDetailPage } from "../features/regions/RegionDetailPage";
 import { BenchmarksPage } from "../features/benchmarks/BenchmarksPage";
+import { SignalsPage } from "../features/signals/SignalsPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { ReportDetailPage } from "../features/reports/ReportDetailPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
@@ -27,6 +28,7 @@ export function AppRoutes() {
         <Route path="creators/:id" element={<CreatorDetailPage />} />
         <Route path="regions" element={<RegionsPage />} />
         <Route path="regions/:id" element={<RegionDetailPage />} />
+        <Route path="signals" element={<SignalsPage />} />
         <Route path="benchmarks" element={<BenchmarksPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/:id" element={<ReportDetailPage />} />

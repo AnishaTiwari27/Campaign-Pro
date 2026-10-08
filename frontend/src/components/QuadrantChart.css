@@ -1,0 +1,77 @@
+.quadrant-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* Tints are deliberately faint: they say which region you are in without
+   competing with the dots, which carry the actual data. */
+.quadrant-zone {
+  opacity: 0.07;
+}
+
+.quadrant-zone-good { fill: var(--good); }
+.quadrant-zone-accent { fill: var(--accent); }
+.quadrant-zone-warn { fill: var(--warn); }
+.quadrant-zone-crit { fill: var(--crit); }
+
+.quadrant-frame {
+  fill: none;
+  stroke: var(--line);
+}
+
+.quadrant-midline {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+/* Ink, not the zone colour: a label is text, and the tint beside it is
+   what carries the region. */
+.quadrant-corner {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  fill: var(--muted);
+}
+
+.quadrant-axis-title,
+.quadrant-tick {
+  font-family: var(--font-ui);
+  fill: var(--muted);
+}
+
+.quadrant-axis-title {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.quadrant-tick {
+  font-size: 10.5px;
+}
+
+/* A 2px surface ring keeps overlapping dots legible where campaigns
+   cluster, which near the midlines they do. */
+.quadrant-dot {
+  fill: var(--accent);
+  stroke: var(--surface);
+  stroke-width: 2;
+  fill-opacity: 0.85;
+}
+
+.quadrant-dot-clickable {
+  cursor: pointer;
+}
+
+.quadrant-dot-clickable:hover {
+  fill-opacity: 1;
+  stroke-width: 2.5;
+}
+
+.quadrant-dot-clickable:focus-visible {
+  outline: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+}

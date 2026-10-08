@@ -48,6 +48,17 @@ export function IconRegions(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconSignals(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <line x1="3" y1="10" x2="17" y2="10" />
+      <line x1="10" y1="3" x2="10" y2="17" />
+      <circle cx="6" cy="6" r="1.6" />
+      <circle cx="14" cy="14" r="1.6" />
+    </Base>
+  );
+}
+
 export function IconBenchmarks(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>

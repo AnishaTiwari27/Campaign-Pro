@@ -5,6 +5,7 @@ import { usePendingCount } from "../api/overview";
 import {
   IconApprovals,
   IconBenchmarks,
+  IconSignals,
   IconCampaigns,
   IconOverview,
   IconCreators,
@@ -59,6 +60,7 @@ export function Rail() {
         <div className="rail-group-label">Analysis</div>
         <NavItem to="/creators" icon={<IconCreators />} label="Creators" />
         <NavItem to="/regions" icon={<IconRegions />} label="Regions" />
+        <NavItem to="/signals" icon={<IconSignals />} label="Signals" />
         <NavItem to="/benchmarks" icon={<IconBenchmarks />} label="Benchmarks" />
       </div>
 
