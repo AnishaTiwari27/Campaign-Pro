@@ -6,6 +6,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"log/slog"
@@ -65,10 +67,23 @@ func main() {
 	rep := reportsmod.New(db, camp.Service(), camp.Detector(), nil, logger, time.Minute)
 	ident := identitymod.New(db, noopAuditor{}, nil, identitymod.Options{}, logger)
 
-	// Fixture logins. The password is deliberately a loud placeholder: it
-	// exists so a demo can be signed into, and should never survive
-	// contact with a real deployment.
-	const demoPassword = "demo-password-change-me"
+	// Fixture logins. The password is generated per run and printed once.
+	//
+	// It used to be a constant in this file, which meant it was published:
+	// this repository is public, so anyone who read it could sign in to any
+	// deployment that had ever been seeded — including as an approver, who
+	// signs off on spend. A loud placeholder is still a credential.
+	//
+	// SEED_PASSWORD overrides it for the workflows that need a known value,
+	// which is the e2e suite and nothing else. See the Makefile.
+	demoPassword := os.Getenv("SEED_PASSWORD")
+	generatedPassword := demoPassword == ""
+	if generatedPassword {
+		var err error
+		if demoPassword, err = randomPassword(); err != nil {
+			log.Fatalf("generate seed password: %v", err)
+		}
+	}
 	for _, u := range []struct {
 		email, name, role string
 		agency, approve   bool
@@ -129,6 +144,9 @@ func main() {
 	flagged, err := detector.Run(ctx)
 	if err != nil {
 		log.Fatalf("anomaly detection: %v", err)
+	}
+	if generatedPassword {
+		fmt.Printf("\nFixture accounts were given this generated password, shown once:\n\n  %s\n\n", demoPassword)
 	}
 	fmt.Printf("Seeded %d brand + %d creator campaigns across %d creators, %d reports. %d flagged by anomaly detection.\n",
 		len(brandCampaigns), creatorCampaigns, len(creatorSeeds()), 3, len(flagged))
@@ -305,4 +323,14 @@ type noopAuditor struct{}
 
 func (noopAuditor) Record(ctx context.Context, userID, actor, action, entityType, entityID string) error {
 	return nil
+}
+
+// randomPassword returns 24 bytes of entropy, URL-safe so it survives being
+// copied through a terminal and a browser form. Matches cmd/createuser.
+func randomPassword() (string, error) {
+	buf := make([]byte, 24)
+	if _, err := rand.Read(buf); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(buf), nil
 }

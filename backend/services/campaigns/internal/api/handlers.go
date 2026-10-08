@@ -98,6 +98,11 @@ func (h *Handlers) Decision(w http.ResponseWriter, r *http.Request) {
 			httpx.WriteConflict(w, "Can't approve: "+blocked.Reason())
 			return
 		}
+		var decided service.AlreadyDecidedError
+		if errors.As(err, &decided) {
+			httpx.WriteConflict(w, "No change: "+decided.Reason()+".")
+			return
+		}
 		httpx.WriteServiceError(w, h.logger, err)
 		return
 	}
@@ -130,6 +135,14 @@ func (h *Handlers) BulkDecision(w http.ResponseWriter, r *http.Request) {
 		var blocked service.ApprovalBlockedError
 		if errors.As(err, &blocked) {
 			httpx.WriteConflict(w, bulkBlockedMessage(blocked))
+			return
+		}
+		// Every selected campaign was already in that state, so there was
+		// nothing to do. A mixed selection is not an error: the ones that
+		// needed changing were changed.
+		var decided service.AlreadyDecidedError
+		if errors.As(err, &decided) {
+			httpx.WriteConflict(w, "No change: every selected campaign is already "+string(decided.Approval)+".")
 			return
 		}
 		httpx.WriteServiceError(w, h.logger, err)

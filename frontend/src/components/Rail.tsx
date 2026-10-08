@@ -38,6 +38,11 @@ export function Rail() {
   const { data: me } = useSession();
   const logout = useLogout();
   const { data: pendingCount } = usePendingCount();
+  // An external client is not agency staff. The approval queue is the
+  // agency deciding its own spend, and benchmarks compare accounts across
+  // the whole book of business — neither is theirs to read. An analyst is
+  // agency staff and does still see both; they simply cannot act on them.
+  const isClient = me?.isClient ?? false;
 
   return (
     <nav className="rail" aria-label="Primary">
@@ -53,7 +58,9 @@ export function Rail() {
         <div className="rail-group-label">Workspace</div>
         <NavItem to="/overview" icon={<IconOverview />} label="Overview" />
         <NavItem to="/campaigns" icon={<IconCampaigns />} label="Campaigns" />
-        <NavItem to="/approvals" icon={<IconApprovals />} label="Approvals" badge={pendingCount} />
+        {!isClient && (
+          <NavItem to="/approvals" icon={<IconApprovals />} label="Approvals" badge={pendingCount} />
+        )}
       </div>
 
       <div className="rail-group">
@@ -61,7 +68,7 @@ export function Rail() {
         <NavItem to="/creators" icon={<IconCreators />} label="Creators" />
         <NavItem to="/regions" icon={<IconRegions />} label="Regions" />
         <NavItem to="/signals" icon={<IconSignals />} label="Signals" />
-        <NavItem to="/benchmarks" icon={<IconBenchmarks />} label="Benchmarks" />
+        {!isClient && <NavItem to="/benchmarks" icon={<IconBenchmarks />} label="Benchmarks" />}
       </div>
 
       <div className="rail-group">

@@ -356,3 +356,52 @@ func TestGetDetailUnknownIDIsNotFound(t *testing.T) {
 	// WriteServiceError depend on.
 	require.ErrorIs(t, err, httpx.ErrNotFound)
 }
+
+// A decision that changes nothing must not write an audit row. Letting it
+// through is how one production campaign collected ten "Approved" events in
+// a single second, which makes the trail useless for the one question it
+// exists to answer.
+func TestDecisionIsRefusedWhenItChangesNothing(t *testing.T) {
+	st := testStore(t)
+	c := NewCampaigns(st)
+	ctx := context.Background()
+
+	id := "svctest-nochange"
+	cleanup(t, st, id)
+	_, err := st.CreateCampaign(ctx, mkTestCampaign(id, 20, 100, 1000, campaigns.ApprovalPending, campaigns.StatusLive))
+	require.NoError(t, err)
+	actor := testActor(t, st)
+
+	auditCount := func() int {
+		events, err := st.ListAuditEventsByCampaign(ctx, id)
+		require.NoError(t, err)
+		return len(events)
+	}
+
+	_, err = c.Decision(ctx, id, "approve", actor, true)
+	require.NoError(t, err, "the first approval must succeed")
+	after := auditCount()
+
+	// The same decision again: refused, and silent in the audit trail.
+	_, err = c.Decision(ctx, id, "approve", actor, true)
+	require.Error(t, err)
+	var decided AlreadyDecidedError
+	require.ErrorAs(t, err, &decided)
+	require.Equal(t, campaigns.ApprovalApproved, decided.Approval)
+	require.ErrorIs(t, err, httpx.ErrConflict, "must map to 409, not 500")
+	require.Equal(t, after, auditCount(), "a refused decision must not write an audit event")
+
+	// Changing a decision is still a real act, and must still work.
+	_, err = c.Decision(ctx, id, "reject", actor, true)
+	require.NoError(t, err, "an approver changing their mind is a decision")
+	require.Equal(t, after+1, auditCount())
+}
+
+// An unknown id is the caller's mistake, not a server fault.
+func TestDecisionOnUnknownCampaignIsNotFound(t *testing.T) {
+	st := testStore(t)
+	c := NewCampaigns(st)
+	_, err := c.Decision(context.Background(), "svctest-no-such-id", "approve", testActor(t, st), true)
+	require.ErrorIs(t, err, ErrNotFound)
+	require.ErrorIs(t, err, httpx.ErrNotFound)
+}

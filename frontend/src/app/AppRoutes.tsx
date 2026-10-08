@@ -1,4 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import type { ReactNode } from "react";
+import { useSession } from "../api/auth";
 import { AppLayout } from "./AppLayout";
 import { NotFoundPage } from "./NotFoundPage";
 import { CampaignsPage } from "../features/campaigns/CampaignsPage";
@@ -15,6 +17,16 @@ import { ReportsPage } from "../features/reports/ReportsPage";
 import { ReportDetailPage } from "../features/reports/ReportDetailPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
 
+// AgencyOnly keeps a client account off the pages the rail already hides
+// from them, so a typed URL or an old bookmark lands on the Overview
+// instead. The server refuses the data either way — this is about not
+// showing an empty, broken-looking page.
+function AgencyOnly({ children }: { children: ReactNode }) {
+  const { data: me } = useSession();
+  if (me?.isClient) return <Navigate to="/overview" replace />;
+  return <>{children}</>;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -23,13 +35,13 @@ export function AppRoutes() {
         <Route path="overview" element={<OverviewPage />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="campaigns/:id" element={<CampaignDetailPage />} />
-        <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="approvals" element={<AgencyOnly><ApprovalsPage /></AgencyOnly>} />
         <Route path="creators" element={<CreatorsPage />} />
         <Route path="creators/:id" element={<CreatorDetailPage />} />
         <Route path="regions" element={<RegionsPage />} />
         <Route path="regions/:id" element={<RegionDetailPage />} />
         <Route path="signals" element={<SignalsPage />} />
-        <Route path="benchmarks" element={<BenchmarksPage />} />
+        <Route path="benchmarks" element={<AgencyOnly><BenchmarksPage /></AgencyOnly>} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/:id" element={<ReportDetailPage />} />
         <Route path="settings" element={<SettingsPage />} />

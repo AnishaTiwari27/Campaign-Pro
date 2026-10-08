@@ -82,7 +82,12 @@ test-web:
 	cd frontend && npm run test
 
 # Playwright drives the running dev servers, so seed first for a known state.
-test-e2e: seed
+# The e2e suite signs in as fixture users, so it needs a password it knows.
+# This is the only place that value exists; an ordinary `make seed` gets a
+# generated one, so seeding a deployment never installs a published
+# credential.
+test-e2e:
+	cd backend && SEED_PASSWORD=demo-password-change-me DATABASE_URL="$(DATABASE_URL)" go run ./cmd/seed
 	cd frontend && npx playwright test
 
 lint:

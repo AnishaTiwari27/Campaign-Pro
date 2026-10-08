@@ -284,6 +284,34 @@ type Actor struct {
 	Name string
 }
 
+// AlreadyDecidedError is returned when a decision would not change
+// anything — approving an approved campaign, rejecting a rejected one.
+//
+// It is almost always a double-click or a stale tab, and letting it through
+// was not harmless: each one wrote another audit row asserting the campaign
+// had been decided again. One production campaign accumulated ten
+// "Approved" events inside a single second, which makes "who signed this
+// off, and when" unanswerable from the trail that exists to answer it.
+//
+// Changing a decision is still allowed — approve after reject is a real act
+// — because only a no-op is refused.
+type AlreadyDecidedError struct {
+	Approval campaigns.Approval
+}
+
+func (e AlreadyDecidedError) Error() string {
+	return "campaign is already " + string(e.Approval)
+}
+
+// Unwrap makes errors.Is(err, httpx.ErrConflict) true, so a handler that
+// does not pull out the specific reason still answers 409 rather than 500.
+func (e AlreadyDecidedError) Unwrap() error { return httpx.ErrConflict }
+
+// Reason is the message to show the approver.
+func (e AlreadyDecidedError) Reason() string {
+	return "this campaign is already " + string(e.Approval)
+}
+
 // ApprovalBlockedError is returned when the caller may approve in principle
 // but this campaign's own state forbids it. It is distinct from ErrForbidden
 // (which is about the caller) and from ErrValidation (which is about the
@@ -361,6 +389,16 @@ func (c *Campaigns) Decision(ctx context.Context, id, action string, actor Actor
 	default:
 		return campaigns.Campaign{}, ErrValidation
 	}
+	// Read first, so a decision that changes nothing is refused before it
+	// can write an audit row — and so an unknown id is a 404 rather than
+	// whatever the update happens to fail with.
+	current, err := c.Store.GetCampaign(ctx, id)
+	if err != nil {
+		return campaigns.Campaign{}, notFound(err)
+	}
+	if current.Approval == approval {
+		return campaigns.Campaign{}, AlreadyDecidedError{Approval: approval}
+	}
 	if action == "approve" {
 		if err := c.blockedIfApproving(ctx, []string{id}); err != nil {
 			return campaigns.Campaign{}, err
@@ -395,11 +433,29 @@ func (c *Campaigns) BulkDecision(ctx context.Context, ids []string, action strin
 			return nil, err
 		}
 	}
-	camps, err := c.Store.BulkUpdateApproval(ctx, ids, approval)
+	// A bulk selection routinely contains campaigns already in the target
+	// state — "select all, approve" is the normal way to use it. Those are
+	// skipped rather than failing the batch, and crucially they are not
+	// audited: an audit row must mean someone changed something.
+	changing := make([]string, 0, len(ids))
+	for _, id := range ids {
+		camp, err := c.Store.GetCampaign(ctx, id)
+		if err != nil {
+			return nil, notFound(err)
+		}
+		if camp.Approval != approval {
+			changing = append(changing, id)
+		}
+	}
+	if len(changing) == 0 {
+		return nil, AlreadyDecidedError{Approval: approval}
+	}
+
+	camps, err := c.Store.BulkUpdateApproval(ctx, changing, approval)
 	if err != nil {
 		return nil, err
 	}
-	for _, id := range ids {
+	for _, id := range changing {
 		if _, err := c.Store.CreateAuditEvent(ctx, id, actor.ID, actor.Name, auditAction, "user"); err != nil {
 			return nil, err
 		}

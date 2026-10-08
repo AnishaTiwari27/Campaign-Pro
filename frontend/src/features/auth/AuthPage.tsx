@@ -18,8 +18,8 @@ const FEATURES: { icon: FeatureIconName; title: string; body: string }[] = [
   },
   {
     icon: "eye",
-    title: "Client-safe by construction",
-    body: "External accounts see their own data only — benchmarks withheld, competitor names stripped.",
+    title: "Client accounts see less, by design",
+    body: "No approval queue, no cross-account benchmarks, and no way to sign off on spend — enforced on the server, not just hidden.",
   },
 ];
 
