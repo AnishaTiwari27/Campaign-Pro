@@ -1,6 +1,10 @@
 package service
 
 import (
+	"errors"
+
+	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/campaigns"
 	"campaigntrackerpro/services/creators"
 	"context"
@@ -8,6 +12,10 @@ import (
 
 	"campaigntrackerpro/services/creators/internal/store"
 )
+
+// ErrNotFound is this service's not-found, aliased to the one the HTTP
+// layer maps to a 404.
+var ErrNotFound = httpx.ErrNotFound
 
 // Creators depends on a narrow read interface for campaign data rather
 // than on the campaigns service itself — it only ever needs to list them
@@ -130,7 +138,7 @@ type LanguageReach struct {
 func (c *Creators) Get(ctx context.Context, id string) (CreatorDetail, error) {
 	cr, err := c.Store.GetCreator(ctx, id)
 	if err != nil {
-		return CreatorDetail{}, err
+		return CreatorDetail{}, notFound(err)
 	}
 
 	roster, err := c.Store.ListCreators(ctx)
@@ -201,4 +209,16 @@ func (c *Creators) Get(ctx context.Context, id string) (CreatorDetail, error) {
 		TierLabel:          creators.TierLabel(cr.Tier),
 		TierPeers:          peers,
 	}, nil
+}
+
+// notFound translates the store's not-found sentinel into this service's,
+// which is the one httpx.WriteServiceError maps to a 404. Without it a
+// missing row leaves here as database.ErrNotFound, which that mapper does
+// not recognise — so a mistyped id came back as a 500 and wrote an
+// "internal error" line to the log for what is really a client mistake.
+func notFound(err error) error {
+	if errors.Is(err, database.ErrNotFound) {
+		return ErrNotFound
+	}
+	return err
 }

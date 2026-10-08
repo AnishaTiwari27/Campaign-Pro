@@ -4,6 +4,9 @@
 package service
 
 import (
+	"errors"
+
+	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/campaigns"
 	"context"
@@ -189,7 +192,7 @@ type CampaignDetail struct {
 func (c *Campaigns) GetDetail(ctx context.Context, id string, listParams campaigns.ListParams) (CampaignDetail, error) {
 	camp, err := c.Store.GetCampaign(ctx, id)
 	if err != nil {
-		return CampaignDetail{}, err
+		return CampaignDetail{}, notFound(err)
 	}
 
 	all, err := c.Store.ListCampaigns(ctx)
@@ -492,4 +495,16 @@ func (c *Campaigns) Flagged(ctx context.Context) ([]campaigns.Campaign, error) {
 
 func (c *Campaigns) CreativesFor(ctx context.Context, campaignID string) ([]campaigns.Creative, error) {
 	return c.Store.ListCreativesByCampaign(ctx, campaignID)
+}
+
+// notFound translates the store's not-found sentinel into this service's,
+// which is the one httpx.WriteServiceError maps to a 404. Without it a
+// missing row leaves here as database.ErrNotFound, which that mapper does
+// not recognise — so a mistyped id came back as a 500 and wrote an
+// "internal error" line to the log for what is really a client mistake.
+func notFound(err error) error {
+	if errors.Is(err, database.ErrNotFound) {
+		return ErrNotFound
+	}
+	return err
 }

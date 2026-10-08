@@ -338,3 +338,21 @@ func TestAnomalyDetectorFlagsAndClears(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, camp.FlagReason)
 }
+
+// A mistyped or stale campaign id is a client mistake, not a server fault.
+// It regressed into a 500 because the store's sentinel (database.ErrNotFound)
+// is a different value from the one httpx.WriteServiceError maps to a 404,
+// so the error fell through to the default branch and logged "internal
+// error" on every bad link.
+func TestGetDetailUnknownIDIsNotFound(t *testing.T) {
+	st := testStore(t)
+	svc := NewCampaigns(st)
+
+	_, err := svc.GetDetail(context.Background(), "svctest-no-such-campaign", campaigns.ListParams{})
+	require.Error(t, err)
+	require.ErrorIs(t, err, ErrNotFound,
+		"a missing campaign must surface as this service's ErrNotFound")
+	// The specific guarantee: it must map to 404, which is what callers of
+	// WriteServiceError depend on.
+	require.ErrorIs(t, err, httpx.ErrNotFound)
+}

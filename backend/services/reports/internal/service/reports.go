@@ -1,6 +1,9 @@
 package service
 
 import (
+	"errors"
+
+	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/platform/httpx"
 	platformmail "campaigntrackerpro/platform/mail"
 	"campaigntrackerpro/services/campaigns"
@@ -45,7 +48,8 @@ func (r *Reports) List(ctx context.Context) ([]reports.Report, error) {
 }
 
 func (r *Reports) Get(ctx context.Context, id string) (reports.Report, error) {
-	return r.Store.GetReport(ctx, id)
+	rep, err := r.Store.GetReport(ctx, id)
+	return rep, notFound(err)
 }
 
 func validEmail(e string) bool {
@@ -222,7 +226,8 @@ func (r *Reports) Test(ctx context.Context, id, testEmail string) error {
 }
 
 func (r *Reports) ListRuns(ctx context.Context, id string, limit int32) ([]reports.ReportRun, error) {
-	return r.Store.ListReportRuns(ctx, id, limit)
+	runs, err := r.Store.ListReportRuns(ctx, id, limit)
+	return runs, notFound(err)
 }
 
 // DueScheduledReports returns enabled, non-on_flag reports whose next
@@ -256,4 +261,16 @@ func (r *Reports) OnFlagReports(ctx context.Context) ([]reports.Report, error) {
 		return nil, err
 	}
 	return all, nil
+}
+
+// notFound translates the store's not-found sentinel into this service's,
+// which is the one httpx.WriteServiceError maps to a 404. Without it a
+// missing row leaves here as database.ErrNotFound, which that mapper does
+// not recognise — so a mistyped id came back as a 500 and wrote an
+// "internal error" line to the log for what is really a client mistake.
+func notFound(err error) error {
+	if errors.Is(err, database.ErrNotFound) {
+		return ErrNotFound
+	}
+	return err
 }
