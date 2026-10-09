@@ -34,12 +34,12 @@ export function CreatorsPage() {
       ) : (
         <div className="creator-list">
           <div className="creator-list-head">
-            <span>Creator</span>
+            <span>Influencer</span>
             <span>Tier</span>
             <span className="creator-col-num">vs tier</span>
             <span className="creator-col-num">Consistency</span>
-            <span className="creator-col-num">Audience reach</span>
-            <span className="creator-col-num">Cost / lakh</span>
+            <span className="creator-col-num" title="Average campaign reach against their own follower count">Reach vs followers</span>
+            <span className="creator-col-num" title="Rupees per lakh of reach, and how that compares with their tier">Cost / lakh</span>
             <span className="creator-col-num">Campaigns</span>
           </div>
 
@@ -73,7 +73,17 @@ export function CreatorsPage() {
                 {c.audienceReachPct >= 200 && <span className="creator-travel" title="Reaching well beyond their own following">travels</span>}
               </span>
 
-              <span className="creator-col-num mono">{formatMoney(c.costPerLakh)}</span>
+              <span className="creator-col-num mono creator-cost">
+                {formatMoney(c.costPerLakh)}
+                {c.costIndex > 0 && (
+                  <span
+                    className={`creator-cost-index${c.costIndex <= 0.95 ? " creator-cost-index-good" : c.costIndex >= 1.1 ? " creator-cost-index-high" : ""}`}
+                    title={`Tier median is ${formatMoney(c.tierCostMedian)} per lakh`}
+                  >
+                    {c.costIndex.toFixed(2)}× tier
+                  </span>
+                )}
+              </span>
 
               <span className="creator-col-num mono creator-campaign-count">
                 {c.campaigns}
@@ -86,9 +96,11 @@ export function CreatorsPage() {
 
       {items.length > 0 && (
         <p className="creators-foot">
-          Tier medians are computed across running campaigns only. Index of {formatIndex(1)} means a creator delivers exactly
-          the median reach for their tier; consistency scores how repeatable that is across their{" "}
-          {items.reduce((n, c) => n + c.campaigns, 0)} tracked campaigns, totalling {formatReach(items.reduce((n, c) => n + c.totalReach, 0))} reach.
+          Tier medians are computed across running campaigns only, over {items.reduce((n, c) => n + c.campaigns, 0)}{" "}
+          tracked campaigns totalling {formatReach(items.reduce((n, c) => n + c.totalReach, 0))} reach. An index of{" "}
+          {formatIndex(1)} on <strong>vs tier</strong> means exactly the median reach for their tier, and higher is
+          better. On <strong>cost / lakh</strong> the comparison runs the other way — <strong>lower is better</strong>,
+          so 0.80× is reach 20% cheaper than peers of their size.
         </p>
       )}
     </div>

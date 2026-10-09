@@ -100,3 +100,27 @@
   .creator-list { overflow-x: auto; }
   .creator-list-head, .creator-row { min-width: 860px; }
 }
+
+/* Cost cell: the rupee figure, with how it compares to the tier beneath it.
+   The comparison is the point — ₹75K means nothing until you know what
+   peers of that size cost. */
+.creator-cost {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  line-height: 1.25;
+}
+
+.creator-cost-index {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Lower is better here, which is the opposite of every other index on this
+   page — so the words "cheaper"/"dearer" carry it in the tooltip and the
+   footnote, and colour is only a reinforcement. */
+.creator-cost-index-good { color: var(--good); }
+.creator-cost-index-high { color: var(--warn); }

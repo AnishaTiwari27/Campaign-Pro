@@ -83,3 +83,27 @@ func TestRankCreatorsOrdersByTierIndex(t *testing.T) {
 		t.Fatalf("unexpected order: %v %v %v", perf[0].Creator.ID, perf[1].Creator.ID, perf[2].Creator.ID)
 	}
 }
+
+// Cost index is the one index in this product where lower is better, so
+// the direction is pinned rather than left to a reader's assumption.
+func TestCostIndexOf(t *testing.T) {
+	cases := []struct {
+		name            string
+		cost, tierMedia float64
+		want            float64
+	}{
+		{"cheaper than their tier", 60_000, 75_000, 0.8},
+		{"exactly the tier median", 75_000, 75_000, 1},
+		{"dearer than their tier", 90_000, 75_000, 1.2},
+		// Unknown on either side is "—", never a flattering 1.0.
+		{"no tier baseline yet", 75_000, 0, 0},
+		{"creator has no cost yet", 0, 75_000, 0},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := CostIndexOf(c.cost, c.tierMedia); got != c.want {
+				t.Fatalf("CostIndexOf(%v, %v) = %v, want %v", c.cost, c.tierMedia, got, c.want)
+			}
+		})
+	}
+}

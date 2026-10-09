@@ -275,6 +275,11 @@ export interface CreatorPerformance extends Creator {
   /** Avg reach as a share of follower base. >100% means content travelled. */
   audienceReachPct: number;
   flagged: number;
+  /** Median cost per lakh across this creator's tier. */
+  tierCostMedian: number;
+  /** costPerLakh / tierCostMedian. LOWER IS BETTER — 0.8x is cheaper
+   *  reach than peers of their size. 0 means not yet measurable. */
+  costIndex: number;
 }
 
 export interface LanguageReach {

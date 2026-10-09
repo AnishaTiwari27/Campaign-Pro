@@ -92,6 +92,12 @@ type CreatorPerformance struct {
 	ConsistencyN     int
 	AudienceReachPct float64 // avg reach as a share of follower base
 	Flagged          int
+	// TierCostMedian is the median ₹-per-lakh among this creator's tier,
+	// and CostIndex is theirs against it. CostPerLakh alone answers "what
+	// does their reach cost"; it cannot answer "is that a good price",
+	// which is the question a booking actually turns on.
+	TierCostMedian float64
+	CostIndex      float64
 }
 
 // TierMedianReach is the median campaign reach within a tier, the baseline
@@ -149,6 +155,18 @@ func AudienceReachPct(avgReachLakh float64, followers int64) float64 {
 		return 0
 	}
 	return (avgReachLakh * 100000) / float64(followers) * 100
+}
+
+// CostIndexOf expresses a creator's cost per lakh against the median for
+// their own tier. Unlike every other index in this product, LOWER IS
+// BETTER: 0.8x means their reach costs 20% less than peers of their size.
+// Returns 0 when either side is unknown, which callers render as "—"
+// rather than as a suspiciously perfect 1.0.
+func CostIndexOf(costPerLakh, tierCostMedian float64) float64 {
+	if tierCostMedian <= 0 || costPerLakh <= 0 {
+		return 0
+	}
+	return costPerLakh / tierCostMedian
 }
 
 // RankCreators orders a roster by tier index descending — best performers
