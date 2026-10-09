@@ -26,6 +26,7 @@ type CampaignReader interface {
 	PendingCount(ctx context.Context) (int64, error)
 	PendingSpend(ctx context.Context) (int64, error)
 	Flagged(ctx context.Context) ([]campaigns.Campaign, error)
+	Festivals(ctx context.Context) ([]campaigns.FestivalStat, error)
 }
 
 // CreatorReader is only used to make creators findable in the palette.

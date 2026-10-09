@@ -29,6 +29,16 @@ export function CreativesTab({ creatives }: { creatives: Creative[] }) {
             <span>{formatReach(c.reach)} reach</span>
             <span>{c.ctr.toFixed(1)}% CTR</span>
           </div>
+          {/* The analyzer's read of the asset. Festival leads because it is
+              the one that drives planning: a Diwali cut and an evergreen
+              cut are not the same creative in this market. */}
+          {(c.festival || c.language || c.hookType) && (
+            <div className="creative-card-tags">
+              {c.festival && <span className="creative-tag creative-tag-festival">{c.festival}</span>}
+              {c.language && <span className="creative-tag">{c.language}</span>}
+              {c.hookType && <span className="creative-tag">{c.hookType}</span>}
+            </div>
+          )}
         </div>
       ))}
     </div>

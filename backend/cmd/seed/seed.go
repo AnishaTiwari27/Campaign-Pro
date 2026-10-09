@@ -117,10 +117,18 @@ func main() {
 			log.Fatalf("create campaign %s: %v", c.id, err)
 		}
 
-		for _, cr := range creativesFor(string(c.adType), c.reach) {
+		for ci, cr := range creativesFor(string(c.adType), c.reach) {
 			if _, err := camp.Store().CreateCreative(ctx, campaigns.Creative{
 				CampaignID: created.ID, Headline: cr.headline, Kind: cr.kind,
 				DurationLabel: cr.duration, Reach: cr.reach, CTR: cr.ctr,
+				Language: pickFor(created.ID, ci, seedLanguages),
+				HookType: pickFor(created.ID, ci, seedHooks),
+				Claim:    c.category + " brand spot",
+				Festival: festivalFor(created.ID, ci),
+				// Seeded creatives are analysed by construction, so the column
+				// that records when reflects that rather than reading as a
+				// backlog of unprocessed assets.
+				AnalyzedAt: time.Now(),
 			}); err != nil {
 				log.Fatalf("create creative for %s: %v", c.id, err)
 			}
@@ -362,4 +370,42 @@ func plannedFlight(id string, daysRunning int, status campaigns.Status) int {
 		flight = daysRunning + 1
 	}
 	return flight
+}
+
+// Indian festivals and tentpoles that campaigns actually plan around. The
+// festival column existed in the schema from the start and was never
+// filled, which left the most India-specific cut of the data unopened:
+// what a Diwali creative delivers against an untagged one.
+var seedFestivals = []string{
+	"Diwali", "Holi", "IPL", "Navratri", "Eid", "Raksha Bandhan", "Pongal", "Independence Day",
+}
+
+// festivalFor tags roughly half the creatives, which is the honest shape:
+// a brand runs festival work around the calendar and evergreen work the
+// rest of the year. Keyed off the campaign id so a reseed is stable.
+func festivalFor(campaignID string, n int) string {
+	var h uint32 = 2166136261
+	for i := 0; i < len(campaignID); i++ {
+		h = (h ^ uint32(campaignID[i])) * 16777619
+	}
+	h = (h ^ uint32(n)) * 16777619
+	if h%10 < 5 {
+		return ""
+	}
+	return seedFestivals[int(h/10)%len(seedFestivals)]
+}
+
+// seedLanguages and seedHooks fill the two analyzer columns for brand
+// creatives, which previously carried neither — only creator campaigns set
+// them, so half the roster looked unanalysed.
+var seedLanguages = []string{"Hindi", "English", "Tamil", "Telugu", "Marathi", "Bengali"}
+var seedHooks = []string{"announcement", "demo", "offer", "story", "testimonial", "unboxing"}
+
+func pickFor(campaignID string, n int, from []string) string {
+	var h uint32 = 2166136261
+	for i := 0; i < len(campaignID); i++ {
+		h = (h ^ uint32(campaignID[i])) * 16777619
+	}
+	h = (h ^ uint32(n*7+13)) * 16777619
+	return from[int(h)%len(from)]
 }

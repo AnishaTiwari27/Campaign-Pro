@@ -25,3 +25,17 @@ RETURNING *;
 
 -- name: ListUnanalyzedCreatives :many
 SELECT * FROM creatives WHERE analyzed_at IS NULL LIMIT $1;
+
+-- FestivalReach groups analysed creatives by the festival they were cut
+-- for. The empty-festival row is evergreen work, and is the baseline every
+-- tagged group gets compared against.
+-- name: FestivalReach :many
+SELECT
+    COALESCE(festival, '') AS festival,
+    count(*)               AS creatives,
+    avg(reach)::float8     AS avg_reach,
+    avg(ctr)::float8       AS avg_ctr
+FROM creatives
+WHERE analyzed_at IS NOT NULL
+GROUP BY 1
+ORDER BY 3 DESC;

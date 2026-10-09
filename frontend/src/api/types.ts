@@ -53,6 +53,13 @@ export interface Creative {
   durationLabel: string;
   reach: number;
   ctr: number;
+  /** The CreativeAnalyzer's output. Absent until an asset is analysed. */
+  language?: string;
+  hookType?: string;
+  claim?: string;
+  /** The festival or tentpole this creative was cut for, when it was cut
+   *  for one at all. Evergreen work has none. */
+  festival?: string;
 }
 
 export interface AuditEvent {
@@ -143,6 +150,20 @@ export interface CategoryBenchmark {
 export interface Benchmark {
   medAll: number;
   categories: CategoryBenchmark[];
+  festivals: FestivalStat[];
+}
+
+/** Analysed-creative performance grouped by the festival a creative was
+ *  cut for. An empty festival is evergreen work — the baseline, which is
+ *  why it carries no lift of its own. */
+export interface FestivalStat {
+  festival: string;
+  creatives: number;
+  avgReach: number;
+  avgCtr: number;
+  /** avgReach against evergreen work. 1.0 means a festival cut performed
+   *  exactly like untagged work. 0 on the baseline row. */
+  lift: number;
 }
 
 export interface AdTypeCount {

@@ -58,3 +58,20 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Festival rows carry two numbers: the reach itself and what it was
+   against evergreen work. The second is the finding, so it gets the
+   colour — and says "vs evergreen" in words, never colour alone. */
+.benchmarks-festival-reach {
+  color: var(--muted);
+  margin-right: 12px;
+}
+
+.benchmarks-festival-lift {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.benchmarks-festival-lift-up { color: var(--good); }
+.benchmarks-festival-lift-down { color: var(--warn); }

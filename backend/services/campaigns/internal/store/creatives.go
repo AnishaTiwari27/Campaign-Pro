@@ -39,3 +39,21 @@ func (s *Store) CreateCreative(ctx context.Context, c campaigns.Creative) (campa
 	}
 	return toDomainCreative(created), nil
 }
+
+// FestivalBreakdown groups analysed creatives by festival.
+func (s *Store) FestivalBreakdown(ctx context.Context) ([]campaigns.FestivalStat, error) {
+	rows, err := s.db.Queries.FestivalReach(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]campaigns.FestivalStat, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, campaigns.FestivalStat{
+			Festival:  r.Festival,
+			Creatives: int(r.Creatives),
+			AvgReach:  r.AvgReach,
+			AvgCTR:    r.AvgCtr,
+		})
+	}
+	return out, nil
+}

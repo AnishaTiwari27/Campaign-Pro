@@ -71,10 +71,21 @@ type CreativeDTO struct {
 	DurationLabel string  `json:"durationLabel"`
 	Reach         float64 `json:"reach"`
 	CTR           float64 `json:"ctr"`
+	// The CreativeAnalyzer's output. Modelled and stored since the start,
+	// but never exposed — so the one genuinely India-specific cut of the
+	// data (what a festival creative delivers) could not be seen at all.
+	Language string `json:"language,omitempty"`
+	HookType string `json:"hookType,omitempty"`
+	Claim    string `json:"claim,omitempty"`
+	Festival string `json:"festival,omitempty"`
 }
 
 func NewCreativeDTO(c Creative) CreativeDTO {
-	return CreativeDTO{ID: c.ID, Headline: c.Headline, Kind: c.Kind, DurationLabel: c.DurationLabel, Reach: c.Reach, CTR: c.CTR}
+	return CreativeDTO{
+		ID: c.ID, Headline: c.Headline, Kind: c.Kind, DurationLabel: c.DurationLabel,
+		Reach: c.Reach, CTR: c.CTR,
+		Language: c.Language, HookType: c.HookType, Claim: c.Claim, Festival: c.Festival,
+	}
 }
 
 func NewCreativeDTOs(cs []Creative) []CreativeDTO {

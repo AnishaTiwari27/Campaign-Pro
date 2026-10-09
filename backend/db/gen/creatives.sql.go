@@ -74,6 +74,53 @@ func (q *Queries) CreateCreative(ctx context.Context, arg CreateCreativeParams) 
 	return i, err
 }
 
+const festivalReach = `-- name: FestivalReach :many
+SELECT
+    COALESCE(festival, '') AS festival,
+    count(*)               AS creatives,
+    avg(reach)::float8     AS avg_reach,
+    avg(ctr)::float8       AS avg_ctr
+FROM creatives
+WHERE analyzed_at IS NOT NULL
+GROUP BY 1
+ORDER BY 3 DESC
+`
+
+type FestivalReachRow struct {
+	Festival  string  `json:"festival"`
+	Creatives int64   `json:"creatives"`
+	AvgReach  float64 `json:"avg_reach"`
+	AvgCtr    float64 `json:"avg_ctr"`
+}
+
+// FestivalReach groups analysed creatives by the festival they were cut
+// for. The empty-festival row is evergreen work, and is the baseline every
+// tagged group gets compared against.
+func (q *Queries) FestivalReach(ctx context.Context) ([]FestivalReachRow, error) {
+	rows, err := q.db.Query(ctx, festivalReach)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FestivalReachRow
+	for rows.Next() {
+		var i FestivalReachRow
+		if err := rows.Scan(
+			&i.Festival,
+			&i.Creatives,
+			&i.AvgReach,
+			&i.AvgCtr,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAllCreatives = `-- name: ListAllCreatives :many
 SELECT id, campaign_id, headline, kind, duration_label, reach, ctr, created_at, language, hook_type, claim, festival, analyzed_at FROM creatives
 `

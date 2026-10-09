@@ -26,6 +26,10 @@ type Querier interface {
 	DeleteReport(ctx context.Context, id pgtype.UUID) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
+	// FestivalReach groups analysed creatives by the festival they were cut
+	// for. The empty-festival row is evergreen work, and is the baseline every
+	// tagged group gets compared against.
+	FestivalReach(ctx context.Context) ([]FestivalReachRow, error)
 	GetCampaign(ctx context.Context, id string) (Campaign, error)
 	GetCreator(ctx context.Context, id string) (Creator, error)
 	GetLastReportRun(ctx context.Context, reportID pgtype.UUID) (ReportRun, error)

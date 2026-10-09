@@ -54,3 +54,19 @@ type User struct {
 	CanApprove bool
 	CreatedAt  time.Time
 }
+
+// FestivalStat is analysed-creative performance grouped by the festival a
+// creative was cut for. Festival is "" for evergreen work, which is the
+// baseline the tagged groups are measured against — the question is not
+// "what did Diwali do", it is "what did Diwali do that ordinary work did
+// not".
+type FestivalStat struct {
+	Festival  string
+	Creatives int
+	AvgReach  float64
+	AvgCTR    float64
+	// Lift is AvgReach against the evergreen baseline. 1.0 means a
+	// festival cut performed exactly like untagged work; 0 on the
+	// baseline row itself, which has nothing to compare with.
+	Lift float64
+}

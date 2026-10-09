@@ -72,7 +72,24 @@ func benchmarkDTO(b service.BenchmarkResult) map[string]any {
 			TopCampaign: c.TopCampaign, TopReach: c.TopReach, TotalSpend: c.TotalSpend,
 		}
 	}
-	return map[string]any{"medAll": b.MedAll, "categories": cats}
+	fests := make([]FestivalStatDTO, 0, len(b.Festivals))
+	for _, f := range b.Festivals {
+		fests = append(fests, FestivalStatDTO{
+			Festival: f.Festival, Creatives: f.Creatives,
+			AvgReach: f.AvgReach, AvgCTR: f.AvgCTR, Lift: f.Lift,
+		})
+	}
+	return map[string]any{"medAll": b.MedAll, "categories": cats, "festivals": fests}
+}
+
+// FestivalStatDTO carries the festival cut. An empty Festival is evergreen
+// work — the baseline, which is why it has no lift of its own.
+type FestivalStatDTO struct {
+	Festival  string  `json:"festival"`
+	Creatives int     `json:"creatives"`
+	AvgReach  float64 `json:"avgReach"`
+	AvgCTR    float64 `json:"avgCtr"`
+	Lift      float64 `json:"lift"`
 }
 
 type AdTypeCountDTO struct {

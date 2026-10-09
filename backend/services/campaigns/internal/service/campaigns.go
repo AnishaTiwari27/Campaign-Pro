@@ -567,3 +567,30 @@ func notFound(err error) error {
 	}
 	return err
 }
+
+// Festivals groups analysed creatives by the festival they were cut for
+// and scores each against evergreen work. The baseline is the untagged
+// row: a festival number on its own says nothing, because a brand puts
+// its best assets behind Diwali whether or not the festival helps.
+func (c *Campaigns) Festivals(ctx context.Context) ([]campaigns.FestivalStat, error) {
+	stats, err := c.Store.FestivalBreakdown(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var baseline float64
+	for _, s := range stats {
+		if s.Festival == "" {
+			baseline = s.AvgReach
+		}
+	}
+	out := make([]campaigns.FestivalStat, 0, len(stats))
+	for _, s := range stats {
+		// The baseline row keeps a lift of 0, which the UI renders as "—":
+		// comparing evergreen work with itself is not a finding.
+		if s.Festival != "" && baseline > 0 {
+			s.Lift = s.AvgReach / baseline
+		}
+		out = append(out, s)
+	}
+	return out, nil
+}
