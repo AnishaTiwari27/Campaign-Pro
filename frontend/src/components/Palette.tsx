@@ -25,7 +25,7 @@ function targetFor(r: SearchResult): string {
 const GROUP_TITLES: Record<SearchResult["kind"], string> = {
   section: "Go to",
   campaign: "Campaigns",
-  creator: "Creators",
+  creator: "Influencers",
   region: "Regions",
   action: "Actions",
 };

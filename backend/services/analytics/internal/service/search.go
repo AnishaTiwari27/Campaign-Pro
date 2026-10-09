@@ -17,7 +17,7 @@ type SearchResult struct {
 
 var paletteSections = []struct{ id, title string }{
 	{"overview", "Overview"}, {"campaigns", "Campaigns"}, {"approvals", "Approvals"},
-	{"creators", "Creators"}, {"regions", "Regions"}, {"benchmarks", "Benchmarks"}, {"reports", "Reports"}, {"settings", "Settings"},
+	{"creators", "Influencers"}, {"regions", "Regions"}, {"benchmarks", "Benchmarks"}, {"reports", "Reports"}, {"settings", "Settings"},
 }
 
 // Search backs the command palette: "Go to" sections always show; campaigns,

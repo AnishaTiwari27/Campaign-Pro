@@ -9,7 +9,7 @@ import { SubjectImage } from "../../components/SubjectImage";
 import "./CreatorsPage.css";
 
 export function CreatorsPage() {
-  useSetBreadcrumbs([{ label: "Creators" }]);
+  useSetBreadcrumbs([{ label: "Influencers" }]);
   const { data, isLoading } = useCreators();
   const navigate = useNavigate();
   const items = data?.items ?? [];
@@ -18,7 +18,7 @@ export function CreatorsPage() {
     <div className="creators-page">
       <div className="page-header">
         <div>
-          <h1>Creators</h1>
+          <h1>Influencers</h1>
           <p className="creators-lede">
             Everyone who fronts a campaign — influencers, actors, cricketers, singers and founders. Ranked by how each
             performs <strong>for their own tier</strong>, not by follower count: a mega account doing big numbers is
@@ -30,7 +30,7 @@ export function CreatorsPage() {
       {isLoading ? (
         <SkeletonRows count={6} height={72} />
       ) : items.length === 0 ? (
-        <EmptyState title="No creators yet" description="Creator-led campaigns will appear here." />
+        <EmptyState title="No influencers yet" description="Campaigns fronted by a person will appear here." />
       ) : (
         <div className="creator-list">
           <div className="creator-list-head">

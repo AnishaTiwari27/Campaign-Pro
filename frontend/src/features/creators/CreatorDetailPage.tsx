@@ -15,15 +15,15 @@ export function CreatorDetailPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useCreatorDetail(id);
 
-  useSetBreadcrumbs([{ label: "Creators", href: "/creators" }, { label: data?.name ?? "…" }]);
+  useSetBreadcrumbs([{ label: "Influencers", href: "/creators" }, { label: data?.name ?? "…" }]);
 
   if (isLoading) return <SkeletonBlock height={400} />;
 
   if (isError || !data) {
     return (
       <EmptyState
-        title="Creator not found"
-        description="This creator doesn't exist, or the link is out of date."
+        title="Influencer not found"
+        description="This person doesn't exist, or the link is out of date."
         action={
           <Link to="/creators" className="btn btn-primary">
             Back to Creators

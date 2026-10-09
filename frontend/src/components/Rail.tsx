@@ -65,7 +65,12 @@ export function Rail() {
 
       <div className="rail-group">
         <div className="rail-group-label">Analysis</div>
-        <NavItem to="/creators" icon={<IconCreators />} label="Creators" />
+        {/* Label and route deliberately differ. The section is named for
+            what it holds — influencers, actors, cricketers, singers — while
+            the route, the API path, the Go package and the table stay
+            "creators". Renaming those would break every link already shared
+            and buy nothing a reader can see. */}
+        <NavItem to="/creators" icon={<IconCreators />} label="Influencers" />
         <NavItem to="/regions" icon={<IconRegions />} label="Regions" />
         <NavItem to="/signals" icon={<IconSignals />} label="Signals" />
         {!isClient && <NavItem to="/benchmarks" icon={<IconBenchmarks />} label="Benchmarks" />}

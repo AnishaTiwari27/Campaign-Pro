@@ -136,7 +136,7 @@ an approver trying to approve a campaign whose budget state forbids it gets
 | GET | `/campaigns/export.csv` | Same filters as the list, as a CSV download |
 | GET | `/overview` | KPIs, sparkline series, spotlight, and the four ribbons |
 | GET | `/benchmark` | Category benchmarks + MED_ALL |
-| GET | `/creators` · `/creators/:id` | The roster with tier-normalised performance; detail adds that creator's campaigns |
+| GET | `/creators` · `/creators/:id` | The roster with tier-normalised performance; detail adds that person's campaigns. Shown in the UI as **Influencers** — the route, package and table keep the `creators` name |
 | GET | `/regions` · `/regions/:id` | Rollups; detail adds campaigns by reach, category breakdown, pending count, budget share |
 | GET/POST | `/reports` | List (with each report's last run) · create from a filter snapshot |
 | GET/PATCH | `/reports/:id` | Read · edit name, enabled, cadence, recipients, columns |
@@ -335,6 +335,18 @@ rewrite.
 | `PORT` | Whatever the platform injects; defaults to `8090` |
 | `ALLOW_SIGNUP` | `true` (the default) exposes the public signup page and `POST /api/auth/signup`. Set it to `false` to close registration once the accounts that should exist do — the route is then not registered at all, rather than registered and refusing |
 
+### A word on "creators" vs "Influencers"
+
+Half the campaigns here are fronted by a person rather than a brand — in the
+demo data that is cricketers, singers, actors and creators, 18 of 35. The UI
+calls that section **Influencers**, because that is the market it belongs to
+and because an abstract label made people guess.
+
+The route (`/creators`), the API path, the Go package and the `creators`
+table all keep the original name. Renaming them would break every link
+already shared and change nothing a reader can see. The divergence is
+deliberate and noted at the nav item itself.
+
 ### Self-registration
 
 `ALLOW_SIGNUP` (on by default) puts a **Create an account** link on the sign-in
@@ -514,6 +526,7 @@ campaign-tracker-pro/
       identity/          sessions, password auth, roles and permissions
       campaigns/         Campaign type, every metric formula, anomalies, CSV
       creators/          tier bucketing and tier-normalised performance
+                         (surfaced in the UI as "Influencers")
       analytics/         overview, benchmarks, regions, search (owns no tables)
       reports/           cadence maths, scheduler, run history
 
