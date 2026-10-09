@@ -23,6 +23,7 @@ type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExpiredSessions(ctx context.Context) error
+	DeleteGrantsForUser(ctx context.Context, userID pgtype.UUID) error
 	DeleteReport(ctx context.Context, id pgtype.UUID) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
@@ -38,6 +39,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error)
 	GetUserForAuth(ctx context.Context, email string) (GetUserForAuthRow, error)
+	GrantCampaign(ctx context.Context, arg GrantCampaignParams) error
 	ListAllCreatives(ctx context.Context) ([]Creative, error)
 	ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error)
 	ListCampaigns(ctx context.Context) ([]Campaign, error)
@@ -51,6 +53,7 @@ type Querier interface {
 	ListEnabledReports(ctx context.Context) ([]Report, error)
 	ListEnabledReportsByCadence(ctx context.Context, cadence ReportCadenceT) ([]Report, error)
 	ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error)
+	ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	ListPendingCampaigns(ctx context.Context) ([]Campaign, error)
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
 	ListReports(ctx context.Context) ([]Report, error)

@@ -10,6 +10,7 @@ import (
 	"log/slog"
 
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/campaigns"
 	"campaigntrackerpro/services/campaigns/internal/api"
 	"campaigntrackerpro/services/campaigns/internal/service"
@@ -131,4 +132,44 @@ func (d userDirectory) ListUsers(ctx context.Context) ([]identity.DirectoryUser,
 // store, where it cannot drift from identity's CanApprove().
 func (d userDirectory) SetRole(ctx context.Context, userID, role string, isAgency bool) error {
 	return d.store.SetUserRole(ctx, userID, role, isAgency)
+}
+
+// Grants is how the composition root resolves what a client may see, and
+// how the Team screen edits it. Campaigns owns both the users table and
+// the campaigns table, so it owns the relation between them.
+func (m *Module) Grants() grantStore { return grantStore{m.store} }
+
+type grantStore struct{ store *store.Store }
+
+func (g grantStore) For(ctx context.Context, userID string) ([]string, error) {
+	return g.store.GrantsForUser(ctx, userID)
+}
+
+func (g grantStore) Replace(ctx context.Context, userID string, campaignIDs []string) error {
+	return g.store.ReplaceGrantsForUser(ctx, userID, campaignIDs)
+}
+
+func (d userDirectory) GrantsFor(ctx context.Context, userID string) ([]string, error) {
+	return d.store.GrantsForUser(ctx, userID)
+}
+
+func (d userDirectory) SetGrants(ctx context.Context, userID string, campaignIDs []string) error {
+	return d.store.ReplaceGrantsForUser(ctx, userID, campaignIDs)
+}
+
+// AllCampaignChoices lists every campaign for the grant editor. Read with
+// an unrestricted context on purpose: an admin granting access has to see
+// the campaigns they are granting, whoever they are granting them to.
+func (d userDirectory) AllCampaignChoices(ctx context.Context) ([]identity.CampaignChoice, error) {
+	all, err := d.store.ListCampaigns(scope.WithCampaigns(ctx, scope.Campaigns{}))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]identity.CampaignChoice, 0, len(all))
+	for _, c := range all {
+		out = append(out, identity.CampaignChoice{
+			ID: c.ID, Name: c.Name, Meta: c.Category + " · " + c.Region,
+		})
+	}
+	return out, nil
 }

@@ -576,6 +576,12 @@ type Campaign struct {
 	FlightDays  pgtype.Int4        `json:"flight_days"`
 }
 
+type ClientCampaignGrant struct {
+	UserID     pgtype.UUID        `json:"user_id"`
+	CampaignID string             `json:"campaign_id"`
+	GrantedAt  pgtype.Timestamptz `json:"granted_at"`
+}
+
 type Creative struct {
 	ID            pgtype.UUID        `json:"id"`
 	CampaignID    string             `json:"campaign_id"`

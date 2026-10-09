@@ -47,6 +47,10 @@ func (u User) CanApprove() bool {
 	return u.IsAgency && (u.Role == RoleAdmin || u.Role == RoleApprover)
 }
 
+// PrincipalID is this account's id, for callers that hold the session as
+// an opaque principal and may not import this package's concrete type.
+func (u User) PrincipalID() string { return u.ID }
+
 // CanManageUsers is admin-only.
 func (u User) CanManageUsers() bool { return u.IsAgency && u.Role == RoleAdmin }
 
@@ -76,4 +80,13 @@ type DirectoryUser struct {
 	IsAgency   bool
 	CanApprove bool
 	CreatedAt  time.Time
+}
+
+// CampaignChoice is one option in the grant editor — enough to recognise a
+// campaign, and nothing more. Identity has no business knowing a
+// campaign's spend.
+type CampaignChoice struct {
+	ID   string
+	Name string
+	Meta string
 }

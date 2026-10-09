@@ -54,6 +54,12 @@ type Directory interface {
 	ListUsers(ctx context.Context) ([]identity.DirectoryUser, error)
 	// SetRole changes what an account may do.
 	SetRole(ctx context.Context, userID, role string, isAgency bool) error
+	// GrantsFor and SetGrants are which campaigns a client account may
+	// see. Meaningless for agency staff, who see everything.
+	GrantsFor(ctx context.Context, userID string) ([]string, error)
+	SetGrants(ctx context.Context, userID string, campaignIDs []string) error
+	// AllCampaignChoices is the list the grant editor picks from.
+	AllCampaignChoices(ctx context.Context) ([]identity.CampaignChoice, error)
 }
 
 // SignupInput is what the form collects, before validation.

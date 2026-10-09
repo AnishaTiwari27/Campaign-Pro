@@ -90,7 +90,7 @@ func main() {
 
 	go reportsMod.Run(ctx)
 
-	router := newRouter(analyticsMod.Health(), identityMod, logger,
+	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(), logger,
 		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}

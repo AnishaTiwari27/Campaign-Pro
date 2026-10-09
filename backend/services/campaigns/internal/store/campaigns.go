@@ -2,6 +2,7 @@ package store
 
 import (
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/campaigns"
 	"context"
 	"errors"
@@ -36,7 +37,7 @@ func (s *Store) ListCampaigns(ctx context.Context) ([]campaigns.Campaign, error)
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
 }
 
 func (s *Store) ListCampaignsFiltered(ctx context.Context, f CampaignFilter) ([]campaigns.Campaign, error) {
@@ -61,10 +62,15 @@ func (s *Store) ListCampaignsFiltered(ctx context.Context, f CampaignFilter) ([]
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
 }
 
 func (s *Store) GetCampaign(ctx context.Context, id string) (campaigns.Campaign, error) {
+	// Out of scope reads as absent, not as forbidden: telling a client
+	// that a campaign exists but is not theirs is itself a disclosure.
+	if !scope.CampaignsFrom(ctx).Allows(id) {
+		return campaigns.Campaign{}, database.ErrNotFound
+	}
 	c, err := s.db.Queries.GetCampaign(ctx, id)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -80,7 +86,7 @@ func (s *Store) ListRunningCampaigns(ctx context.Context) ([]campaigns.Campaign,
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
 }
 
 func (s *Store) ListPendingCampaigns(ctx context.Context) ([]campaigns.Campaign, error) {
@@ -88,7 +94,7 @@ func (s *Store) ListPendingCampaigns(ctx context.Context) ([]campaigns.Campaign,
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
 }
 
 func (s *Store) ListFlaggedCampaigns(ctx context.Context) ([]campaigns.Campaign, error) {
@@ -96,7 +102,7 @@ func (s *Store) ListFlaggedCampaigns(ctx context.Context) ([]campaigns.Campaign,
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
 }
 
 func (s *Store) CreateCampaign(ctx context.Context, c campaigns.Campaign) (campaigns.Campaign, error) {
@@ -148,7 +154,7 @@ func (s *Store) BulkUpdateApproval(ctx context.Context, ids []string, approval c
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
 }
 
 func (s *Store) UpdateCampaignStatus(ctx context.Context, id string, status campaigns.Status) (campaigns.Campaign, error) {
@@ -201,5 +207,25 @@ func (s *Store) ListCampaignsByCreator(ctx context.Context, creatorID string) ([
 	if err != nil {
 		return nil, err
 	}
-	return toDomainCampaigns(cs), nil
+	return scoped(ctx, toDomainCampaigns(cs)), nil
+}
+
+// scoped drops anything the caller may not see. Applied at every list
+// return in this file rather than in the SQL, because the filter must hold
+// for all six of them and a WHERE clause added to five is a hole.
+//
+// With an unrestricted scope this is a no-op, which is every caller that
+// is not a client request.
+func scoped(ctx context.Context, cs []campaigns.Campaign) []campaigns.Campaign {
+	sc := scope.CampaignsFrom(ctx)
+	if !sc.Restricted {
+		return cs
+	}
+	out := make([]campaigns.Campaign, 0, len(cs))
+	for _, c := range cs {
+		if sc.Allows(c.ID) {
+			out = append(out, c)
+		}
+	}
+	return out
 }

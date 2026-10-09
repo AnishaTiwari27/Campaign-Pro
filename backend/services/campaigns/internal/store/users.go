@@ -82,3 +82,38 @@ func (s *Store) SetUserRole(ctx context.Context, userID, role string, isAgency b
 		uid, role, canApprove, isAgency)
 	return err
 }
+
+// GrantsForUser is the campaign ids a client account may see.
+func (s *Store) GrantsForUser(ctx context.Context, userID string) ([]string, error) {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.db.Queries.ListGrantsForUser(ctx, uid)
+}
+
+// ReplaceGrantsForUser sets exactly which campaigns a client may see.
+// Replace rather than add: the screen edits a set, and a partial update
+// would leave a revoked campaign visible until someone noticed.
+func (s *Store) ReplaceGrantsForUser(ctx context.Context, userID string, campaignIDs []string) error {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return err
+	}
+	tx, err := s.db.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := s.db.Queries.WithTx(tx)
+	if err := q.DeleteGrantsForUser(ctx, uid); err != nil {
+		return err
+	}
+	for _, id := range campaignIDs {
+		if err := q.GrantCampaign(ctx, gen.GrantCampaignParams{UserID: uid, CampaignID: id}); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
+}

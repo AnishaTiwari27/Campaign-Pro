@@ -5,6 +5,7 @@ import (
 
 	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/platform/httpx"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/campaigns"
 	"campaigntrackerpro/services/creators"
 	"context"
@@ -149,6 +150,20 @@ func (c *Creators) List(ctx context.Context) ([]creators.CreatorPerformance, err
 		}
 	}
 
+	// The roster comes from the creators table, which carries no scope of
+	// its own — so a client would otherwise see every influencer the
+	// agency works with, including those on accounts that are not theirs.
+	// Campaign reads are already scoped, so "has no visible campaign" is
+	// exactly the right test, and it costs agency staff nothing: they can
+	// see every campaign, so they keep every creator.
+	visible := make([]creators.Creator, 0, len(roster))
+	for _, cr := range roster {
+		if len(byCreator[cr.ID]) > 0 {
+			visible = append(visible, cr)
+		}
+	}
+	roster = visible
+
 	medians := tierMedians(roster, byCreator)
 	costMedians, costPeers := tierCostMedians(roster, byCreator)
 	out := make([]creators.CreatorPerformance, 0, len(roster))
@@ -200,6 +215,11 @@ func (c *Creators) Get(ctx context.Context, id string) (CreatorDetail, error) {
 	costMedians, costPeers := tierCostMedians(roster, byCreator)
 
 	camps := byCreator[cr.ID]
+	// Same rule as the roster: no visible campaign means this creator is
+	// not part of what the caller may see, and "absent" is the safe answer.
+	if len(camps) == 0 && scope.CampaignsFrom(ctx).Restricted {
+		return CreatorDetail{}, ErrNotFound
+	}
 	perf := performanceFor(cr, camps, medians[cr.Tier], costMedians[cr.Tier], costPeers[cr.Tier])
 
 	rowsByID := c.Campaigns.Enrich(ctx, all)

@@ -14,6 +14,7 @@ export const queryKeys = {
   search: (q: string) => ["search", q] as const,
   me: () => ["me"] as const,
   users: () => ["users"] as const,
+  grants: (userId: string) => ["users", userId, "grants"] as const,
   authOptions: () => ["auth", "options"] as const,
   health: () => ["health"] as const,
 };

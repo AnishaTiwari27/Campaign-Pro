@@ -145,3 +145,78 @@
   .users-table-card { overflow-x: auto; }
   .users-table { min-width: 680px; }
 }
+
+/* Access editing opens inline under the row it belongs to, so the person
+   and their permissions stay in one place. */
+.users-grants-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+}
+
+.users-grants-link:hover { text-decoration: underline; }
+.users-grants-link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+
+.users-grant-row > td { background: var(--surface-2); padding: 0 !important; }
+
+.grant-editor { padding: 18px 20px; }
+
+.grant-editor-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.grant-editor-head h4 { margin: 0 0 4px; }
+
+.grant-editor-head p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 64ch;
+}
+
+.grant-editor-actions { display: flex; gap: 8px; flex: none; }
+
+.grant-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.grant-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.grant-row:hover { background: var(--surface-3); }
+.grant-row input { width: 16px; height: 16px; flex: none; }
+
+.grant-row-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grant-row-meta { flex: none; font-size: 11.5px; color: var(--muted); }

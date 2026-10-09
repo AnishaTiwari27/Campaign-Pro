@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 
 	"campaigntrackerpro/platform/httpx"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/web"
 
 	"github.com/go-chi/chi/v5"
@@ -26,7 +28,7 @@ type publicMountable interface {
 	Authenticator() httpx.SessionAuthenticator
 }
 
-func newRouter(health http.HandlerFunc, auth publicMountable,
+func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup,
 	logger *slog.Logger, modules ...mountable) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -48,6 +50,11 @@ func newRouter(health http.HandlerFunc, auth publicMountable,
 
 		r.Group(func(r chi.Router) {
 			r.Use(httpx.RequireSession(auth.Authenticator(), logger))
+			// Immediately after the session is resolved and before any
+			// handler runs, so every read below inherits the caller's
+			// visibility. A client with no grants sees nothing, which is
+			// the safe end of the switch.
+			r.Use(clientScope(grants, logger))
 			r.Get("/health", health)
 			for _, m := range modules {
 				m.Routes(r)
@@ -63,4 +70,44 @@ func newRouter(health http.HandlerFunc, auth publicMountable,
 	r.NotFound(web.Handler("/api", "/health").ServeHTTP)
 
 	return r
+}
+
+// grantLookup is what the scope middleware needs: the campaigns one client
+// account may see. Declared here, in the composition root, so neither
+// platform nor a service takes a dependency on the other for it.
+type grantLookup interface {
+	For(ctx context.Context, userID string) ([]string, error)
+}
+
+// clientPrincipal is the one thing the middleware asks of the session.
+type clientPrincipal interface {
+	IsClient() bool
+	PrincipalID() string
+}
+
+// clientScope narrows what a client account can read, for the whole
+// request, before any handler sees it.
+//
+// Agency staff pass through unrestricted. A client gets their granted
+// campaign ids — and if the lookup fails, they get an empty restricted
+// scope rather than an unrestricted one: a database hiccup must not be a
+// way to see everybody's data.
+func clientScope(grants grantLookup, logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			v, _ := httpx.UserFromContext(r.Context())
+			p, ok := v.(clientPrincipal)
+			if !ok || !p.IsClient() {
+				next.ServeHTTP(w, r)
+				return
+			}
+			ids, err := grants.For(r.Context(), p.PrincipalID())
+			if err != nil {
+				logger.Error("could not resolve client grants — showing nothing", "err", err)
+				ids = nil
+			}
+			ctx := scope.WithCampaigns(r.Context(), scope.Campaigns{Restricted: true, IDs: ids})
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

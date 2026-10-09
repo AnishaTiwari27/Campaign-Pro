@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, patch, post } from "./client";
+import { get, patch, post, put } from "./client";
 import { queryKeys } from "./queryKeys";
 import type { DirectoryUser } from "./types";
 
@@ -41,5 +41,29 @@ export function useSetUserRole() {
 export function useResetPassword() {
   return useMutation({
     mutationFn: (id: string) => post<{ password: string }>(`/users/${id}/reset-password`, {}),
+  });
+}
+
+export type CampaignChoice = { id: string; name: string; meta: string };
+type GrantsResponse = { granted: string[]; campaigns: CampaignChoice[] };
+
+/** Which campaigns a client may see, and everything they could be given.
+ *  Only fetched while the editor for that user is open. */
+export function useGrants(userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.grants(userId ?? ""),
+    queryFn: () => get<GrantsResponse>(`/users/${userId}/grants`),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Replaces the set. A partial update would leave a revoked campaign
+ *  visible until somebody noticed. */
+export function useSetGrants() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (v: { id: string; campaignIds: string[] }) =>
+      put<{ ok: boolean }>(`/users/${v.id}/grants`, { campaignIds: v.campaignIds }),
+    onSuccess: (_d, v) => qc.invalidateQueries({ queryKey: queryKeys.grants(v.id) }),
   });
 }

@@ -45,6 +45,15 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const deleteGrantsForUser = `-- name: DeleteGrantsForUser :exec
+DELETE FROM client_campaign_grants WHERE user_id = $1
+`
+
+func (q *Queries) DeleteGrantsForUser(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteGrantsForUser, userID)
+	return err
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users WHERE id = $1
 `
@@ -85,6 +94,45 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.LastLoginAt,
 	)
 	return i, err
+}
+
+const grantCampaign = `-- name: GrantCampaign :exec
+INSERT INTO client_campaign_grants (user_id, campaign_id) VALUES ($1, $2)
+ON CONFLICT DO NOTHING
+`
+
+type GrantCampaignParams struct {
+	UserID     pgtype.UUID `json:"user_id"`
+	CampaignID string      `json:"campaign_id"`
+}
+
+func (q *Queries) GrantCampaign(ctx context.Context, arg GrantCampaignParams) error {
+	_, err := q.db.Exec(ctx, grantCampaign, arg.UserID, arg.CampaignID)
+	return err
+}
+
+const listGrantsForUser = `-- name: ListGrantsForUser :many
+SELECT campaign_id FROM client_campaign_grants WHERE user_id = $1 ORDER BY campaign_id
+`
+
+func (q *Queries) ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, listGrantsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var campaign_id string
+		if err := rows.Scan(&campaign_id); err != nil {
+			return nil, err
+		}
+		items = append(items, campaign_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listUsers = `-- name: ListUsers :many

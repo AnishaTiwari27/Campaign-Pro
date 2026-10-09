@@ -168,3 +168,42 @@ func generatePassword() (string, error) {
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
+
+// Grants is which campaigns a client account may see, plus everything it
+// could be given. Admin-only, like the rest of this file.
+func (a *Auth) Grants(ctx context.Context, actor identity.User, userID string) ([]string, []identity.CampaignChoice, error) {
+	if !actor.CanManageUsers() {
+		return nil, nil, ErrNotPermitted
+	}
+	if a.directory == nil {
+		return nil, nil, fmt.Errorf("user management is not configured on this server")
+	}
+	granted, err := a.directory.GrantsFor(ctx, userID)
+	if err != nil {
+		return nil, nil, err
+	}
+	choices, err := a.directory.AllCampaignChoices(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return granted, choices, nil
+}
+
+// SetGrants replaces the set of campaigns a client may see.
+//
+// Replace rather than add, because the screen edits a set: a partial
+// update would leave a revoked campaign visible until somebody noticed.
+func (a *Auth) SetGrants(ctx context.Context, actor identity.User, userID string, campaignIDs []string) error {
+	if !actor.CanManageUsers() {
+		return ErrNotPermitted
+	}
+	if a.directory == nil {
+		return fmt.Errorf("user management is not configured on this server")
+	}
+	if err := a.directory.SetGrants(ctx, userID, campaignIDs); err != nil {
+		return err
+	}
+	_ = a.auditor.Record(ctx, actor.ID, actor.Name,
+		fmt.Sprintf("Set visible campaigns (%d)", len(campaignIDs)), "user", userID)
+	return nil
+}

@@ -22,6 +22,8 @@ func (h *Handlers) UserRoutes(r chi.Router) {
 		r.Post("/", h.CreateUser)
 		r.Patch("/{id}", h.SetUserRole)
 		r.Post("/{id}/reset-password", h.ResetUserPassword)
+		r.Get("/{id}/grants", h.GetGrants)
+		r.Put("/{id}/grants", h.SetGrants)
 	})
 }
 
@@ -147,4 +149,55 @@ func (h *Handlers) writeUserError(w http.ResponseWriter, err error) {
 		return
 	}
 	httpx.WriteServiceError(w, h.logger, err)
+}
+
+type campaignChoiceDTO struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	Meta string `json:"meta"`
+}
+
+// GetGrants is which campaigns a client may see, and everything they could
+// be given.
+func (h *Handlers) GetGrants(w http.ResponseWriter, r *http.Request) {
+	actor, ok := currentUser(r)
+	if !ok {
+		httpx.WriteUnauthorized(w, "sign in to continue")
+		return
+	}
+	granted, choices, err := h.auth.Grants(r.Context(), actor, chi.URLParam(r, "id"))
+	if err != nil {
+		h.writeUserError(w, err)
+		return
+	}
+	opts := make([]campaignChoiceDTO, 0, len(choices))
+	for _, c := range choices {
+		opts = append(opts, campaignChoiceDTO{ID: c.ID, Name: c.Name, Meta: c.Meta})
+	}
+	if granted == nil {
+		granted = []string{}
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"granted": granted, "campaigns": opts})
+}
+
+type setGrantsRequest struct {
+	CampaignIDs []string `json:"campaignIds"`
+}
+
+func (h *Handlers) SetGrants(w http.ResponseWriter, r *http.Request) {
+	actor, ok := currentUser(r)
+	if !ok {
+		httpx.WriteUnauthorized(w, "sign in to continue")
+		return
+	}
+	var req setGrantsRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.WriteValidationError(w, "invalid JSON body", "")
+		return
+	}
+	if err := h.auth.SetGrants(r.Context(), actor, chi.URLParam(r, "id"), req.CampaignIDs); err != nil {
+		h.writeUserError(w, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"ok": true})
 }

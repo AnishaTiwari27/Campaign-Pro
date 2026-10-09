@@ -5,6 +5,7 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { ApiError } from "../../api/client";
+import { GrantEditor } from "./GrantEditor";
 import { formatDate } from "../../lib/format";
 import "./UsersPage.css";
 
@@ -28,6 +29,8 @@ export function UsersPage() {
   const [role, setRole_] = useState("analyst");
   const [isAgency, setIsAgency] = useState(true);
   const [issued, setIssued] = useState<OneTimePassword | null>(null);
+  // Which client's access is open for editing, if any.
+  const [editing, setEditing] = useState<string | null>(null);
 
   if (!canManage) {
     return (
@@ -148,7 +151,7 @@ export function UsersPage() {
             </tr>
           </thead>
           <tbody>
-            {data.items.map((u) => (
+            {data.items.flatMap((u) => [
               <tr key={u.id}>
                 <td>
                   {u.name}
@@ -171,7 +174,19 @@ export function UsersPage() {
                     ))}
                   </select>
                 </td>
-                <td>{u.isAgency ? "Every account" : "Their own only"}</td>
+                <td>
+                  {u.isAgency ? (
+                    "Every account"
+                  ) : (
+                    <button
+                      type="button"
+                      className="users-grants-link"
+                      onClick={() => setEditing(editing === u.id ? null : u.id)}
+                    >
+                      {editing === u.id ? "Close access" : "Only granted campaigns"}
+                    </button>
+                  )}
+                </td>
                 <td className="users-date">{formatDate(u.createdAt)}</td>
                 <td className="users-col-action">
                   <button
@@ -187,8 +202,15 @@ export function UsersPage() {
                     Reset
                   </button>
                 </td>
-              </tr>
-            ))}
+              </tr>,
+              editing === u.id ? (
+                <tr key={`${u.id}-grants`} className="users-grant-row">
+                  <td colSpan={6}>
+                    <GrantEditor userId={u.id} userName={u.name} onClose={() => setEditing(null)} />
+                  </td>
+                </tr>
+              ) : null,
+            ])}
           </tbody>
         </table>
       </div>
