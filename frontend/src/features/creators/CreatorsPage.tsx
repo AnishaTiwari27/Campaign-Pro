@@ -78,7 +78,7 @@ export function CreatorsPage() {
                 {c.costIndex > 0 && (
                   <span
                     className={`creator-cost-index${c.costIndex <= 0.95 ? " creator-cost-index-good" : c.costIndex >= 1.1 ? " creator-cost-index-high" : ""}`}
-                    title={`Tier median is ${formatMoney(c.tierCostMedian)} per lakh`}
+                    title={`Tier median is ${formatMoney(c.tierCostMedian)} per lakh, across ${c.tierCostPeers} priced ${c.tierCostPeers === 1 ? "creator" : "creators"}`}
                   >
                     {c.costIndex.toFixed(2)}× tier
                   </span>
@@ -100,7 +100,8 @@ export function CreatorsPage() {
           tracked campaigns totalling {formatReach(items.reduce((n, c) => n + c.totalReach, 0))} reach. An index of{" "}
           {formatIndex(1)} on <strong>vs tier</strong> means exactly the median reach for their tier, and higher is
           better. On <strong>cost / lakh</strong> the comparison runs the other way — <strong>lower is better</strong>,
-          so 0.80× is reach 20% cheaper than peers of their size.
+          so 0.80× is reach 20% cheaper than peers of their size. A creator alone in their tier has nobody to be
+          compared against, so that figure is left blank for them rather than shown as a self-flattering 1.00×.
         </p>
       )}
     </div>

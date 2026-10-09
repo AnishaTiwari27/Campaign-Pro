@@ -98,6 +98,10 @@ type CreatorPerformance struct {
 	// which is the question a booking actually turns on.
 	TierCostMedian float64
 	CostIndex      float64
+	// TierCostPeers is how many priced creators the median came from. One
+	// means the creator is alone in their tier and there is nothing to
+	// compare against, so CostIndex is 0 rather than a misleading 1.0.
+	TierCostPeers int
 }
 
 // TierMedianReach is the median campaign reach within a tier, the baseline

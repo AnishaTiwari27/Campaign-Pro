@@ -280,6 +280,9 @@ export interface CreatorPerformance extends Creator {
   /** costPerLakh / tierCostMedian. LOWER IS BETTER — 0.8x is cheaper
    *  reach than peers of their size. 0 means not yet measurable. */
   costIndex: number;
+  /** How many priced creators the tier median came from. 1 means they are
+   *  alone in their tier, so costIndex is 0 and nothing is shown. */
+  tierCostPeers: number;
 }
 
 export interface LanguageReach {

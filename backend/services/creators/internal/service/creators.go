@@ -56,8 +56,10 @@ func tierMedians(roster []creators.Creator, campaignsByCreator map[string][]camp
 	return out
 }
 
-func performanceFor(cr creators.Creator, camps []campaigns.Campaign, tierMedian, tierCostMedian float64) creators.CreatorPerformance {
-	perf := creators.CreatorPerformance{Creator: cr, TierMedian: tierMedian, TierCostMedian: tierCostMedian}
+func performanceFor(cr creators.Creator, camps []campaigns.Campaign, tierMedian, tierCostMedian float64, costPeers int) creators.CreatorPerformance {
+	perf := creators.CreatorPerformance{
+		Creator: cr, TierMedian: tierMedian, TierCostMedian: tierCostMedian, TierCostPeers: costPeers,
+	}
 
 	reaches := make([]float64, 0, len(camps))
 	for _, c := range camps {
@@ -92,11 +94,18 @@ func performanceFor(cr creators.Creator, camps []campaigns.Campaign, tierMedian,
 	return perf
 }
 
-// tierCostMedians is the median ₹-per-lakh within each tier. It mirrors
-// tierMedians, but cost is derived from a creator's whole book rather than
-// from one campaign, so it is worked out per creator first and the median
-// taken across the tier after.
-func tierCostMedians(roster []creators.Creator, campaignsByCreator map[string][]campaigns.Campaign) map[creators.Tier]float64 {
+// minCostPeers is how many priced creators a tier needs before a cost
+// comparison means anything. At one, the "median" is that creator's own
+// number and every such row reads 1.00x — a self-comparison wearing the
+// clothes of a benchmark, which is worse than showing nothing.
+const minCostPeers = 2
+
+// tierCostMedians is the median ₹-per-lakh within each tier, and how many
+// priced creators it was taken across. It mirrors tierMedians, but cost is
+// derived from a creator's whole book rather than from one campaign, so it
+// is worked out per creator first and the median taken across the tier
+// after. Tiers below minCostPeers are absent, which callers render as "—".
+func tierCostMedians(roster []creators.Creator, campaignsByCreator map[string][]campaigns.Campaign) (map[creators.Tier]float64, map[creators.Tier]int) {
 	costsByTier := map[creators.Tier][]float64{}
 	for _, cr := range roster {
 		var spend int64
@@ -109,11 +118,16 @@ func tierCostMedians(roster []creators.Creator, campaignsByCreator map[string][]
 			costsByTier[cr.Tier] = append(costsByTier[cr.Tier], cost)
 		}
 	}
-	out := map[creators.Tier]float64{}
+	medians := map[creators.Tier]float64{}
+	peers := map[creators.Tier]int{}
 	for tier, costs := range costsByTier {
-		out[tier] = campaigns.Median(costs)
+		peers[tier] = len(costs)
+		if len(costs) < minCostPeers {
+			continue
+		}
+		medians[tier] = campaigns.Median(costs)
 	}
-	return out
+	return medians, peers
 }
 
 // List returns the full roster ranked by how well each creator performs
@@ -136,10 +150,10 @@ func (c *Creators) List(ctx context.Context) ([]creators.CreatorPerformance, err
 	}
 
 	medians := tierMedians(roster, byCreator)
-	costMedians := tierCostMedians(roster, byCreator)
+	costMedians, costPeers := tierCostMedians(roster, byCreator)
 	out := make([]creators.CreatorPerformance, 0, len(roster))
 	for _, cr := range roster {
-		out = append(out, performanceFor(cr, byCreator[cr.ID], medians[cr.Tier], costMedians[cr.Tier]))
+		out = append(out, performanceFor(cr, byCreator[cr.ID], medians[cr.Tier], costMedians[cr.Tier], costPeers[cr.Tier]))
 	}
 	creators.RankCreators(out)
 	return out, nil
@@ -183,10 +197,10 @@ func (c *Creators) Get(ctx context.Context, id string) (CreatorDetail, error) {
 		}
 	}
 	medians := tierMedians(roster, byCreator)
-	costMedians := tierCostMedians(roster, byCreator)
+	costMedians, costPeers := tierCostMedians(roster, byCreator)
 
 	camps := byCreator[cr.ID]
-	perf := performanceFor(cr, camps, medians[cr.Tier], costMedians[cr.Tier])
+	perf := performanceFor(cr, camps, medians[cr.Tier], costMedians[cr.Tier], costPeers[cr.Tier])
 
 	rowsByID := c.Campaigns.Enrich(ctx, all)
 	rows := make([]campaigns.CampaignRow, 0, len(camps))
