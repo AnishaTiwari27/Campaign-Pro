@@ -16,6 +16,7 @@ import { SignalsPage } from "../features/signals/SignalsPage";
 import { ReportsPage } from "../features/reports/ReportsPage";
 import { ReportDetailPage } from "../features/reports/ReportDetailPage";
 import { SettingsPage } from "../features/settings/SettingsPage";
+import { UsersPage } from "../features/users/UsersPage";
 
 // AgencyOnly keeps a client account off the pages the rail already hides
 // from them, so a typed URL or an old bookmark lands on the Overview
@@ -44,6 +45,7 @@ export function AppRoutes() {
         <Route path="benchmarks" element={<AgencyOnly><BenchmarksPage /></AgencyOnly>} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/:id" element={<ReportDetailPage />} />
+        <Route path="users" element={<UsersPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

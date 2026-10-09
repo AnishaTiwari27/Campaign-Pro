@@ -63,3 +63,17 @@ const SessionTTL = 7 * 24 * time.Hour
 type Authenticator interface {
 	UserForSession(ctx context.Context, token string) (User, error)
 }
+
+// DirectoryUser is one account as the user-management screen needs it.
+// It lives in this package rather than identity's internals because the
+// service that owns the users table has to speak it too, and a sibling
+// may read a service's public contract but never reach inside it.
+type DirectoryUser struct {
+	ID         string
+	Email      string
+	Name       string
+	Role       string
+	IsAgency   bool
+	CanApprove bool
+	CreatedAt  time.Time
+}

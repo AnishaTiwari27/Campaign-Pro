@@ -80,6 +80,16 @@ export function IconReports(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function IconUsers(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <circle cx="7.5" cy="7" r="2.6" />
+      <path d="M3 16c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" />
+      <path d="M13.5 5.2a2.6 2.6 0 010 4.6M14.5 12.4c1.7.5 2.5 1.9 2.5 3.6" />
+    </Base>
+  );
+}
+
 export function IconSettings(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>

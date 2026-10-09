@@ -14,6 +14,7 @@ import (
 	"campaigntrackerpro/services/campaigns/internal/api"
 	"campaigntrackerpro/services/campaigns/internal/service"
 	"campaigntrackerpro/services/campaigns/internal/store"
+	"campaigntrackerpro/services/identity"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -106,4 +107,28 @@ func (d userDirectory) CreateUser(ctx context.Context, email, name, role string,
 		return "", err
 	}
 	return u.ID, nil
+}
+
+// ListUsers is the roster. The shape is identity's, filled from campaigns'
+// own rows: the two services share a vocabulary of primitives rather than
+// a type.
+func (d userDirectory) ListUsers(ctx context.Context) ([]identity.DirectoryUser, error) {
+	us, err := d.store.ListUsers(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]identity.DirectoryUser, 0, len(us))
+	for _, u := range us {
+		out = append(out, identity.DirectoryUser{
+			ID: u.ID, Email: u.Email, Name: u.Name, Role: u.Role,
+			IsAgency: u.IsAgency, CanApprove: u.CanApprove, CreatedAt: u.CreatedAt,
+		})
+	}
+	return out, nil
+}
+
+// SetRole changes a user's role. can_approve is derived from it inside the
+// store, where it cannot drift from identity's CanApprove().
+func (d userDirectory) SetRole(ctx context.Context, userID, role string, isAgency bool) error {
+	return d.store.SetUserRole(ctx, userID, role, isAgency)
 }

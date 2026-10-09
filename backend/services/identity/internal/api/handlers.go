@@ -103,6 +103,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) Routes(r chi.Router) {
 	r.Post("/auth/logout", h.Logout)
 	r.Get("/me", h.Me)
+	h.UserRoutes(r)
 }
 
 type loginRequest struct {
@@ -118,12 +119,17 @@ type userDTO struct {
 	IsAgency   bool   `json:"isAgency"`
 	CanApprove bool   `json:"canApprove"`
 	IsClient   bool   `json:"isClient"`
+	// CanManageUsers is derived, not stored. Sent so the client does not
+	// re-derive a permission rule from role and agency and get it subtly
+	// different from the server that enforces it.
+	CanManageUsers bool `json:"canManageUsers"`
 }
 
 func toDTO(u identity.User) userDTO {
 	return userDTO{
 		ID: u.ID, Name: u.Name, Email: u.Email, Role: string(u.Role),
 		IsAgency: u.IsAgency, CanApprove: u.CanApprove(), IsClient: u.IsClient(),
+		CanManageUsers: u.CanManageUsers(),
 	}
 }
 

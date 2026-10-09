@@ -47,11 +47,15 @@ type ListResult struct {
 
 // User is the acting account; auth loads one onto every request.
 type User struct {
-	ID         string
-	Email      string
-	Name       string
-	Role       string
+	ID    string
+	Email string
+	Name  string
+	Role  string
+	// CanApprove mirrors the role, and IsAgency is the separate axis:
+	// agency staff see every account, a client only their own. Both are
+	// needed by anything that manages users rather than just reads one.
 	CanApprove bool
+	IsAgency   bool
 	CreatedAt  time.Time
 }
 

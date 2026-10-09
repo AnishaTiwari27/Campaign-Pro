@@ -1,0 +1,147 @@
+.users-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.users-lede {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted);
+  max-width: 78ch;
+}
+
+/* The one-time password. Loud on purpose: it exists for a few seconds and
+   then is unrecoverable, so it should not look like an ordinary toast. */
+.users-issued {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-left: 3px solid var(--good);
+}
+
+.users-issued h4 { margin: 0 0 4px; }
+
+.users-issued p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 62ch;
+}
+
+.users-issued-password {
+  flex: 1 1 320px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  user-select: all;
+  word-break: break-all;
+}
+
+.users-new { padding: 18px 20px; }
+.users-new h4 { margin: 0 0 14px; }
+
+.users-new-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.users-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.users-field > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.users-field-check {
+  flex: 0 0 auto;
+  align-items: flex-start;
+}
+
+.users-field-check input { width: 18px; height: 18px; }
+
+.users-new-submit { flex: 0 0 auto; height: 38px; }
+
+.users-hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 12px 0 0;
+  max-width: 78ch;
+}
+
+.users-error {
+  font-size: 12.5px;
+  color: var(--crit);
+  background: var(--crit-soft);
+  padding: 9px 11px;
+  border-radius: var(--radius-sm);
+  margin: 12px 0 0;
+}
+
+.users-table-card { padding: 18px 20px; }
+.users-table-card h4 { margin: 0 0 14px; }
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.users-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 10px 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.users-table td {
+  padding: 11px 10px 11px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.users-table tr:last-child td { border-bottom: 0; }
+
+.users-email, .users-date { color: var(--muted); }
+
+.users-you {
+  margin-left: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.users-role-select { min-width: 120px; }
+.users-col-action { text-align: right; }
+.users-reset { min-height: 34px; padding: 6px 14px; }
+
+@media (max-width: 860px) {
+  .users-table-card { overflow-x: auto; }
+  .users-table { min-width: 680px; }
+}

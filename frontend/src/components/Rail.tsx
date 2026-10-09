@@ -6,6 +6,7 @@ import {
   IconApprovals,
   IconBenchmarks,
   IconSignals,
+  IconUsers,
   IconCampaigns,
   IconOverview,
   IconCreators,
@@ -43,6 +44,7 @@ export function Rail() {
   // the whole book of business — neither is theirs to read. An analyst is
   // agency staff and does still see both; they simply cannot act on them.
   const isClient = me?.isClient ?? false;
+  const canManageUsers = me?.canManageUsers ?? false;
 
   return (
     <nav className="rail" aria-label="Primary">
@@ -84,6 +86,7 @@ export function Rail() {
       <div className="rail-spacer" />
 
       <div className="rail-footer">
+        {canManageUsers && <NavItem to="/users" icon={<IconUsers />} label="Team" />}
         <NavItem to="/settings" icon={<IconSettings />} label="Settings" />
         {me && (
           <div className="rail-user-row">

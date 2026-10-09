@@ -50,6 +50,10 @@ type Directory interface {
 	EmailTaken(ctx context.Context, email string) (bool, error)
 	// CreateUser writes the account and returns its ID.
 	CreateUser(ctx context.Context, email, name, role string, isAgency bool) (string, error)
+	// ListUsers is the roster, for the screen that manages it.
+	ListUsers(ctx context.Context) ([]identity.DirectoryUser, error)
+	// SetRole changes what an account may do.
+	SetRole(ctx context.Context, userID, role string, isAgency bool) error
 }
 
 // SignupInput is what the form collects, before validation.

@@ -232,6 +232,23 @@ export interface Me {
   isAgency: boolean;
   canApprove: boolean;
   isClient: boolean;
+  /** Derived server-side and sent, so the client never re-derives a
+   *  permission rule and gets it subtly different from the enforcer. */
+  canManageUsers: boolean;
+}
+
+/** One account on the user-management screen. */
+export interface DirectoryUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  isAgency: boolean;
+  canApprove: boolean;
+  createdAt: string;
+  /** True for the signed-in admin's own row: the controls they must not
+   *  use on themselves are disabled rather than hidden. */
+  isSelf: boolean;
 }
 
 export interface HealthSource {

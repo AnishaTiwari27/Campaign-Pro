@@ -18,6 +18,7 @@ func toDomainUser(u gen.User) campaigns.User {
 		Name:       u.Name,
 		Role:       string(u.Role),
 		CanApprove: u.CanApprove,
+		IsAgency:   u.IsAgency,
 		CreatedAt:  database.TimeOf(u.CreatedAt),
 	}
 }
@@ -63,5 +64,21 @@ func (s *Store) SetUserAgency(ctx context.Context, userID string, isAgency bool)
 		return err
 	}
 	_, err = s.db.Pool.Exec(ctx, `UPDATE users SET is_agency = $2 WHERE id = $1`, uid, isAgency)
+	return err
+}
+
+// SetUserRole changes a user's role, keeping can_approve in step with it.
+// The two are derived from one decision, so they are written together:
+// letting a caller set them independently is how a column and a method
+// come to disagree about the same account.
+func (s *Store) SetUserRole(ctx context.Context, userID, role string, isAgency bool) error {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return err
+	}
+	canApprove := isAgency && (role == "admin" || role == "approver")
+	_, err = s.db.Pool.Exec(ctx,
+		`UPDATE users SET role = $2::user_role_t, can_approve = $3, is_agency = $4 WHERE id = $1`,
+		uid, role, canApprove, isAgency)
 	return err
 }
