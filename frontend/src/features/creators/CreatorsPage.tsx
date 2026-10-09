@@ -20,8 +20,9 @@ export function CreatorsPage() {
         <div>
           <h1>Creators</h1>
           <p className="creators-lede">
-            Ranked by how each performs <strong>for their own tier</strong>, not by follower count. A mega account doing big
-            numbers is expected; a micro creator beating their tier median is a find.
+            Everyone who fronts a campaign — influencers, actors, cricketers, singers and founders. Ranked by how each
+            performs <strong>for their own tier</strong>, not by follower count: a mega account doing big numbers is
+            expected; a micro creator beating their tier median is a find.
           </p>
         </div>
       </div>

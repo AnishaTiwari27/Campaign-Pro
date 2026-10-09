@@ -97,12 +97,16 @@ export function OverviewPage() {
               ))}
             </Ribbon>
 
+            {/* Named for what it is. "Faces, not logos" read as a design
+                slogan; this ribbon is the endorsement book — the campaigns
+                a person fronts rather than the brand, which is the half of
+                the market this product exists to measure. */}
             <Ribbon
-              title="Faces, not logos"
-              subtitle="Creator- and talent-led campaigns, where the subject is a person"
+              title="Influencer & celebrity campaigns"
+              subtitle="Fronted by a creator, actor, cricketer or singer — not by the brand itself"
               count={data.people.length}
               accent="accent"
-              emptyMessage="No people-led campaigns are running."
+              emptyMessage="No influencer or celebrity campaigns are running."
             >
               {data.people.map((c) => (
                 <Tile key={c.id} campaign={c} statLabel="Reach" stat={formatReach(c.reach)} />
