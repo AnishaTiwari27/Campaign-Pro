@@ -440,8 +440,15 @@ That means either Neon string can be pasted in without it being a trap.
 Known trade-off: Render's free tier sleeps after about 15 minutes idle and
 takes roughly a minute to wake. While it sleeps the in-process worker is not
 running, so scheduled reports do not fire on time and anomaly detection only
-runs while someone is using the app. Fine for demos; it is the first thing to
-fix when this becomes real.
+runs while someone is using the app.
+
+[`.github/workflows/keep-awake.yml`](.github/workflows/keep-awake.yml) pings
+`/health` every 10 minutes to hold it open, which also serves as a crude
+uptime check. Treat it as a workaround rather than a fix: GitHub's scheduled
+runs are frequently 5-15 minutes late, so the service still naps sometimes;
+GitHub disables the schedule after 60 days without a commit; and holding one
+service awake uses about 730 of the free plan's 750 instance-hours a month,
+which fits for exactly one service. The actual fix is a paid instance.
 
 ### Before scaling past one instance
 

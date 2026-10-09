@@ -1,0 +1,68 @@
+# Keeps the Render free instance from sleeping, and doubles as a crude
+# uptime check.
+#
+# Why this exists: Render's free tier spins a service down after about 15
+# minutes with no traffic. The first request after that takes roughly a
+# minute to answer, and — the part that actually matters — the in-process
+# worker is not running while the service sleeps, so anomaly detection
+# stops and `on_flag` reports do not fire on time.
+#
+# This is a workaround, not a fix. The fix is a paid instance. Three
+# things to know before relying on it:
+#
+#   1. GitHub's scheduled runs are best-effort and are commonly 5-15
+#      minutes late when the runner pool is busy, so a 10-minute cron can
+#      stretch past Render's 15-minute idle window and the service naps
+#      anyway. It will be awake most of the time, not all of it.
+#   2. GitHub disables scheduled workflows in a repository with no commits
+#      for 60 days. If the demo goes quiet, this quietly stops too.
+#   3. Render's free plan allows 750 instance-hours a month. Holding one
+#      service awake continuously is about 730, so this fits — for exactly
+#      one service. A second one on the same account would exceed it.
+name: Keep the demo awake
+
+on:
+  schedule:
+    # Every 10 minutes, to leave headroom inside Render's ~15-minute window.
+    - cron: "*/10 * * * *"
+  # So it can be triggered by hand before a demo, rather than waiting.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # A late run plus the next scheduled one should not pile up.
+  group: keep-awake
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake the service and check it is healthy
+        env:
+          # Override with a repository variable if the service URL changes,
+          # so this file does not need editing.
+          HEALTH_URL: ${{ vars.HEALTH_URL || 'https://campaign-tracker-pro-wbio.onrender.com/health' }}
+        run: |
+          set -uo pipefail
+
+          # A sleeping instance takes about a minute to answer, so the
+          # first attempt is given a long timeout rather than treated as
+          # a failure. Three tries before this is called an outage.
+          for attempt in 1 2 3; do
+            code=$(curl -sS -o /tmp/health.json -w '%{http_code}' --max-time 120 "$HEALTH_URL" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "healthy (attempt $attempt)"
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "attempt $attempt: HTTP $code"
+            sleep 20
+          done
+
+          echo "::error::$HEALTH_URL did not return 200 after three attempts over ~3 minutes."
+          cat /tmp/health.json || true
+          exit 1
