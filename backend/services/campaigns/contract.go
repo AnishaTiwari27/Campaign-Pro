@@ -14,6 +14,12 @@ type CampaignRow struct {
 	CPM           float64
 	Index         float64
 	CategoryIndex float64
+	// ExpectedPace is the budget share the plan implies by now, and
+	// PaceVsPlan is actual pace against it. Both are 0 when the campaign
+	// has no recorded flight length, which the UI shows as "—": raw pace
+	// cannot distinguish mid-flight from underspending on its own.
+	ExpectedPace float64
+	PaceVsPlan   float64
 }
 
 // ListParams mirrors every GET /campaigns query parameter.

@@ -154,7 +154,7 @@ func seedCreators(ctx context.Context, pool *pgxpool.Pool, camp *campaignsmod.Mo
 				ID: campaignID, Name: name, SubjectType: campaigns.SubjectPerson, Role: cs.role,
 				Initials: cs.initials, Category: cs.category, Region: cs.region,
 				AdType: cc.adType, Platform: cc.platform, Status: cc.status,
-				DaysRunning: cc.daysRunning, Reach: cc.reach, Spend: cc.spend, Budget: cc.budget,
+				DaysRunning: cc.daysRunning, FlightDays: plannedFlight(campaignID, cc.daysRunning, cc.status), Reach: cc.reach, Spend: cc.spend, Budget: cc.budget,
 				Frequency: cc.frequency, Approval: cc.approval, CurveShape: cc.curve,
 				BrandDomain: brandDomains[cc.brand],
 			})

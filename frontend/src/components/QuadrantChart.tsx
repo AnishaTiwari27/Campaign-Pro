@@ -20,7 +20,8 @@ function radiusOf(budget: number, maxBudget: number): number {
 }
 
 /**
- * Pace against reach index, with the two midlines dividing the fleet into
+ * Spending-against-plan against reach index, with the two midlines
+ * dividing the fleet into
  * Scale / Protect / Fix / Cut. Both axes start at zero: this chart is read
  * by where a point sits relative to a line, so a truncated axis would move
  * campaigns between quadrants visually without moving them actually.
@@ -42,16 +43,16 @@ export function QuadrantChart({
   const { xMax, yMax, maxBudget } = useMemo(() => {
     // Domains always contain the midline with room past it, so an empty or
     // one-sided fleet still renders four readable quadrants.
-    const paces = points.map((p) => p.pace);
+    const paces = points.map((p) => p.paceVsPlan);
     const indices = points.map((p) => p.index);
     return {
-      xMax: Math.max(PACE_MIDLINE * 1.4, ...paces.map((v) => v * 1.08)),
+      xMax: Math.max(PACE_MIDLINE * 2, ...paces.map((v) => v * 1.12)),
       yMax: Math.max(INDEX_MIDLINE * 2, ...indices.map((v) => v * 1.12)),
       maxBudget: Math.max(0, ...points.map((p) => p.campaign.budget)),
     };
   }, [points]);
 
-  const x = (pace: number) => PAD.left + (Math.min(pace, xMax) / xMax) * PLOT_W;
+  const x = (paceVsPlan: number) => PAD.left + (Math.min(paceVsPlan, xMax) / xMax) * PLOT_W;
   const y = (index: number) => PAD.top + PLOT_H - (Math.min(index, yMax) / yMax) * PLOT_H;
 
   const midX = x(PACE_MIDLINE);
@@ -68,7 +69,7 @@ export function QuadrantChart({
 
   return (
     <svg className="quadrant-chart" viewBox={`0 0 ${W} ${H}`} role="img"
-      aria-label={`${points.length} campaigns plotted by budget pace against reach index`}>
+      aria-label={`${points.length} campaigns plotted by spending against plan versus reach index`}>
       {/* quadrant tints */}
       <rect className="quadrant-zone quadrant-zone-good" x={PAD.left} y={PAD.top}
         width={midX - PAD.left} height={midY - PAD.top} />
@@ -93,14 +94,14 @@ export function QuadrantChart({
 
       {/* axes */}
       <text className="quadrant-axis-title" x={PAD.left + PLOT_W / 2} y={H - 8} textAnchor="middle">
-        Budget pace →
+        Spending vs plan →
       </text>
       <text className="quadrant-axis-title" x={14} y={PAD.top + PLOT_H / 2}
         textAnchor="middle" transform={`rotate(-90 14 ${PAD.top + PLOT_H / 2})`}>
         Reach index →
       </text>
       <text className="quadrant-tick" x={midX} y={PAD.top + PLOT_H + 17} textAnchor="middle">
-        {PACE_MIDLINE}% spent
+        on plan
       </text>
       <text className="quadrant-tick" x={PAD.left - 8} y={midY + 4} textAnchor="end">
         {formatIndex(INDEX_MIDLINE)}
@@ -118,7 +119,7 @@ export function QuadrantChart({
           <circle
             key={p.campaign.id}
             className={`quadrant-dot${clickable ? " quadrant-dot-clickable" : ""}`}
-            cx={x(p.pace)}
+            cx={x(p.paceVsPlan)}
             cy={y(p.index)}
             r={radiusOf(p.campaign.budget, maxBudget)}
             tabIndex={clickable ? 0 : undefined}
@@ -139,7 +140,7 @@ export function QuadrantChart({
                 read out by assistive tech as the element's accessible name. */}
             <title>
               {`${p.campaign.name} — ${QUADRANTS[p.quadrant].label}\n`}
-              {`Pace ${Math.round(p.pace)}% · Index ${formatIndex(p.index)} · Budget ${formatMoney(p.campaign.budget)}`}
+              {`${formatIndex(p.paceVsPlan)} of planned spend · Index ${formatIndex(p.index)} · Budget ${formatMoney(p.campaign.budget)}`}
             </title>
           </circle>
         );

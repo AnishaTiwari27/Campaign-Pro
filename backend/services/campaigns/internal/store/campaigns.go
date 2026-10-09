@@ -112,6 +112,7 @@ func (s *Store) CreateCampaign(ctx context.Context, c campaigns.Campaign) (campa
 		Platform:    c.Platform,
 		Status:      gen.CampaignStatusT(c.Status),
 		DaysRunning: int32(c.DaysRunning),
+		FlightDays:  database.Int32Param(c.FlightDays),
 		Reach:       c.Reach,
 		Spend:       c.Spend,
 		Budget:      c.Budget,

@@ -31,6 +31,26 @@ func TextParam(s string) pgtype.Text {
 	return pgtype.Text{String: s, Valid: true}
 }
 
+// Int32OrZero reads a nullable integer column. Zero stands for "absent",
+// which suits every such column here: a planned flight length of 0 days is
+// not a real value, so the domain can treat 0 and NULL alike.
+func Int32OrZero(i pgtype.Int4) int32 {
+	if !i.Valid {
+		return 0
+	}
+	return i.Int32
+}
+
+// Int32Param writes a nullable integer column, sending NULL for a
+// non-positive value rather than storing a 0 that would read as a real
+// measurement later.
+func Int32Param(i int) pgtype.Int4 {
+	if i <= 0 {
+		return pgtype.Int4{}
+	}
+	return pgtype.Int4{Int32: int32(i), Valid: true}
+}
+
 func PgxBool(b bool) pgtype.Bool {
 	return pgtype.Bool{Bool: b, Valid: true}
 }

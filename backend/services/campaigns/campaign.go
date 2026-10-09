@@ -73,6 +73,11 @@ type Campaign struct {
 	Approval    Approval
 	CurveShape  CurveShape
 	FlagReason  string
+	// FlightDays is the planned length of the flight. Zero means nobody
+	// recorded one, which is a real state: pace against plan is then
+	// unknowable and must be reported as such rather than guessed from
+	// DaysRunning, which would call every such campaign exactly on plan.
+	FlightDays int
 	// CreatorID is set when the subject is a person, linking the campaign
 	// to the creator who ran it. Empty for brand campaigns.
 	CreatorID string
@@ -83,6 +88,10 @@ type Campaign struct {
 }
 
 func (c Campaign) IsRunning() bool { return c.Status != StatusScheduled }
+
+// HasPlan reports whether this campaign's planned length is known, which is
+// what every pace-against-plan figure depends on.
+func (c Campaign) HasPlan() bool   { return c.FlightDays > 0 }
 func (c Campaign) IsFlagged() bool { return c.FlagReason != "" }
 
 type Creative struct {

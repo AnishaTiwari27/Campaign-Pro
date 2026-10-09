@@ -36,6 +36,9 @@ type CampaignDTO struct {
 	CPM           float64 `json:"cpm"`
 	Index         float64 `json:"index"`
 	CategoryIndex float64 `json:"categoryIndex"`
+	FlightDays    int     `json:"flightDays"`
+	ExpectedPace  float64 `json:"expectedPace"`
+	PaceVsPlan    float64 `json:"paceVsPlan"`
 }
 
 func NewCampaignDTO(r CampaignRow) CampaignDTO {
@@ -49,6 +52,7 @@ func NewCampaignDTO(r CampaignRow) CampaignDTO {
 		CreatedAt: r.CreatedAt.Format(rfc3339), UpdatedAt: r.UpdatedAt.Format(rfc3339),
 		Pace: r.Pace, PaceClass: string(r.PaceClass), CPM: r.CPM, Index: r.Index,
 		CategoryIndex: r.CategoryIndex,
+		FlightDays:    r.FlightDays, ExpectedPace: r.ExpectedPace, PaceVsPlan: r.PaceVsPlan,
 	}
 }
 

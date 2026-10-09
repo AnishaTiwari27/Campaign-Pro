@@ -37,6 +37,13 @@ export interface Campaign {
   cpm: number;
   index: number;
   categoryIndex: number;
+  /** Planned flight length in days. 0 when nobody recorded one. */
+  flightDays: number;
+  /** Budget share the plan implies by now, as a percentage. */
+  expectedPace: number;
+  /** pace / expectedPace. 1.0 is exactly on plan, 1.4 is 40% ahead of the
+   *  flight. 0 when the campaign has no recorded plan. */
+  paceVsPlan: number;
 }
 
 export interface Creative {

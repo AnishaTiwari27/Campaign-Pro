@@ -86,7 +86,7 @@ func (q *Queries) GetCreator(ctx context.Context, id string) (Creator, error) {
 }
 
 const listCampaignsByCreator = `-- name: ListCampaignsByCreator :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns WHERE creator_id = $1 ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE creator_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) ListCampaignsByCreator(ctx context.Context, creatorID pgtype.Text) ([]Campaign, error) {
@@ -121,6 +121,7 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, creatorID pgtype.T
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}

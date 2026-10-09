@@ -37,9 +37,9 @@ SELECT * FROM campaigns WHERE flag_reason IS NOT NULL ORDER BY updated_at DESC;
 INSERT INTO campaigns (
     id, name, subject_type, role, initials, category, region, ad_type, platform,
     status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason,
-    brand_domain
+    brand_domain, flight_days
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
 ) RETURNING *;
 
 -- name: UpdateCampaignDecision :one

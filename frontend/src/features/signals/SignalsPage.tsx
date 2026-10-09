@@ -39,6 +39,12 @@ export function SignalsPage() {
   // Said plainly rather than silently truncated, because a quadrant drawn
   // from part of the fleet would be quietly wrong.
   const truncated = data.total > data.items.length;
+  // Said out loud rather than quietly dropped: a campaign with no recorded
+  // flight length has no plan to be measured against, so it cannot be
+  // placed on this chart without inventing one.
+  const unplanned = (data.items ?? []).filter(
+    (c) => c.status !== "scheduled" && c.paceVsPlan <= 0,
+  ).length;
 
   return (
     <div className="signals-page">
@@ -46,8 +52,8 @@ export function SignalsPage() {
         <div>
           <h1>Signals</h1>
           <p className="signals-lede">
-            Every running campaign plotted by what it has spent against what it has delivered. Vertical line is a
-            fully-spent budget; horizontal line is{" "}
+            Every running campaign plotted by whether it is spending to plan against what it has delivered. Vertical
+            line is exactly on plan — its own flight curve, at today's point in the flight; horizontal line is{" "}
             <Link to="/benchmarks">the all-campaign median</Link>. Which quarter a campaign lands in is the decision
             waiting to be made about it.
           </p>
@@ -88,7 +94,11 @@ export function SignalsPage() {
             <div className="card signals-stat">
               <span className="signals-stat-label">Campaigns plotted</span>
               <strong className="signals-stat-value mono">{points.length}</strong>
-              <span className="signals-stat-sub">Scheduled excluded — nothing delivered yet</span>
+              <span className="signals-stat-sub">
+                {unplanned > 0
+                  ? `${unplanned} excluded — no planned flight length recorded`
+                  : "Scheduled excluded — nothing delivered yet"}
+              </span>
             </div>
           </div>
 
@@ -124,7 +134,7 @@ export function SignalsPage() {
                             {p.campaign.name}
                           </Link>
                           <span className="mono signals-list-figures">
-                            {Math.round(p.pace)}% · {formatIndex(p.index)}
+                            {formatIndex(p.paceVsPlan)} · {formatIndex(p.index)}
                           </span>
                         </li>
                       ))}

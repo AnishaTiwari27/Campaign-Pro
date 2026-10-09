@@ -20,6 +20,7 @@ func toDomainCampaign(c gen.Campaign) campaigns.Campaign {
 		Platform:    c.Platform,
 		Status:      campaigns.Status(c.Status),
 		DaysRunning: int(c.DaysRunning),
+		FlightDays:  int(database.Int32OrZero(c.FlightDays)),
 		Reach:       c.Reach,
 		Spend:       c.Spend,
 		Budget:      c.Budget,

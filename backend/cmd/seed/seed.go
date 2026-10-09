@@ -109,7 +109,7 @@ func main() {
 		created, err := camp.Store().CreateCampaign(ctx, campaigns.Campaign{
 			ID: c.id, Name: c.name, SubjectType: c.subjectType, Role: c.role, Initials: c.initials,
 			Category: c.category, Region: c.region, AdType: c.adType, Platform: c.platform,
-			Status: c.status, DaysRunning: c.daysRunning, Reach: c.reach, Spend: c.spend, Budget: c.budget,
+			Status: c.status, DaysRunning: c.daysRunning, FlightDays: plannedFlight(c.id, c.daysRunning, c.status), Reach: c.reach, Spend: c.spend, Budget: c.budget,
 			Frequency: c.frequency, Approval: c.approval, CurveShape: c.curveShape,
 			BrandDomain: c.brandDomain,
 		})
@@ -333,4 +333,33 @@ func randomPassword() (string, error) {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(buf), nil
+}
+
+// plannedFlight gives a seeded campaign a believable planned length from
+// what it already has. Derived rather than typed into every row: 35
+// hand-picked numbers would be 35 chances to make the demo incoherent, and
+// the shape of the spread is what matters, not any single value.
+//
+// An ended campaign has finished its flight, so its planned length is what
+// it ran. A live one is somewhere inside it — the id's hash picks how far,
+// between 55% and 95% through, so the Signals quadrant gets campaigns on
+// both sides of plan instead of a single stripe.
+func plannedFlight(id string, daysRunning int, status campaigns.Status) int {
+	if daysRunning <= 0 {
+		return 0
+	}
+	if status == campaigns.StatusEnded {
+		return daysRunning
+	}
+	var h uint32 = 2166136261
+	for i := 0; i < len(id); i++ {
+		h = (h ^ uint32(id[i])) * 16777619
+	}
+	// 55%..95% of the way through, in 5-point steps.
+	pct := 55 + int(h%9)*5
+	flight := daysRunning * 100 / pct
+	if flight <= daysRunning {
+		flight = daysRunning + 1
+	}
+	return flight
 }

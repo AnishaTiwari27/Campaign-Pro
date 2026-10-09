@@ -573,6 +573,7 @@ type Campaign struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 	CreatorID   pgtype.Text        `json:"creator_id"`
 	BrandDomain pgtype.Text        `json:"brand_domain"`
+	FlightDays  pgtype.Int4        `json:"flight_days"`
 }
 
 type Creative struct {

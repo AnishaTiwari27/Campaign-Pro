@@ -35,10 +35,13 @@ func (c *Campaigns) enrich(ctx context.Context, all []campaigns.Campaign) (map[s
 	rows := make(map[string]campaigns.CampaignRow, len(all))
 	for _, camp := range all {
 		pace := campaigns.Pace(camp.Spend, camp.Budget)
+		expected := campaigns.ExpectedPace(camp.CurveShape, camp.DaysRunning, camp.FlightDays)
 		rows[camp.ID] = campaigns.CampaignRow{
 			Campaign:      camp,
 			Pace:          pace,
 			PaceClass:     campaigns.PaceClassOf(pace),
+			ExpectedPace:  expected,
+			PaceVsPlan:    campaigns.PaceVsPlan(pace, expected),
 			CPM:           campaigns.CPM(camp.Spend, camp.Reach, camp.Frequency),
 			Index:         campaigns.Index(camp.Reach, medAll),
 			CategoryIndex: campaigns.CategoryIndexOf(camp, benchmarks),

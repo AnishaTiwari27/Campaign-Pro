@@ -347,3 +347,61 @@ func TestApprovalBlockAgreesWithBudgetFlags(t *testing.T) {
 		}
 	}
 }
+
+// Expected pace follows the flight's own curve, so the same age on the same
+// planned length gives different answers for a fast and a slow flight.
+func TestExpectedPaceFollowsTheFlightShape(t *testing.T) {
+	const flight = 20
+
+	halfway := map[CurveShape]float64{}
+	for _, shape := range []CurveShape{CurveFast, CurveSteady, CurveSlow} {
+		halfway[shape] = ExpectedPace(shape, flight/2, flight)
+	}
+	if !(halfway[CurveFast] > halfway[CurveSteady]) {
+		t.Errorf("a fast flight should be further through its budget at halfway: fast %v, steady %v",
+			halfway[CurveFast], halfway[CurveSteady])
+	}
+	if !(halfway[CurveSlow] < halfway[CurveSteady]) {
+		t.Errorf("a slow flight should be behind steady at halfway: slow %v, steady %v",
+			halfway[CurveSlow], halfway[CurveSteady])
+	}
+
+	// Both ends are fixed whatever the shape.
+	for _, shape := range []CurveShape{CurveFast, CurveSteady, CurveSlow} {
+		if got := ExpectedPace(shape, 0, flight); got != 0 {
+			t.Errorf("%s at day 0 = %v, want 0", shape, got)
+		}
+		if got := ExpectedPace(shape, flight, flight); got != 100 {
+			t.Errorf("%s at the end = %v, want 100", shape, got)
+		}
+	}
+
+	// An unknown plan is no answer, never 0%.
+	if got := ExpectedPace(CurveSteady, 10, 0); got != 0 {
+		t.Errorf("no planned length should give 0 (unknown), got %v", got)
+	}
+}
+
+func TestPaceVsPlan(t *testing.T) {
+	cases := []struct {
+		name           string
+		pace, expected float64
+		want           float64
+	}{
+		{"exactly on plan", 50, 50, 1},
+		{"spending 40% ahead of the flight", 70, 50, 1.4},
+		{"spending well behind", 25, 50, 0.5},
+		// The case the whole column exists for: half the budget gone at the
+		// halfway point is ON plan, which raw pace alone cannot say.
+		{"halfway through a flight at half budget is on plan", 50, 50, 1},
+		{"unknown plan", 50, 0, 0},
+		{"nothing spent yet", 0, 50, 0},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := PaceVsPlan(c.pace, c.expected); got != c.want {
+				t.Fatalf("PaceVsPlan(%v, %v) = %v, want %v", c.pace, c.expected, got, c.want)
+			}
+		})
+	}
+}

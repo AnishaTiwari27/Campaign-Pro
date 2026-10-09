@@ -6,8 +6,10 @@
 
 import type { Campaign } from "../api/types";
 
-/** Fully spent. At or past this, more budget is a decision, not a drift. */
-export const PACE_MIDLINE = 100;
+/** Exactly on plan. Above it a campaign is spending ahead of its flight.
+ *  This replaced a raw "100% of budget" line, which could not tell a
+ *  campaign halfway through its flight from one that was underspending. */
+export const PACE_MIDLINE = 1;
 
 /** 1.0x is exactly typical: the all-campaign median reach (MED_ALL). */
 export const INDEX_MIDLINE = 1;
@@ -28,25 +30,25 @@ export const QUADRANTS: Record<QuadrantKey, Quadrant> = {
   scale: {
     key: "scale",
     label: "Scale",
-    blurb: "Beating the median on less than its budget. The cheapest reach you can buy is more of this.",
+    blurb: "Beating the median while spending behind its flight. The cheapest reach you can buy is more of this.",
     tone: "good",
   },
   protect: {
     key: "protect",
     label: "Protect",
-    blurb: "Beating the median and spending to plan. Working as intended — leave it alone.",
+    blurb: "Beating the median and spending to plan or faster. Working as intended — leave it alone.",
     tone: "accent",
   },
   fix: {
     key: "fix",
     label: "Fix",
-    blurb: "Below the median, but budget is still unspent. Still time to change the creative or the targeting.",
+    blurb: "Below the median, but behind its flight with budget still to run. Time to change the creative or the targeting.",
     tone: "warn",
   },
   cut: {
     key: "cut",
     label: "Cut",
-    blurb: "Below the median and the budget is gone. Every further rupee buys less than the fleet average.",
+    blurb: "Below the median and burning ahead of plan. Every further rupee buys less than the fleet average.",
     tone: "crit",
   },
 };
@@ -64,34 +66,36 @@ export const QUADRANT_ORDER: QuadrantKey[] = ["scale", "protect", "fix", "cut"];
  * the strict way for budget keeps the "Cut" quadrant free of campaigns
  * that have not actually underperformed.
  */
-export function quadrantOf(pace: number, index: number): QuadrantKey {
+export function quadrantOf(paceVsPlan: number, index: number): QuadrantKey {
   const delivering = index >= INDEX_MIDLINE;
-  const spent = pace >= PACE_MIDLINE;
+  const spent = paceVsPlan >= PACE_MIDLINE;
   if (delivering) return spent ? "protect" : "scale";
   return spent ? "cut" : "fix";
 }
 
 export interface SignalPoint {
   campaign: Campaign;
-  pace: number;
+  /** Pace against plan, the x-axis. 1.0 is exactly on plan. */
+  paceVsPlan: number;
   index: number;
   quadrant: QuadrantKey;
 }
 
 /**
- * Scheduled campaigns are excluded, mirroring the backend's Running():
- * nothing has been delivered or spent yet, so a pace of 0 against an
- * index of 0 would plant every unstarted campaign in "Fix" and drown the
- * quadrant that is supposed to be a to-do list.
+ * Two exclusions, both because the point would be a lie rather than a
+ * measurement. Scheduled campaigns have delivered and spent nothing, so
+ * they would all pile into the corner of "Fix". A campaign with no
+ * recorded flight length has no plan to be measured against, and placing
+ * it would mean inventing one — the page says how many were left out.
  */
 export function signalPoints(campaigns: Campaign[]): SignalPoint[] {
   return campaigns
-    .filter((c) => c.status !== "scheduled")
+    .filter((c) => c.status !== "scheduled" && c.paceVsPlan > 0)
     .map((c) => ({
       campaign: c,
-      pace: c.pace,
+      paceVsPlan: c.paceVsPlan,
       index: c.index,
-      quadrant: quadrantOf(c.pace, c.index),
+      quadrant: quadrantOf(c.paceVsPlan, c.index),
     }));
 }
 

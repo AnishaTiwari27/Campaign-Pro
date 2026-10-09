@@ -60,6 +60,34 @@ func Pace(spend, budget int64) float64 {
 	return math.Round(float64(spend) / float64(budget) * 100)
 }
 
+// ExpectedPace is the share of budget a campaign should have spent by now,
+// as a percentage — its own flight curve evaluated at today's age across
+// the planned length. A fast flight is expected to be further through its
+// budget on day 5 than a slow one, so a straight line would misjudge both.
+//
+// Returns 0 when the planned length is unknown, which callers must treat as
+// "no answer" rather than as 0%.
+func ExpectedPace(shape CurveShape, daysRunning, flightDays int) float64 {
+	if flightDays <= 0 {
+		return 0
+	}
+	return ValueAtAge(100, shape, flightDays, daysRunning)
+}
+
+// PaceVsPlan is actual budget pace against the pace the plan implies by
+// now. 1.0 is exactly on plan, 1.4 is spending 40% ahead of the flight, 0.6
+// is 40% behind. This is the number "am I overspending" actually needs:
+// raw pace cannot tell a campaign halfway through its flight from one that
+// is underspending, because both read 50%.
+//
+// Returns 0 when either side is unknown.
+func PaceVsPlan(pace, expectedPace float64) float64 {
+	if pace <= 0 || expectedPace <= 0 {
+		return 0
+	}
+	return pace / expectedPace
+}
+
 type PaceClass string
 
 const (

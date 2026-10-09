@@ -13,7 +13,7 @@ import (
 
 const bulkUpdateApproval = `-- name: BulkUpdateApproval :many
 UPDATE campaigns SET approval = $1::approval_status_t, updated_at = now()
-WHERE id = ANY($2::text[]) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain
+WHERE id = ANY($2::text[]) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
 `
 
 type BulkUpdateApprovalParams struct {
@@ -53,6 +53,7 @@ func (q *Queries) BulkUpdateApproval(ctx context.Context, arg BulkUpdateApproval
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}
@@ -79,10 +80,10 @@ const createCampaign = `-- name: CreateCampaign :one
 INSERT INTO campaigns (
     id, name, subject_type, role, initials, category, region, ad_type, platform,
     status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason,
-    brand_domain
+    brand_domain, flight_days
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
-) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
 `
 
 type CreateCampaignParams struct {
@@ -105,6 +106,7 @@ type CreateCampaignParams struct {
 	CurveShape  CurveShapeT     `json:"curve_shape"`
 	FlagReason  pgtype.Text     `json:"flag_reason"`
 	BrandDomain pgtype.Text     `json:"brand_domain"`
+	FlightDays  pgtype.Int4     `json:"flight_days"`
 }
 
 func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) (Campaign, error) {
@@ -128,6 +130,7 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		arg.CurveShape,
 		arg.FlagReason,
 		arg.BrandDomain,
+		arg.FlightDays,
 	)
 	var i Campaign
 	err := row.Scan(
@@ -153,12 +156,13 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		&i.UpdatedAt,
 		&i.CreatorID,
 		&i.BrandDomain,
+		&i.FlightDays,
 	)
 	return i, err
 }
 
 const getCampaign = `-- name: GetCampaign :one
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns WHERE id = $1
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE id = $1
 `
 
 func (q *Queries) GetCampaign(ctx context.Context, id string) (Campaign, error) {
@@ -187,12 +191,13 @@ func (q *Queries) GetCampaign(ctx context.Context, id string) (Campaign, error) 
 		&i.UpdatedAt,
 		&i.CreatorID,
 		&i.BrandDomain,
+		&i.FlightDays,
 	)
 	return i, err
 }
 
 const listCampaigns = `-- name: ListCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns ORDER BY created_at DESC
 `
 
 func (q *Queries) ListCampaigns(ctx context.Context) ([]Campaign, error) {
@@ -227,6 +232,7 @@ func (q *Queries) ListCampaigns(ctx context.Context) ([]Campaign, error) {
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}
@@ -239,7 +245,7 @@ func (q *Queries) ListCampaigns(ctx context.Context) ([]Campaign, error) {
 }
 
 const listCampaignsFiltered = `-- name: ListCampaignsFiltered :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns
 WHERE ($1::subject_type_t IS NULL OR subject_type = $1::subject_type_t)
   AND ($2::text IS NULL OR category = $2::text)
   AND ($3::text IS NULL OR region = $3::text)
@@ -309,6 +315,7 @@ func (q *Queries) ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFi
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}
@@ -321,7 +328,7 @@ func (q *Queries) ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFi
 }
 
 const listFlaggedCampaigns = `-- name: ListFlaggedCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns WHERE flag_reason IS NOT NULL ORDER BY updated_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE flag_reason IS NOT NULL ORDER BY updated_at DESC
 `
 
 func (q *Queries) ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error) {
@@ -356,6 +363,7 @@ func (q *Queries) ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error) 
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}
@@ -368,7 +376,7 @@ func (q *Queries) ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error) 
 }
 
 const listPendingCampaigns = `-- name: ListPendingCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns WHERE approval = 'pending' ORDER BY spend DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE approval = 'pending' ORDER BY spend DESC
 `
 
 func (q *Queries) ListPendingCampaigns(ctx context.Context) ([]Campaign, error) {
@@ -403,6 +411,7 @@ func (q *Queries) ListPendingCampaigns(ctx context.Context) ([]Campaign, error) 
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}
@@ -415,7 +424,7 @@ func (q *Queries) ListPendingCampaigns(ctx context.Context) ([]Campaign, error) 
 }
 
 const listRunningCampaigns = `-- name: ListRunningCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain FROM campaigns WHERE status != 'scheduled' ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE status != 'scheduled' ORDER BY created_at DESC
 `
 
 func (q *Queries) ListRunningCampaigns(ctx context.Context) ([]Campaign, error) {
@@ -450,6 +459,7 @@ func (q *Queries) ListRunningCampaigns(ctx context.Context) ([]Campaign, error) 
 			&i.UpdatedAt,
 			&i.CreatorID,
 			&i.BrandDomain,
+			&i.FlightDays,
 		); err != nil {
 			return nil, err
 		}
@@ -473,7 +483,7 @@ func (q *Queries) TotalPendingSpend(ctx context.Context) (int64, error) {
 }
 
 const updateCampaignDecision = `-- name: UpdateCampaignDecision :one
-UPDATE campaigns SET approval = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain
+UPDATE campaigns SET approval = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
 `
 
 type UpdateCampaignDecisionParams struct {
@@ -507,12 +517,13 @@ func (q *Queries) UpdateCampaignDecision(ctx context.Context, arg UpdateCampaign
 		&i.UpdatedAt,
 		&i.CreatorID,
 		&i.BrandDomain,
+		&i.FlightDays,
 	)
 	return i, err
 }
 
 const updateCampaignFlag = `-- name: UpdateCampaignFlag :one
-UPDATE campaigns SET flag_reason = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain
+UPDATE campaigns SET flag_reason = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
 `
 
 type UpdateCampaignFlagParams struct {
@@ -546,12 +557,13 @@ func (q *Queries) UpdateCampaignFlag(ctx context.Context, arg UpdateCampaignFlag
 		&i.UpdatedAt,
 		&i.CreatorID,
 		&i.BrandDomain,
+		&i.FlightDays,
 	)
 	return i, err
 }
 
 const updateCampaignStatus = `-- name: UpdateCampaignStatus :one
-UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain
+UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
 `
 
 type UpdateCampaignStatusParams struct {
@@ -585,6 +597,7 @@ func (q *Queries) UpdateCampaignStatus(ctx context.Context, arg UpdateCampaignSt
 		&i.UpdatedAt,
 		&i.CreatorID,
 		&i.BrandDomain,
+		&i.FlightDays,
 	)
 	return i, err
 }
