@@ -44,6 +44,9 @@ export function Tile({
         }
       }}
     >
+      {/* The art is the advertisement: its headline, its format, and the
+          face fronting it — not a portrait floating on a gradient. The
+          headline is the campaign's highest-reaching asset. */}
       <div className="tile-art">
         <SubjectImage
           name={campaign.name}
@@ -52,9 +55,21 @@ export function Tile({
           kind={campaign.subjectType}
           domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
           seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
-          size={46}
+          size={30}
           className="tile-image"
         />
+        {campaign.lead && (
+          <span className="tile-creative">
+            <span className="tile-creative-copy">{campaign.lead.headline}</span>
+            <span className="tile-creative-meta">
+              {campaign.lead.kind}
+              {campaign.lead.duration && campaign.lead.duration !== "static" && campaign.lead.duration !== "article"
+                ? ` · ${campaign.lead.duration}`
+                : ""}
+              {campaign.lead.festival ? ` · ${campaign.lead.festival}` : ""}
+            </span>
+          </span>
+        )}
         <span className="tile-status">
           <Pill status={campaign.status} />
         </span>

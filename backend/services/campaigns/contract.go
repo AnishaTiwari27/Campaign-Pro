@@ -20,6 +20,10 @@ type CampaignRow struct {
 	// cannot distinguish mid-flight from underspending on its own.
 	ExpectedPace float64
 	PaceVsPlan   float64
+	// Lead is the campaign's headline creative — what a tile shows, so a
+	// card reads as the advertisement it represents rather than as a row
+	// with an avatar on it.
+	Lead LeadCreative
 }
 
 // ListParams mirrors every GET /campaigns query parameter.
@@ -73,4 +77,13 @@ type FestivalStat struct {
 	// festival cut performed exactly like untagged work; 0 on the
 	// baseline row itself, which has nothing to compare with.
 	Lift float64
+}
+
+// LeadCreative is the highest-reaching asset on a campaign, carried on the
+// row so a list does not need a request per card.
+type LeadCreative struct {
+	Headline string
+	Kind     string
+	Duration string
+	Festival string
 }

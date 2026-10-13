@@ -39,6 +39,17 @@ type CampaignDTO struct {
 	FlightDays    int     `json:"flightDays"`
 	ExpectedPace  float64 `json:"expectedPace"`
 	PaceVsPlan    float64 `json:"paceVsPlan"`
+	// Lead is the campaign's headline asset, so a card can show the
+	// advertisement rather than an avatar on a gradient.
+	Lead *LeadCreativeDTO `json:"lead,omitempty"`
+}
+
+// LeadCreativeDTO is the highest-reaching creative on a campaign.
+type LeadCreativeDTO struct {
+	Headline string `json:"headline"`
+	Kind     string `json:"kind"`
+	Duration string `json:"duration"`
+	Festival string `json:"festival,omitempty"`
 }
 
 func NewCampaignDTO(r CampaignRow) CampaignDTO {
@@ -53,6 +64,7 @@ func NewCampaignDTO(r CampaignRow) CampaignDTO {
 		Pace: r.Pace, PaceClass: string(r.PaceClass), CPM: r.CPM, Index: r.Index,
 		CategoryIndex: r.CategoryIndex,
 		FlightDays:    r.FlightDays, ExpectedPace: r.ExpectedPace, PaceVsPlan: r.PaceVsPlan,
+		Lead: leadDTO(r.Lead),
 	}
 }
 
@@ -125,4 +137,14 @@ type ListResponse struct {
 
 func NewListResponse(r ListResult) ListResponse {
 	return ListResponse{Items: NewCampaignDTOs(r.Items), Total: r.Total, Page: r.Page, Pages: r.Pages}
+}
+
+// leadDTO omits the field entirely when a campaign has no creative yet,
+// so the card falls back to the campaign's own name rather than rendering
+// an empty headline.
+func leadDTO(l LeadCreative) *LeadCreativeDTO {
+	if l.Headline == "" {
+		return nil
+	}
+	return &LeadCreativeDTO{Headline: l.Headline, Kind: l.Kind, Duration: l.Duration, Festival: l.Festival}
 }

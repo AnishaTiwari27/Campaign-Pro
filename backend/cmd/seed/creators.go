@@ -165,13 +165,21 @@ func seedCreators(ctx context.Context, pool *pgxpool.Pool, camp *campaignsmod.Mo
 				log.Fatalf("link campaign %s to creator: %v", campaignID, err)
 			}
 
-			for ci, cr := range creativesFor(string(cc.adType), cc.reach) {
+			// An endorsement is one asset in the person's own feed, so it
+			// is written from the brand and their role rather than drawn
+			// from the brand's own creative set.
+			ad := creatorCreative(cc.brand, cs.role)
+			for ci, cr := range []creativeSpec{{
+				headline: ad.headline, kind: ad.kind, duration: ad.duration,
+				reach: cc.reach * ad.reachMul, ctr: baseCTR(string(cc.adType)) * ad.ctrMul,
+				hook: ad.hook,
+			}} {
 				if _, err := camp.Store().CreateCreative(ctx, campaigns.Creative{
 					CampaignID: created.ID, Headline: cr.headline, Kind: cr.kind,
 					DurationLabel: cr.duration, Reach: cr.reach, CTR: cr.ctr,
-					Language: cc.language, HookType: cc.hook,
+					Language: cc.language, HookType: cr.hook,
 					Claim:    fmt.Sprintf("%s endorsement", cc.brand),
-					Festival: festivalFor(campaignID, ci),
+					Festival: festivalFor(campaignID, cs.category, ci),
 					// Seeded creatives are analysed by construction, so the column
 					// that records when reflects that rather than reading as a
 					// backlog of unprocessed assets.

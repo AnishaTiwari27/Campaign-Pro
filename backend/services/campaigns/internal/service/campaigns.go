@@ -32,6 +32,14 @@ func (c *Campaigns) enrich(ctx context.Context, all []campaigns.Campaign) (map[s
 	medAll := campaigns.MedianReach(running)
 	benchmarks := campaigns.CategoryBenchmarks(running)
 
+	// One query for every campaign's lead asset rather than one per row.
+	// A failure here costs a tile its headline, not the page, so it is
+	// absorbed: the card falls back to the campaign's own name.
+	leads, err := c.Store.LeadCreatives(ctx)
+	if err != nil {
+		leads = map[string]campaigns.LeadCreative{}
+	}
+
 	rows := make(map[string]campaigns.CampaignRow, len(all))
 	for _, camp := range all {
 		pace := campaigns.Pace(camp.Spend, camp.Budget)
@@ -40,6 +48,7 @@ func (c *Campaigns) enrich(ctx context.Context, all []campaigns.Campaign) (map[s
 			Campaign:      camp,
 			Pace:          pace,
 			PaceClass:     campaigns.PaceClassOf(pace),
+			Lead:          leads[camp.ID],
 			ExpectedPace:  expected,
 			PaceVsPlan:    campaigns.PaceVsPlan(pace, expected),
 			CPM:           campaigns.CPM(camp.Spend, camp.Reach, camp.Frequency),

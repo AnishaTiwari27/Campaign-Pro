@@ -57,3 +57,21 @@ func (s *Store) FestivalBreakdown(ctx context.Context) ([]campaigns.FestivalStat
 	}
 	return out, nil
 }
+
+// LeadCreatives maps campaign id to its highest-reaching asset.
+func (s *Store) LeadCreatives(ctx context.Context) (map[string]campaigns.LeadCreative, error) {
+	rows, err := s.db.Queries.TopCreativePerCampaign(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]campaigns.LeadCreative, len(rows))
+	for _, r := range rows {
+		out[r.CampaignID] = campaigns.LeadCreative{
+			Headline: r.Headline,
+			Kind:     string(r.Kind),
+			Duration: r.DurationLabel,
+			Festival: database.TextOrEmpty(r.Festival),
+		}
+	}
+	return out, nil
+}

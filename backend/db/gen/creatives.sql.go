@@ -235,6 +235,50 @@ func (q *Queries) ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]C
 	return items, nil
 }
 
+const topCreativePerCampaign = `-- name: TopCreativePerCampaign :many
+SELECT DISTINCT ON (campaign_id)
+    campaign_id, headline, kind, duration_label, festival
+FROM creatives
+ORDER BY campaign_id, reach DESC
+`
+
+type TopCreativePerCampaignRow struct {
+	CampaignID    string        `json:"campaign_id"`
+	Headline      string        `json:"headline"`
+	Kind          CreativeKindT `json:"kind"`
+	DurationLabel string        `json:"duration_label"`
+	Festival      pgtype.Text   `json:"festival"`
+}
+
+// TopCreativePerCampaign is the lead asset for each campaign — the one a
+// tile shows. Highest reach wins, which is the creative the campaign is
+// actually known by.
+func (q *Queries) TopCreativePerCampaign(ctx context.Context) ([]TopCreativePerCampaignRow, error) {
+	rows, err := q.db.Query(ctx, topCreativePerCampaign)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TopCreativePerCampaignRow
+	for rows.Next() {
+		var i TopCreativePerCampaignRow
+		if err := rows.Scan(
+			&i.CampaignID,
+			&i.Headline,
+			&i.Kind,
+			&i.DurationLabel,
+			&i.Festival,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateCreativeAnalysis = `-- name: UpdateCreativeAnalysis :one
 UPDATE creatives SET
     language   = coalesce($1::text, language),

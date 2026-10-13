@@ -44,6 +44,17 @@ export interface Campaign {
   /** pace / expectedPace. 1.0 is exactly on plan, 1.4 is 40% ahead of the
    *  flight. 0 when the campaign has no recorded plan. */
   paceVsPlan: number;
+  /** The campaign's headline creative, so a card can show the
+   *  advertisement rather than an avatar on a gradient. Absent until a
+   *  campaign has an asset. */
+  lead?: LeadCreative;
+}
+
+export interface LeadCreative {
+  headline: string;
+  kind: "video" | "banner" | "text";
+  duration: string;
+  festival?: string;
 }
 
 export interface Creative {

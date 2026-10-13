@@ -68,6 +68,10 @@ type Querier interface {
 	// the url is empty. The avatar takes over again when it is cleared.
 	SetCreatorPhoto(ctx context.Context, arg SetCreatorPhotoParams) error
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
+	// TopCreativePerCampaign is the lead asset for each campaign — the one a
+	// tile shows. Highest reach wins, which is the creative the campaign is
+	// actually known by.
+	TopCreativePerCampaign(ctx context.Context) ([]TopCreativePerCampaignRow, error)
 	TotalPendingSpend(ctx context.Context) (int64, error)
 	TouchUserLogin(ctx context.Context, id pgtype.UUID) error
 	UpdateCampaignDecision(ctx context.Context, arg UpdateCampaignDecisionParams) (Campaign, error)

@@ -39,3 +39,12 @@ FROM creatives
 WHERE analyzed_at IS NOT NULL
 GROUP BY 1
 ORDER BY 3 DESC;
+
+-- TopCreativePerCampaign is the lead asset for each campaign — the one a
+-- tile shows. Highest reach wins, which is the creative the campaign is
+-- actually known by.
+-- name: TopCreativePerCampaign :many
+SELECT DISTINCT ON (campaign_id)
+    campaign_id, headline, kind, duration_label, festival
+FROM creatives
+ORDER BY campaign_id, reach DESC;
