@@ -25,3 +25,42 @@
 .subject-logo-person {
   border-radius: 50%;
 }
+
+/* Fill mode: the subject IS the panel. The parent positions and clips. */
+.subject-image-fill {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.subject-avatar-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.subject-fill-media {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* A portrait crops: faces sit high in the frame, so bias the crop upward
+   rather than centring it and cutting foreheads. */
+.subject-fill-media-person {
+  object-fit: cover;
+  object-position: center 18%;
+}
+
+/* A mark does not crop — scaling a wordmark to cover would slice letters
+   off. It sits on white because most fetched marks are dark ink, with room
+   at the bottom for the headline that overlays it. */
+.subject-fill-media-brand {
+  object-fit: contain;
+  background: #fff;
+  /* The foot of the panel belongs to the headline's scrim, so the mark is
+     held clear of it — contained inside the top band rather than centred,
+     which put the scrim's edge straight through the middle of the logo. */
+  padding: 14px 22px 60px;
+  box-sizing: border-box;
+}

@@ -5,6 +5,7 @@ import { Pill } from "../../components/Pill";
 import { ApprovalTag } from "../../components/Tag";
 import { adTypeStripeStyle } from "../../components/AdTypeTag";
 import { SubjectImage } from "../../components/SubjectImage";
+import { useCreatorPhotos } from "../../api/creatorPhotos";
 import { AreaChart } from "../../components/AreaChart";
 import { reachCurve } from "../../lib/metrics";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
@@ -21,6 +22,9 @@ export function InFocus({
   medAll: number;
   benchmarks?: CategoryBenchmark[];
 }) {
+  // A creator with a photograph should be the same person here as on the
+  // tiles below; the roster is already cached, so this costs no request.
+  const creatorPhotos = useCreatorPhotos();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
   // Drives the progress ring. Kept separate from `active` so restarting the
@@ -119,6 +123,7 @@ export function InFocus({
               name={campaign.name}
               initials={campaign.initials}
               kind={campaign.subjectType}
+              imageUrl={campaign.creatorId ? creatorPhotos[campaign.creatorId] : undefined}
               domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
               seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
               size={40}
@@ -177,6 +182,7 @@ export function InFocus({
               name={c.name}
               initials={c.initials}
               kind={c.subjectType}
+              imageUrl={c.creatorId ? creatorPhotos[c.creatorId] : undefined}
               domain={c.subjectType === "brand" ? c.brandDomain : undefined}
               seed={c.creatorId ?? c.brandDomain ?? c.name}
               size={26}

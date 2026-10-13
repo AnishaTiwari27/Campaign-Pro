@@ -49,17 +49,23 @@ function hairPath(style: HairStyle): string {
   }
 }
 
-function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; name: string; initials: string; kind: SubjectKind; size: number }) {
+function GeneratedAvatar({ seed, name, initials, kind, size, fill }: { seed: string; name: string; initials: string; kind: SubjectKind; size: number; fill: boolean }) {
+  const isPerson = kind === "person";
   const h = hash(seed);
   const hue = h % 360;
   const hue2 = (hue + 48) % 360;
   const uid = h.toString(36);
   const gradientId = `grad-${uid}`;
   const clipId = `clip-${uid}`;
-  const radius = kind === "person" ? 32 : 14;
+  // Filling a panel, the artwork is the panel, so it keeps no rounding of
+  // its own. The drawn portrait does not come with it: it is legible at
+  // avatar size and reads as an emoji at a hundred and seventy pixels, so
+  // a subject with no photograph gets the lettered card at this size —
+  // a title slate, which is a thing an ad can be.
+  const radius = fill ? 0 : kind === "person" ? 32 : 14;
+  const drawFace = isPerson && !fill;
 
   // A brand is a mark, not a face: it keeps the lettered chip.
-  const isPerson = kind === "person";
   const skin = SKIN[(h >> 2) % SKIN.length];
   const hair = HAIR[(h >> 9) % HAIR.length];
   const style = ((h >> 17) % 6) as HairStyle;
@@ -67,10 +73,11 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
 
   return (
     <svg
-      width={size}
-      height={size}
+      width={fill ? "100%" : size}
+      height={fill ? "100%" : size}
       viewBox="0 0 64 64"
-      className={`subject-avatar subject-avatar-${kind}`}
+      preserveAspectRatio={fill ? "xMidYMid slice" : undefined}
+      className={`subject-avatar subject-avatar-${kind}${fill ? " subject-avatar-fill" : ""}`}
       role="img"
       aria-label={name}
     >
@@ -93,7 +100,7 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
         <circle cx="12" cy="10" r="26" fill="#fff" opacity="0.1" />
         <circle cx="58" cy="56" r="20" fill="#000" opacity="0.08" />
 
-        {isPerson && (
+        {drawFace && (
           // Order matters: shoulders, then neck, then head, then hair over
           // the hairline. Drawn inside the clip so the shoulders run off
           // the bottom edge the way a cropped portrait does.
@@ -109,10 +116,11 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
         )}
       </g>
 
-      {!isPerson && (
+      {!drawFace && (
+        // Lifted in fill mode: the headline's scrim owns the lower third.
         <text
           x="32"
-          y="33"
+          y={fill ? 26 : 33}
           textAnchor="middle"
           dominantBaseline="central"
           fill="#fff"
@@ -137,6 +145,7 @@ export function SubjectImage({
   seed,
   size = 40,
   className = "",
+  fill = false,
 }: {
   name: string;
   initials: string;
@@ -154,31 +163,38 @@ export function SubjectImage({
   seed?: string;
   size?: number;
   className?: string;
+  /**
+   * Fill the parent instead of drawing a fixed-size chip. The parent must be
+   * positioned and clipped; the campaign tiles use this so the art panel is
+   * one photograph edge to edge rather than a thumbnail on a gradient.
+   */
+  fill?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
 
   const src = imageUrl ?? (domain ? `/logos/${domain}.png` : undefined);
-  const style: CSSProperties = { width: size, height: size };
+  const style: CSSProperties | undefined = fill ? undefined : { width: size, height: size };
+  const wrapper = `subject-image${fill ? " subject-image-fill" : ""} ${className}`;
 
   // Not every domain has a usable logo (fetch-logos.sh skips the ones that
   // come back too small), so a failed load is expected, not exceptional.
   if (!src || failed) {
     return (
-      <span className={`subject-image ${className}`} style={style}>
-        <GeneratedAvatar seed={seed ?? name} name={name} initials={initials} kind={kind} size={size} />
+      <span className={wrapper} style={style}>
+        <GeneratedAvatar seed={seed ?? name} name={name} initials={initials} kind={kind} size={size} fill={fill} />
       </span>
     );
   }
 
   return (
-    <span className={`subject-image ${className}`} style={style}>
+    <span className={wrapper} style={style}>
       <img
         src={src}
         alt={name}
-        width={size}
-        height={size}
+        width={fill ? undefined : size}
+        height={fill ? undefined : size}
         loading="lazy"
-        className={`subject-logo subject-logo-${kind}`}
+        className={fill ? `subject-fill-media subject-fill-media-${kind}` : `subject-logo subject-logo-${kind}`}
         onError={() => setFailed(true)}
       />
     </span>

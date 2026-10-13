@@ -44,9 +44,9 @@ export function Tile({
         }
       }}
     >
-      {/* The art is the advertisement: its headline, its format, and the
-          face fronting it — not a portrait floating on a gradient. The
-          headline is the campaign's highest-reaching asset. */}
+      {/* The art is the advertisement, and the whole panel is the picture:
+          one image edge to edge, with the headline — the campaign's
+          highest-reaching asset — set over a scrim at its foot. */}
       <div className="tile-art">
         <SubjectImage
           name={campaign.name}
@@ -55,8 +55,7 @@ export function Tile({
           kind={campaign.subjectType}
           domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
           seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
-          size={30}
-          className="tile-image"
+          fill
         />
         {campaign.lead && (
           <span className="tile-creative">
