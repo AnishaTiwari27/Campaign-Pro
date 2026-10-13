@@ -335,6 +335,30 @@ rewrite.
 | `PORT` | Whatever the platform injects; defaults to `8090` |
 | `ALLOW_SIGNUP` | `true` (the default) exposes the public signup page and `POST /api/auth/signup`. Set it to `false` to close registration once the accounts that should exist do — the route is then not registered at all, rather than registered and refusing |
 
+### Photographs of people
+
+`creators.image_url` holds a person's own photograph, and `SubjectImage`
+prefers it over the generated avatar wherever that person appears — the
+roster, their detail page, and every campaign tile they front. A failed
+load falls back to the avatar, so a dead URL degrades rather than breaks.
+
+```sql
+UPDATE creators SET image_url = 'https://…/aanya.jpg' WHERE id = 'aanya-verma';
+```
+
+An empty column is the normal state, not a gap to be filled. The generated
+avatar is the correct likeness for someone whose photo the agency has no
+right to publish, which is most people most of the time.
+
+Two things not to put in that column. A real celebrity's photograph beside
+these names attaches invented spend, reach and sign-off to someone who
+never ran the campaign — the creators in the demo data are fictional, and
+the pairing would be a fabricated endorsement. Stock portraits carry the
+same problem in licence form: most stock licences forbid using a model's
+likeness to imply they endorse a product. Synthetic portraits of people
+who do not exist, or a real creator's own photo used with their
+permission, are the two that work.
+
 ### A word on "creators" vs "Influencers"
 
 Half the campaigns here are fronted by a person rather than a brand — in the

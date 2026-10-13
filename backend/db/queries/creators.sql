@@ -14,3 +14,8 @@ SELECT * FROM campaigns WHERE creator_id = $1 ORDER BY created_at DESC;
 
 -- name: SetCampaignCreator :exec
 UPDATE campaigns SET creator_id = $2, updated_at = now() WHERE id = $1;
+
+-- SetCreatorPhoto attaches a creator's own photograph, or clears it when
+-- the url is empty. The avatar takes over again when it is cleared.
+-- name: SetCreatorPhoto :exec
+UPDATE creators SET image_url = NULLIF($2, '') WHERE id = $1;

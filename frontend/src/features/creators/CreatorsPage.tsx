@@ -46,7 +46,7 @@ export function CreatorsPage() {
           {items.map((c) => (
             <button key={c.id} type="button" className="creator-row" onClick={() => navigate(`/creators/${c.id}`)}>
               <span className="creator-identity">
-                <SubjectImage name={c.name} initials={c.initials} kind="person" seed={c.id} size={34} />
+                <SubjectImage name={c.name} initials={c.initials} kind="person" seed={c.id} imageUrl={c.imageUrl} size={34} />
                 <span className="creator-identity-text">
                   <span className="creator-name">{c.name}</span>
                   <span className="creator-meta">

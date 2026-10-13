@@ -14,7 +14,7 @@ import (
 const createCreator = `-- name: CreateCreator :one
 INSERT INTO creators (id, name, role, initials, category, region, tier, followers, primary_platform, languages)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at
+RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url
 `
 
 type CreateCreatorParams struct {
@@ -57,12 +57,13 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 		&i.Languages,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ImageUrl,
 	)
 	return i, err
 }
 
 const getCreator = `-- name: GetCreator :one
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at FROM creators WHERE id = $1
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url FROM creators WHERE id = $1
 `
 
 func (q *Queries) GetCreator(ctx context.Context, id string) (Creator, error) {
@@ -81,6 +82,7 @@ func (q *Queries) GetCreator(ctx context.Context, id string) (Creator, error) {
 		&i.Languages,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ImageUrl,
 	)
 	return i, err
 }
@@ -134,7 +136,7 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, creatorID pgtype.T
 }
 
 const listCreators = `-- name: ListCreators :many
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at FROM creators ORDER BY followers DESC
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url FROM creators ORDER BY followers DESC
 `
 
 func (q *Queries) ListCreators(ctx context.Context) ([]Creator, error) {
@@ -159,6 +161,7 @@ func (q *Queries) ListCreators(ctx context.Context) ([]Creator, error) {
 			&i.Languages,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -181,5 +184,21 @@ type SetCampaignCreatorParams struct {
 
 func (q *Queries) SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error {
 	_, err := q.db.Exec(ctx, setCampaignCreator, arg.ID, arg.CreatorID)
+	return err
+}
+
+const setCreatorPhoto = `-- name: SetCreatorPhoto :exec
+UPDATE creators SET image_url = NULLIF($2, '') WHERE id = $1
+`
+
+type SetCreatorPhotoParams struct {
+	ID      string      `json:"id"`
+	Column2 interface{} `json:"column_2"`
+}
+
+// SetCreatorPhoto attaches a creator's own photograph, or clears it when
+// the url is empty. The avatar takes over again when it is cleared.
+func (q *Queries) SetCreatorPhoto(ctx context.Context, arg SetCreatorPhotoParams) error {
+	_, err := q.db.Exec(ctx, setCreatorPhoto, arg.ID, arg.Column2)
 	return err
 }

@@ -300,6 +300,11 @@ export interface Creator {
   followers: number;
   primaryPlatform: string;
   languages: string[];
+  /** The creator's own photograph, where the agency has one it may
+   *  publish. Absent is normal, and draws the generated avatar — which is
+   *  the right likeness for someone whose photo cannot be used, not a
+   *  placeholder for a missing one. */
+  imageUrl?: string;
 }
 
 export interface CreatorPerformance extends Creator {

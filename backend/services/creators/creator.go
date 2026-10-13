@@ -69,8 +69,13 @@ type Creator struct {
 	Followers       int64
 	PrimaryPlatform string
 	Languages       []string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	// ImageURL is this creator's own photograph, where the agency has one
+	// it may publish. Empty is the normal case, and renders the generated
+	// avatar — which is the correct likeness for someone whose photo the
+	// agency has no right to use, not a placeholder for a missing one.
+	ImageURL  string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // CreatorPerformance is everything the roster and detail views need, all

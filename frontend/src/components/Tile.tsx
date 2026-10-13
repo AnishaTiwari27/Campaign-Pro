@@ -5,6 +5,7 @@ import { adTypeStripeStyle } from "./AdTypeTag";
 import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
 import { useSession } from "../api/auth";
+import { useCreatorPhotos } from "../api/creatorPhotos";
 import { approvalBlockOf } from "../lib/metrics";
 import "./Tile.css";
 
@@ -22,6 +23,7 @@ export function Tile({
   showDecide?: boolean;
 }) {
   const navigate = useNavigate();
+  const creatorPhotos = useCreatorPhotos();
   const decision = useDecision();
   const { data: me } = useSession();
   // The server refuses to approve an over-budget campaign, so the inline
@@ -45,6 +47,7 @@ export function Tile({
       <div className="tile-art">
         <SubjectImage
           name={campaign.name}
+          imageUrl={campaign.creatorId ? creatorPhotos[campaign.creatorId] : undefined}
           initials={campaign.initials}
           kind={campaign.subjectType}
           domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}

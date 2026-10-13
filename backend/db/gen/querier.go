@@ -64,6 +64,9 @@ type Querier interface {
 	// when the session has not expired.
 	SessionUser(ctx context.Context, tokenHash []byte) (SessionUserRow, error)
 	SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error
+	// SetCreatorPhoto attaches a creator's own photograph, or clears it when
+	// the url is empty. The avatar takes over again when it is cleared.
+	SetCreatorPhoto(ctx context.Context, arg SetCreatorPhotoParams) error
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	TotalPendingSpend(ctx context.Context) (int64, error)
 	TouchUserLogin(ctx context.Context, id pgtype.UUID) error

@@ -1,0 +1,11 @@
+-- A creator's own photograph.
+--
+-- SubjectImage has always preferred a real image over its generated
+-- avatar; there was simply never a column to put one in, so every person
+-- in the product rendered as initials on a gradient.
+--
+-- Nullable, and expected to stay null for most rows. The avatar is not a
+-- placeholder for a missing photo — it is the correct rendering for a
+-- person whose likeness the agency has no right to publish, which is most
+-- of them most of the time.
+ALTER TABLE creators ADD COLUMN image_url TEXT;

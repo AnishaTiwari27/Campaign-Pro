@@ -51,7 +51,7 @@ export function CreatorDetailPage() {
     <div className="creator-detail-page">
       <div className="page-header">
         <div className="creator-detail-head">
-          <SubjectImage name={data.name} initials={data.initials} kind="person" seed={data.id} size={52} />
+          <SubjectImage name={data.name} initials={data.initials} kind="person" seed={data.id} imageUrl={data.imageUrl} size={52} />
           <div>
             <div className="creator-detail-title">
               <h1>{data.name}</h1>

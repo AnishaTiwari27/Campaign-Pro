@@ -6,6 +6,7 @@ import { useUIStore } from "../../app/useUIStore";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { useLastFilterStore } from "../../app/lastFilterStore";
 import { useSession } from "../../api/auth";
+import { useCreatorPhotos } from "../../api/creatorPhotos";
 import { FilterBar } from "../../components/FilterBar";
 import { DataTable, type Column } from "../../components/DataTable";
 import { Pagination } from "../../components/Pagination";
@@ -28,6 +29,7 @@ export function CampaignsPage() {
   const [params, setParams] = useListParams();
   const { data, isLoading, isError } = useCampaignsList(params);
   const density = useUIStore((s) => s.density);
+  const creatorPhotos = useCreatorPhotos();
   const setDensity = useUIStore((s) => s.setDensity);
   const selectedIds = useUIStore((s) => s.selectedIds);
   const toggleSelected = useUIStore((s) => s.toggleSelected);
@@ -72,7 +74,7 @@ export function CampaignsPage() {
         render: (c) => (
           <div className="campaign-subject" style={adTypeStripeStyle(c.adType)}>
             <span className="campaign-subject-stripe" />
-            <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={28} />
+            <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} imageUrl={c.creatorId ? creatorPhotos[c.creatorId] : undefined} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={28} />
             <span className="campaign-subject-text">
               <span className="campaign-subject-name truncate">{c.name}</span>
               <span className="campaign-subject-hint">Open →</span>
@@ -130,7 +132,9 @@ export function CampaignsPage() {
         },
       },
     ],
-    [decision, canApprove],
+    // creatorPhotos arrives a moment after first paint; without it here
+    // the memo keeps the empty map and no photo ever appears.
+    [decision, canApprove, creatorPhotos],
   );
 
   return (

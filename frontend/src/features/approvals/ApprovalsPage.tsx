@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { useCampaignsList, useDecision } from "../../api/campaigns";
 import { useSession } from "../../api/auth";
+import { useCreatorPhotos } from "../../api/creatorPhotos";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { Pill } from "../../components/Pill";
 import { FlaggedTag } from "../../components/Tag";
@@ -19,6 +20,7 @@ export function ApprovalsPage() {
   const decision = useDecision();
   const { data: me } = useSession();
   const canApprove = me?.canApprove ?? false;
+  const creatorPhotos = useCreatorPhotos();
 
   const items = data?.items ?? [];
   const totalSpend = items.reduce((sum, c) => sum + c.spend, 0);
@@ -50,7 +52,7 @@ export function ApprovalsPage() {
               <div key={c.id} className="approval-card card" style={adTypeStripeStyle(c.adType)}>
                 <div className="approval-card-stripe" />
                 <div className="approval-card-main">
-                  <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={40} />
+                  <SubjectImage name={c.name} initials={c.initials} kind={c.subjectType} imageUrl={c.creatorId ? creatorPhotos[c.creatorId] : undefined} domain={c.subjectType === "brand" ? c.brandDomain : undefined} seed={c.creatorId ?? c.brandDomain ?? c.name} size={40} />
                   <div className="approval-card-body">
                     <div className="approval-card-title-row">
                       <span className="approval-card-name">{c.name}</span>

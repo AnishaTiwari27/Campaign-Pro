@@ -41,6 +41,9 @@ type CreatorDTO struct {
 	Followers       int64    `json:"followers"`
 	PrimaryPlatform string   `json:"primaryPlatform"`
 	Languages       []string `json:"languages"`
+	// Empty when the agency has no photograph it may publish, which is the
+	// normal case; the client then draws its generated avatar.
+	ImageURL string `json:"imageUrl,omitempty"`
 }
 
 type CreatorPerformanceDTO struct {
@@ -72,6 +75,7 @@ func creatorDTO(c creators.Creator) CreatorDTO {
 		Category: c.Category, Region: c.Region, Tier: string(c.Tier),
 		TierLabel: creators.TierLabel(c.Tier), Followers: c.Followers,
 		PrimaryPlatform: c.PrimaryPlatform, Languages: langs,
+		ImageURL: c.ImageURL,
 	}
 }
 

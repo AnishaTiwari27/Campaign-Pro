@@ -23,6 +23,7 @@ func toDomainCreator(c gen.Creator) creators.Creator {
 		Followers:       c.Followers,
 		PrimaryPlatform: c.PrimaryPlatform,
 		Languages:       c.Languages,
+		ImageURL:        database.TextOrEmpty(c.ImageUrl),
 		CreatedAt:       database.TimeOf(c.CreatedAt),
 		UpdatedAt:       database.TimeOf(c.UpdatedAt),
 	}
@@ -67,4 +68,10 @@ func (s *Store) CreateCreator(ctx context.Context, c creators.Creator) (creators
 // the command palette.
 func (s *Store) All(ctx context.Context) ([]creators.Creator, error) {
 	return s.ListCreators(ctx)
+}
+
+// SetPhoto attaches a creator's own photograph, or clears it when the url
+// is empty.
+func (s *Store) SetPhoto(ctx context.Context, creatorID, imageURL string) error {
+	return s.db.Queries.SetCreatorPhoto(ctx, gen.SetCreatorPhotoParams{ID: creatorID, Column2: imageURL})
 }
