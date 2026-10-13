@@ -15,6 +15,40 @@ function hash(s: string): number {
 // fictional, so a real face would attach invented spend figures to someone
 // who didn't run the campaign. A real creator's own photo drops into the
 // same slot by giving them an imageUrl.
+// Flat-illustration portraits for people, drawn from the seed so the same
+// person is the same face everywhere, on every machine, forever.
+//
+// Deliberately illustrated rather than photographic. These creators are
+// fictional, so a real face beside an invented campaign, an invented spend
+// figure and an approval trail would read as a record of an endorsement
+// that never happened — and in this market personality rights over exactly
+// that kind of implied association are enforced. A drawn face carries the
+// same recognition value with nobody's likeness attached. A real creator's
+// own photograph still wins over this, through imageUrl.
+const SKIN = ["#F7D2AE", "#E8B183", "#D19A62", "#B07A45", "#8E5C33", "#6B4226"];
+const HAIR = ["#141110", "#3A2418", "#6B3F1F", "#1F1A17", "#52331E", "#2A1C14"];
+
+type HairStyle = 0 | 1 | 2 | 3 | 4 | 5;
+
+/** Six silhouettes, enough that a roster of a dozen reads as a dozen
+ *  people rather than a repeated icon. */
+function hairPath(style: HairStyle): string {
+  switch (style) {
+    case 0: // cropped
+      return "M15 28c0-11 8-18 17-18s17 7 17 18c0-8-7-10-17-10s-17 2-17 10z";
+    case 1: // long, past the shoulders
+      return "M14 30c0-12 8-20 18-20s18 8 18 20c0 9 3 14 3 20h-8c0-8-1-13-1-20 0-7-5-11-12-11s-12 4-12 11c0 7-1 12-1 20h-8c0-6 3-11 3-20z";
+    case 2: // side part
+      return "M15 29c0-12 8-19 17-19s17 7 17 19c0-9-8-9-14-11-4-1-6-2-9 0-4 4-8 4-11 11z";
+    case 3: // bun
+      return "M15 28c0-11 8-18 17-18s17 7 17 18c0-8-7-10-17-10s-17 2-17 10zM32 1a6 6 0 110 12 6 6 0 010-12z";
+    case 4: // curls
+      return "M14 30c0-12 8-20 18-20s18 8 18 20c-3-5-6-4-9-8-3 4-6 1-9-2-3 4-6 6-10 4-3 4-7 1-8 6z";
+    default: // receding
+      return "M18 26c1-9 7-15 14-15s13 5 14 13c-3-5-7-6-14-6-6 0-11 2-14 8z";
+  }
+}
+
 function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; name: string; initials: string; kind: SubjectKind; size: number }) {
   const h = hash(seed);
   const hue = h % 360;
@@ -23,6 +57,13 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
   const gradientId = `grad-${uid}`;
   const clipId = `clip-${uid}`;
   const radius = kind === "person" ? 32 : 14;
+
+  // A brand is a mark, not a face: it keeps the lettered chip.
+  const isPerson = kind === "person";
+  const skin = SKIN[(h >> 2) % SKIN.length];
+  const hair = HAIR[(h >> 9) % HAIR.length];
+  const style = ((h >> 17) % 6) as HairStyle;
+  const shirt = `hsl(${(hue + 160) % 360} 42% 42%)`;
 
   return (
     <svg
@@ -51,20 +92,38 @@ function GeneratedAvatar({ seed, name, initials, kind, size }: { seed: string; n
             rather than a flat colour chip. */}
         <circle cx="12" cy="10" r="26" fill="#fff" opacity="0.1" />
         <circle cx="58" cy="56" r="20" fill="#000" opacity="0.08" />
+
+        {isPerson && (
+          // Order matters: shoulders, then neck, then head, then hair over
+          // the hairline. Drawn inside the clip so the shoulders run off
+          // the bottom edge the way a cropped portrait does.
+          <g>
+            <path d="M6 64c0-13 11-20 26-20s26 7 26 20z" fill={shirt} />
+            <path d="M25 42h14v11c0 4-14 4-14 0z" fill={skin} />
+            <ellipse cx="32" cy="29" rx="16" ry="18" fill={skin} />
+            <path d={hairPath(style)} fill={hair} />
+            <circle cx="26" cy="29" r="1.9" fill="#2B2320" />
+            <circle cx="38" cy="29" r="1.9" fill="#2B2320" />
+            <path d="M27 37c2.5 2 7.5 2 10 0" stroke="#2B2320" strokeWidth="1.6" strokeLinecap="round" fill="none" opacity="0.6" />
+          </g>
+        )}
       </g>
-      <text
-        x="32"
-        y="33"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="#fff"
-        fontSize={initials.length > 2 ? 21 : 25}
-        fontWeight="800"
-        fontFamily="Archivo, system-ui, sans-serif"
-        letterSpacing="-0.5"
-      >
-        {initials}
-      </text>
+
+      {!isPerson && (
+        <text
+          x="32"
+          y="33"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="#fff"
+          fontSize={initials.length > 2 ? 21 : 25}
+          fontWeight="800"
+          fontFamily="Archivo, system-ui, sans-serif"
+          letterSpacing="-0.5"
+        >
+          {initials}
+        </text>
+      )}
     </svg>
   );
 }

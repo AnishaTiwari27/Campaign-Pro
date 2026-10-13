@@ -143,6 +143,8 @@ func main() {
 
 	creatorCampaigns := seedCreators(ctx, pool, camp, cre)
 
+	seedCreatorFaces(ctx, cre)
+
 	if err := seedReports(ctx, pool, rep); err != nil {
 		log.Fatalf("seed reports: %v", err)
 	}

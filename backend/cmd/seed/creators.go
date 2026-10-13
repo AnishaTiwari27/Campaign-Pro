@@ -202,3 +202,8 @@ func seedCreators(ctx context.Context, pool *pgxpool.Pool, camp *campaignsmod.Mo
 	}
 	return count
 }
+
+// seedCreatorFaces runs after the roster is written.
+func seedCreatorFaces(ctx context.Context, cre *creatorsmod.Module) {
+	applyCreatorFaces(ctx, cre.Store().SetPhoto)
+}
