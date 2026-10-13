@@ -9,6 +9,7 @@ import { Pill } from "../../components/Pill";
 import { ApprovalTag, FlaggedTag } from "../../components/Tag";
 import { AdTypeTag } from "../../components/AdTypeTag";
 import { SubjectImage } from "../../components/SubjectImage";
+import { useCreatorIndex } from "../../api/creatorPhotos";
 import { EmptyState } from "../../components/EmptyState";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { ApiError } from "../../api/client";
@@ -44,6 +45,7 @@ export function CampaignDetailPage() {
   const decision = useDecision();
   const pause = usePause();
   const { data: me } = useSession();
+  const creatorIndex = useCreatorIndex();
   const canApprove = me?.canApprove ?? false;
 
   useSetBreadcrumbs([
@@ -80,6 +82,9 @@ export function CampaignDetailPage() {
   // Over budget: the server refuses the approval, so don't offer it. Reject
   // and Pause stay available — they're how an approver deals with this.
   const approvalBlock = approvalBlockOf(campaign.spend, campaign.budget);
+  // The person fronting this ad. Their roster lives in the creators
+  // service, so the id on the campaign is resolved client-side.
+  const creator = campaign.creatorId ? creatorIndex[campaign.creatorId] : undefined;
 
   return (
     <div className="campaign-detail-page">
@@ -91,6 +96,7 @@ export function CampaignDetailPage() {
             kind={campaign.subjectType}
             domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
             seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
+            imageUrl={creator?.imageUrl}
             size={52}
           />
           <div>
@@ -102,6 +108,11 @@ export function CampaignDetailPage() {
               {campaign.flagReason && <FlaggedTag />}
             </div>
             <div className="campaign-detail-subtitle">
+              {creator ? (
+                <>
+                  <Link to={`/creators/${creator.id}`}>{creator.name}</Link> ·{" "}
+                </>
+              ) : null}
               {campaign.role || campaign.category} ·{" "}
               <Link to={`/regions/${encodeURIComponent(campaign.region)}`}>{campaign.region}</Link> · {campaign.platform}
               {campaign.flagReason && <span className="campaign-detail-flag-reason"> · {campaign.flagReason}</span>}

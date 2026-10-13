@@ -1,11 +1,11 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { Campaign } from "../api/types";
 import { Pill } from "./Pill";
 import { adTypeStripeStyle } from "./AdTypeTag";
 import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
 import { useSession } from "../api/auth";
-import { useCreatorPhotos } from "../api/creatorPhotos";
+import { useCreatorIndex } from "../api/creatorPhotos";
 import { approvalBlockOf } from "../lib/metrics";
 import "./Tile.css";
 
@@ -23,7 +23,8 @@ export function Tile({
   showDecide?: boolean;
 }) {
   const navigate = useNavigate();
-  const creatorPhotos = useCreatorPhotos();
+  const creatorIndex = useCreatorIndex();
+  const creator = campaign.creatorId ? creatorIndex[campaign.creatorId] : undefined;
   const decision = useDecision();
   const { data: me } = useSession();
   // The server refuses to approve an over-budget campaign, so the inline
@@ -50,13 +51,29 @@ export function Tile({
       <div className="tile-art">
         <SubjectImage
           name={campaign.name}
-          imageUrl={campaign.creatorId ? creatorPhotos[campaign.creatorId] : undefined}
+          imageUrl={creator?.imageUrl}
           initials={campaign.initials}
           kind={campaign.subjectType}
           domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
           seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
           fill
         />
+        {/* The byline. A tile is one campaign, but the face on it has a
+            body of work, and the person is what someone wants next —
+            so their name on the picture goes to them, not to this ad. */}
+        {creator && (
+          <Link
+            to={`/creators/${creator.id}`}
+            className="tile-byline"
+            title={`${creator.name} — ${creator.campaigns} campaign${creator.campaigns === 1 ? "" : "s"}`}
+            // The whole tile is a link to the campaign; this one is not it.
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <span className="tile-byline-name truncate">{creator.name}</span>
+            <span className="tile-byline-go" aria-hidden="true">›</span>
+          </Link>
+        )}
         {campaign.lead && (
           <span className="tile-creative">
             <span className="tile-creative-copy">{campaign.lead.headline}</span>

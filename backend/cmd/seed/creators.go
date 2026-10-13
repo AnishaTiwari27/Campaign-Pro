@@ -168,7 +168,7 @@ func seedCreators(ctx context.Context, pool *pgxpool.Pool, camp *campaignsmod.Mo
 			// An endorsement is one asset in the person's own feed, so it
 			// is written from the brand and their role rather than drawn
 			// from the brand's own creative set.
-			ad := creatorCreative(cc.brand, cs.role)
+			ad := creatorCreative(cc.brand, campaignID)
 			for ci, cr := range []creativeSpec{{
 				headline: ad.headline, kind: ad.kind, duration: ad.duration,
 				reach: cc.reach * ad.reachMul, ctr: baseCTR(string(cc.adType)) * ad.ctrMul,

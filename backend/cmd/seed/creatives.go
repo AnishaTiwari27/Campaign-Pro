@@ -94,19 +94,109 @@ var brandCreatives = map[string][]adCreative{
 	},
 }
 
+// creatorEndorsements is the copy for creator-fronted work.
+//
+// An endorsement is not the brand's own headline read out by someone
+// else: it is written as something the person would plausibly say in
+// their own feed, which is why these are first-person and the brand
+// creatives above are not. Three per brand, in the formats a creator
+// deal actually buys — a reel, a short cut, a grid post — so that a
+// person with four brands on their profile has four different pieces of
+// work rather than the same line four times.
+//
+// Original copy, for the reason given at the top of this file.
+var creatorEndorsements = map[string][]adCreative{
+	"Zepto": {
+		{"What I actually keep in my fridge", "video", "0:20", "testimonial", 1.1, 0.72},
+		{"Ordered mid-recipe, arrived before the oil was hot", "video", "0:15", "demo", 1.2, 0.64},
+		{"My 2am list, delivered", "banner", "static", "story", 0.9, 0.55},
+	},
+	"Nykaa": {
+		{"The five things in my travel pouch", "video", "0:30", "demo", 1.1, 0.75},
+		{"What I wear when there is no makeup artist", "video", "0:20", "testimonial", 1.2, 0.68},
+		{"Shade matching, finally done right", "banner", "static", "demo", 0.9, 0.52},
+	},
+	"Lenskart": {
+		{"Three frames, one face, you decide", "video", "0:20", "demo", 1.2, 0.70},
+		{"I stopped squinting at the teleprompter", "video", "0:15", "testimonial", 1.0, 0.62},
+		{"Try them on without leaving the sofa", "banner", "static", "offer", 0.9, 0.54},
+	},
+	"Mamaearth": {
+		{"What I use on my daughter's hair", "video", "0:20", "testimonial", 1.2, 0.74},
+		{"Gentle enough that I stopped reading labels", "video", "0:15", "story", 1.0, 0.60},
+		{"The one bottle that travels with me", "banner", "static", "story", 0.8, 0.50},
+	},
+	"CRED": {
+		{"I pay my bill first now, oddly", "video", "0:20", "story", 1.1, 0.68},
+		{"The only app that rewards me for being boring", "video", "0:15", "story", 1.3, 0.72},
+		{"My credit score, checked on a Sunday", "banner", "static", "demo", 0.9, 0.48},
+	},
+	"Dream11": {
+		{"My eleven for tonight, and why", "video", "0:30", "story", 1.2, 0.80},
+		{"I have never picked the obvious captain", "video", "0:20", "story", 1.1, 0.70},
+		{"Team locked. Toss in ten.", "banner", "static", "announcement", 1.0, 0.58},
+	},
+	"boAt": {
+		{"What I train in, every morning", "video", "0:20", "demo", 1.1, 0.70},
+		{"I charge them on Sunday and forget", "video", "0:15", "announcement", 1.0, 0.62},
+		{"The pair that survived my gym bag", "banner", "static", "testimonial", 0.9, 0.52},
+	},
+	"Lakmé": {
+		{"Backstage, this is all I use", "video", "0:30", "demo", 1.2, 0.76},
+		{"The look I do in four minutes", "video", "0:20", "demo", 1.1, 0.66},
+		{"Festive, but still my face", "banner", "static", "story", 0.9, 0.54},
+	},
+	"Myntra": {
+		{"Everything in this reel is on sale", "video", "0:20", "offer", 1.3, 0.74},
+		{"Five outfits, one suitcase", "video", "0:30", "demo", 1.1, 0.68},
+		{"What I actually re-wear", "banner", "static", "story", 0.9, 0.50},
+	},
+	"PhonePe": {
+		{"I paid the sabziwala without a note", "video", "0:15", "demo", 1.1, 0.66},
+		{"Split the bill before the plates clear", "video", "0:20", "demo", 1.0, 0.60},
+		{"Recharge, bill, done", "banner", "static", "offer", 0.9, 0.46},
+	},
+	"Tanishq": {
+		{"The piece I will not be taking off", "video", "0:30", "story", 1.2, 0.72},
+		{"My mother's taste, my size", "video", "0:20", "story", 1.1, 0.64},
+		{"Light enough to wear all evening", "banner", "static", "demo", 0.9, 0.50},
+	},
+	"Urban Company": {
+		{"They arrived, and I did nothing", "video", "0:20", "testimonial", 1.1, 0.64},
+		{"The deep clean I had been putting off", "video", "0:30", "demo", 1.0, 0.58},
+		{"Booked at eleven, done by two", "banner", "static", "offer", 0.9, 0.44},
+	},
+}
+
 // creatorCreative is the endorsement format: one asset, the person's own
-// feed, the brand's product. Templated because it varies by brand, not by
-// creative.
-func creatorCreative(brand, role string) adCreative {
-	_ = role // the card already shows it in the subtitle line
-	return adCreative{
-		headline: brand + " — sponsored reel",
-		kind:     "video",
-		duration: "0:20",
-		hook:     "testimonial",
-		ctrMul:   1.0,
-		reachMul: 0.70,
+// feed, the brand's product. Picked by campaign id so the same pairing is
+// always the same piece of work, and so one brand running with several
+// creators does not put an identical line in each of their feeds.
+func creatorCreative(brand, campaignID string) adCreative {
+	set := creatorEndorsements[brand]
+	if len(set) == 0 {
+		// A brand with no written set still gets a campaign; it just gets
+		// the generic line rather than nothing.
+		return adCreative{
+			headline: brand + " — sponsored reel",
+			kind:     "video",
+			duration: "0:20",
+			hook:     "testimonial",
+			ctrMul:   1.0,
+			reachMul: 0.70,
+		}
 	}
+	return set[fnv32(campaignID)%uint32(len(set))]
+}
+
+// fnv32 is FNV-1a. Deterministic across machines and runs, which is the
+// whole requirement — a reseed must not reshuffle who ran what.
+func fnv32(s string) uint32 {
+	var h uint32 = 2166136261
+	for i := 0; i < len(s); i++ {
+		h = (h ^ uint32(s[i])) * 16777619
+	}
+	return h
 }
 
 // regionLanguages is what a campaign in that market would actually run in.
@@ -150,11 +240,7 @@ func festivalFor(campaignID, category string, n int) string {
 	if !ok {
 		return ""
 	}
-	var h uint32 = 2166136261
-	for i := 0; i < len(campaignID); i++ {
-		h = (h ^ uint32(campaignID[i])) * 16777619
-	}
-	h = (h ^ uint32(n)) * 16777619
+	h := (fnv32(campaignID) ^ uint32(n)) * 16777619
 	// Rather more than half of a festive-category brand's work is still
 	// evergreen, so only some creatives carry a tentpole.
 	if h%10 < 4 {

@@ -114,7 +114,12 @@ export function CreatorDetailPage() {
 
       <div className="creator-detail-body">
         <div className="card creator-panel">
-          <h4>Campaigns</h4>
+          <div className="creator-panel-head">
+            <h4>Campaigns</h4>
+            <span className="creator-panel-count">
+              {data.campaigns} total · {formatReach(data.totalReach)} reach · {formatMoney(data.totalSpend)} spend
+            </span>
+          </div>
           <div className="creator-campaign-list">
             {data.campaignRows.map((c) => (
               <button
@@ -123,7 +128,27 @@ export function CreatorDetailPage() {
                 className="creator-campaign-row"
                 onClick={() => navigate(`/campaigns/${c.id}`)}
               >
-                <span className="creator-campaign-name truncate">{c.name}</span>
+                <span className="creator-campaign-main">
+                  <span className="creator-campaign-name truncate">
+                    {c.name}
+                    {c.flagReason && <span className="creator-campaign-flag">{c.flagReason}</span>}
+                  </span>
+                  {/* What the ad actually was. A roster of campaign names
+                      tells you who they worked with; this tells you what
+                      they made. */}
+                  {c.lead && (
+                    <span className="creator-campaign-creative truncate">
+                      <span className="creator-campaign-headline">“{c.lead.headline}”</span>
+                      <span className="creator-campaign-format">
+                        {c.lead.kind}
+                        {c.lead.duration && c.lead.duration !== "static" && c.lead.duration !== "article"
+                          ? ` · ${c.lead.duration}`
+                          : ""}
+                        {c.lead.festival ? ` · ${c.lead.festival}` : ""}
+                      </span>
+                    </span>
+                  )}
+                </span>
                 <Pill status={c.status} />
                 <span className="mono creator-campaign-reach">{formatReach(c.reach)}</span>
                 <span className="mono creator-campaign-spend">{formatMoney(c.spend)}</span>

@@ -86,3 +86,69 @@
   .creator-verdict { flex-direction: column; align-items: flex-start; gap: 14px; }
   .creator-verdict-main { flex-wrap: wrap; gap: 12px; }
 }
+
+.creator-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.creator-panel-count {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* The row grew a second line, so it stops being vertically centred on a
+   single string and aligns to the top of the block instead. */
+.creator-campaign-row { align-items: center; }
+
+.creator-campaign-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.creator-campaign-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.creator-campaign-flag {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--crit);
+  background: var(--crit-soft);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.creator-campaign-creative {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.creator-campaign-headline {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.creator-campaign-format {
+  flex: none;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+  font-weight: 600;
+}
