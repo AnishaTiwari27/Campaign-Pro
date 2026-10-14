@@ -357,3 +357,38 @@ export interface CreatorDetail extends CreatorPerformance {
   languageBreakdown: LanguageReach[];
   tierPeers: number;
 }
+
+/** A freely-licensed photograph, with everything needed to credit it. */
+export interface EndorsementPhoto {
+  url: string;
+  artist: string;
+  license: string;
+  licenseUrl: string;
+  source: string;
+}
+
+export interface EndorsementDeal {
+  brand: string;
+  period?: string;
+  note?: string;
+  /** endorsement | ambassador | stake — an ownership stake is not an ad. */
+  kind: "endorsement" | "ambassador" | "stake";
+}
+
+/**
+ * A real public figure and the brand work reported about them.
+ *
+ * Carries no reach, spend, pace or approval, and never will: those exist
+ * only in the agency's own fixture data, and attaching an invented figure
+ * to a named real person would fabricate a commercial relationship.
+ */
+export interface EndorsementPerson {
+  id: string;
+  name: string;
+  role: string;
+  initials: string;
+  field: string;
+  photo: EndorsementPhoto;
+  deals: EndorsementDeal[];
+  source: string;
+}

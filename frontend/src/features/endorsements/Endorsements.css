@@ -1,0 +1,211 @@
+.endorsements-lede {
+  max-width: 68ch;
+  margin: -4px 0 18px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.endorsement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+  gap: 14px;
+}
+
+.endorsement-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.endorsement-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--elevation-2);
+}
+
+/* One image, filling the panel — the same treatment as a campaign tile,
+   for the same reason: a face in a small circle is a contact sheet. */
+.endorsement-art {
+  position: relative;
+  display: block;
+  height: 208px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--surface-2);
+}
+
+.endorsement-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 14%;
+}
+
+.endorsement-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.84) 0%, rgba(0, 0, 0, 0.5) 22%, transparent 52%);
+}
+
+.endorsement-art-text {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 10px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.endorsement-art-name {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.endorsement-art-role {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.endorsement-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.endorsement-count {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.endorsement-brands {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+/* Detail */
+.endorsement-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.endorsement-hero {
+  display: flex;
+  gap: 18px;
+  padding: 16px;
+  align-items: flex-start;
+}
+
+.endorsement-hero-photo {
+  flex: none;
+  width: 148px;
+  height: 184px;
+  object-fit: cover;
+  object-position: center 14%;
+  border-radius: var(--radius-md);
+}
+
+.endorsement-hero-text { min-width: 0; }
+.endorsement-hero-text h1 { margin: 0 0 2px; }
+
+.endorsement-hero-sub {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.endorsement-hero-note {
+  margin: 0 0 10px;
+  max-width: 62ch;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.endorsement-hero-links { margin: 0; font-size: 12.5px; }
+
+.endorsement-panel { padding: 14px 16px; }
+
+.endorsement-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.endorsement-panel-head h4 { margin: 0; }
+
+.endorsement-panel-count {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.endorsement-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+}
+
+.endorsement-row {
+  display: grid;
+  grid-template-columns: 1.1fr auto 130px 1.6fr;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.endorsement-row:last-child { border-bottom: none; }
+
+.endorsement-brand { font-size: 13.5px; font-weight: 650; }
+
+.endorsement-kind {
+  justify-self: start;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-3);
+  color: var(--muted);
+}
+
+.endorsement-kind-ambassador { background: var(--accent-soft); color: var(--accent); }
+.endorsement-kind-stake { background: var(--warn-soft); color: var(--warn); }
+
+.endorsement-period { font-size: 12px; color: var(--ink-2); }
+.endorsement-note { font-size: 12.5px; color: var(--muted); min-width: 0; }
+
+.endorsement-credit {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .endorsement-hero { flex-direction: column; }
+  .endorsement-hero-photo { width: 120px; height: 150px; }
+  .endorsement-row { grid-template-columns: 1fr auto; gap: 6px 10px; }
+  .endorsement-period, .endorsement-note { grid-column: 1 / -1; }
+}

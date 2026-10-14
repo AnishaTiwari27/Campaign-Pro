@@ -10,6 +10,7 @@ import {
   IconCampaigns,
   IconOverview,
   IconCreators,
+  IconEndorsements,
   IconRegions,
   IconReports,
   IconLogout,
@@ -73,6 +74,10 @@ export function Rail() {
             "creators". Renaming those would break every link already shared
             and buy nothing a reader can see. */}
         <NavItem to="/creators" icon={<IconCreators />} label="Influencers" />
+        {/* Public figures and their reported brand work. Sits apart from
+            Influencers on purpose: that page is the agency's roster with
+            its performance data, this one is published fact with none. */}
+        <NavItem to="/endorsements" icon={<IconEndorsements />} label="Public record" />
         <NavItem to="/regions" icon={<IconRegions />} label="Regions" />
         <NavItem to="/signals" icon={<IconSignals />} label="Signals" />
         {!isClient && <NavItem to="/benchmarks" icon={<IconBenchmarks />} label="Benchmarks" />}

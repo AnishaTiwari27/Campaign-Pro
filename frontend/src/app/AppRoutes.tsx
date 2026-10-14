@@ -9,6 +9,8 @@ import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
 import { OverviewPage } from "../features/overview/OverviewPage";
 import { CreatorsPage } from "../features/creators/CreatorsPage";
 import { CreatorDetailPage } from "../features/creators/CreatorDetailPage";
+import { EndorsementsPage } from "../features/endorsements/EndorsementsPage";
+import { EndorsementDetailPage } from "../features/endorsements/EndorsementDetailPage";
 import { RegionsPage } from "../features/regions/RegionsPage";
 import { RegionDetailPage } from "../features/regions/RegionDetailPage";
 import { BenchmarksPage } from "../features/benchmarks/BenchmarksPage";
@@ -39,6 +41,8 @@ export function AppRoutes() {
         <Route path="approvals" element={<AgencyOnly><ApprovalsPage /></AgencyOnly>} />
         <Route path="creators" element={<CreatorsPage />} />
         <Route path="creators/:id" element={<CreatorDetailPage />} />
+        <Route path="endorsements" element={<EndorsementsPage />} />
+        <Route path="endorsements/:id" element={<EndorsementDetailPage />} />
         <Route path="regions" element={<RegionsPage />} />
         <Route path="regions/:id" element={<RegionDetailPage />} />
         <Route path="signals" element={<SignalsPage />} />

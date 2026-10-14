@@ -17,5 +17,7 @@ export const queryKeys = {
   creatorPhotos: () => ["creators", "photos"] as const,
   grants: (userId: string) => ["users", userId, "grants"] as const,
   authOptions: () => ["auth", "options"] as const,
+  endorsements: () => ["endorsements"] as const,
+  endorsementPerson: (id: string) => ["endorsements", id] as const,
   health: () => ["health"] as const,
 };

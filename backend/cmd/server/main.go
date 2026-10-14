@@ -19,6 +19,7 @@ import (
 	analytics "campaigntrackerpro/services/analytics/module"
 	campaigns "campaigntrackerpro/services/campaigns/module"
 	creators "campaigntrackerpro/services/creators/module"
+	endorsements "campaigntrackerpro/services/endorsements/module"
 	identity "campaigntrackerpro/services/identity/module"
 	reports "campaigntrackerpro/services/reports/module"
 	"campaigntrackerpro/web"
@@ -84,6 +85,8 @@ func main() {
 	identityMod := identity.New(db, auditBridge{campaignsMod}, campaignsMod.UserDirectory(),
 		identity.Options{SecureCookies: cfg.SecureCookies, AllowSignup: cfg.AllowSignup}, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
+	// No database: the public record is reference data, not the agency's.
+	endorsementsMod := endorsements.New(logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
 		mail.LogMailer{Logger: logger}, logger, workerTick)
@@ -91,7 +94,7 @@ func main() {
 	go reportsMod.Run(ctx)
 
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(), logger,
-		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod)
+		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

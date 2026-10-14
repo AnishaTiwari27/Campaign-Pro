@@ -48,6 +48,15 @@ export function IconRegions(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** A bookmarked page — a published record rather than a live metric. */
+export function IconEndorsements(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M4.5 2.5h9a1 1 0 011 1v13l-5.5-3-5.5 3v-13a1 1 0 011-1z" />
+    </Base>
+  );
+}
+
 export function IconSignals(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>
