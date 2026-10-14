@@ -62,6 +62,13 @@ func WriteConflict(w http.ResponseWriter, message string) {
 	WriteJSON(w, http.StatusConflict, Error{Error: message})
 }
 
+// WriteTooManyRequests is the rate limiter's refusal. Retry-After is set
+// by the caller, because only the limiter knows how long the window has
+// left to run.
+func WriteTooManyRequests(w http.ResponseWriter, message string) {
+	WriteJSON(w, http.StatusTooManyRequests, Error{Error: message})
+}
+
 // WriteServiceError maps the small set of sentinel errors every service
 // method can return onto the right HTTP status; anything else is a 500,
 // logged server-side but not leaked to the client.

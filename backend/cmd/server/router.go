@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/platform/scope"
@@ -12,7 +13,35 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 )
+
+// rateLimits is the per-IP request budget, named here so the router does
+// not import the whole config.
+//
+// Two jobs, so two limits. The API budget is deliberately generous: it
+// exists to stop one client saturating a small instance, not to shape
+// ordinary use — a page of this dashboard fires several reads at once.
+//
+// The auth budget is the strict one, and it is the one that matters
+// here: this deployment's fixture passwords are published in a public
+// repository, which makes credential stuffing realistic rather than
+// theoretical. It keys on address alone rather than address+email,
+// because keying on the email would let an attacker rotate addresses and
+// draw a fresh budget for every guess.
+type rateLimits struct {
+	APIPerMinute  int
+	AuthPerMinute int
+}
+
+// Both limiters answer in the API's own error shape. The default is
+// plain text, which would be the only non-JSON body the API can return
+// and would land in the client's parser as a surprise.
+func limitJSON(message string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		httpx.WriteTooManyRequests(w, message)
+	}
+}
 
 // mountable is what every service module offers the router: its own URL
 // space. The composition root never names an individual path — services
@@ -29,9 +58,17 @@ type publicMountable interface {
 }
 
 func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup,
-	logger *slog.Logger, modules ...mountable) http.Handler {
+	limits rateLimits, logger *slog.Logger, modules ...mountable) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
+	// Must come before anything that keys on the caller's address. This
+	// deployment is only reachable through Render's proxy, so RemoteAddr
+	// is the proxy on every request and the rate limiters below would
+	// otherwise put the entire internet in one bucket — a single noisy
+	// client would lock everyone out. RealIP reads X-Forwarded-For, which
+	// is trustworthy exactly because the proxy is the only way in; an
+	// origin exposed directly would let a client forge it.
+	r.Use(middleware.RealIP)
 	r.Use(httpx.RequestLogger(logger))
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
@@ -45,8 +82,24 @@ func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup
 	r.Get("/health", health)
 
 	r.Route("/api", func(r chi.Router) {
-		// Login sits outside the guard; everything else sits behind it.
-		auth.PublicRoutes(r)
+		r.Use(httprate.Limit(
+			limits.APIPerMinute, time.Minute,
+			httprate.WithKeyByIP(),
+			httprate.WithLimitHandler(limitJSON("too many requests — slow down and try again shortly")),
+		))
+
+		// Login sits outside the session guard, which is exactly why it
+		// needs a limit of its own: it is the only authenticated-adjacent
+		// endpoint an anonymous caller can reach, and it is the one that
+		// tells you whether a password was right.
+		r.Group(func(r chi.Router) {
+			r.Use(httprate.Limit(
+				limits.AuthPerMinute, time.Minute,
+				httprate.WithKeyByIP(),
+				httprate.WithLimitHandler(limitJSON("too many sign-in attempts — wait a minute and try again")),
+			))
+			auth.PublicRoutes(r)
+		})
 
 		r.Group(func(r chi.Router) {
 			r.Use(httpx.RequireSession(auth.Authenticator(), logger))

@@ -4,6 +4,7 @@ package config
 import (
 	"errors"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -66,6 +67,16 @@ type Config struct {
 	// reaching for the database; set ALLOW_SIGNUP=false to close it once
 	// the accounts that should exist do.
 	AllowSignup bool
+	// RateAPIPerMinute and RateAuthPerMinute are per-IP request budgets.
+	//
+	// Tunable without a code change because the right number depends on
+	// where the traffic comes from, which the code cannot know: a single
+	// user is nowhere near either limit, but an office behind one NAT
+	// address shares a bucket, and so does a CI suite. If real users
+	// start seeing 429s, this is the knob — not a redeploy of the
+	// limiter.
+	RateAPIPerMinute  int
+	RateAuthPerMinute int
 }
 
 func Load() Config {
@@ -80,6 +91,8 @@ func Load() Config {
 		AdminEmail:           getenv("ADMIN_EMAIL", "anishatiwari695@gmail.com"),
 		SecureCookies:        getenv("SECURE_COOKIES", "false") == "true",
 		AllowSignup:          getenv("ALLOW_SIGNUP", "true") == "true",
+		RateAPIPerMinute:     getint("RATE_API_PER_MINUTE", 600),
+		RateAuthPerMinute:    getint("RATE_AUTH_PER_MINUTE", 30),
 	}
 }
 
@@ -121,6 +134,18 @@ func managedHost() bool {
 
 func getenv(key, def string) string {
 	return or(os.Getenv(key), def)
+}
+
+// getint reads a positive integer, falling back to def for anything that
+// is not one. A malformed limit must not become zero: a zero budget
+// would refuse every request, which is a worse failure than ignoring a
+// typo in an environment variable.
+func getint(key string, def int) int {
+	n, err := strconv.Atoi(os.Getenv(key))
+	if err != nil || n <= 0 {
+		return def
+	}
+	return n
 }
 
 func or(v, def string) string {
