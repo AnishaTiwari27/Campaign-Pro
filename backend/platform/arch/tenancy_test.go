@@ -9,7 +9,7 @@ import (
 
 // orgOwned are the tables that carry org_id. Anything reading or writing
 // one of them has to say which organisation it means.
-var orgOwned = []string{"campaigns", "creators", "reports", "users", "benchmark_snapshots"}
+var orgOwned = []string{"campaigns", "creators", "reports", "users", "benchmark_snapshots", "ingest_runs"}
 
 // exempt lists the queries that legitimately run without an organisation,
 // each with the reason. Keeping them here rather than as a comment in the
@@ -36,6 +36,9 @@ var exempt = map[string]string{
 	"DeleteGrantsForUser": "keyed by a user id already resolved in-org",
 	"GrantCampaign":       "keyed by ids already resolved in-org",
 	"ListGrantsForUser":   "keyed by a user id already resolved in-org",
+	// The id comes from StartIngestRun earlier in the same call and is
+	// never taken from user input, so it cannot name another tenant's run.
+	"FinishIngestRun": "closes a run this call opened in-org",
 }
 
 // splitQueries breaks a .sql file into (name, body) pairs.

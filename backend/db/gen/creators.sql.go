@@ -98,7 +98,7 @@ func (q *Queries) GetCreator(ctx context.Context, arg GetCreatorParams) (Creator
 }
 
 const listCampaignsByCreator = `-- name: ListCampaignsByCreator :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE creator_id = $1 AND ($2::bool OR org_id = $3::text) ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id, external_source, external_id FROM campaigns WHERE creator_id = $1 AND ($2::bool OR org_id = $3::text) ORDER BY created_at DESC
 `
 
 type ListCampaignsByCreatorParams struct {
@@ -141,6 +141,8 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, arg ListCampaignsB
 			&i.BrandDomain,
 			&i.FlightDays,
 			&i.OrgID,
+			&i.ExternalSource,
+			&i.ExternalID,
 		); err != nil {
 			return nil, err
 		}

@@ -22,6 +22,8 @@ import (
 	creators "campaigntrackerpro/services/creators/module"
 	endorsements "campaigntrackerpro/services/endorsements/module"
 	identity "campaigntrackerpro/services/identity/module"
+	ingestsvc "campaigntrackerpro/services/ingest"
+	ingest "campaigntrackerpro/services/ingest/module"
 	reports "campaigntrackerpro/services/reports/module"
 	"campaigntrackerpro/web"
 )
@@ -88,6 +90,13 @@ func main() {
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
 	// No database: the public record is reference data, not the agency's.
 	endorsementsMod := endorsements.New(logger)
+	ingestMod := ingest.New(db, ingestsvc.GoogleAdsConfig{
+		DeveloperToken: cfg.GoogleAdsDeveloperToken,
+		ClientID:       cfg.GoogleAdsClientID,
+		ClientSecret:   cfg.GoogleAdsClientSecret,
+		RefreshToken:   cfg.GoogleAdsRefreshToken,
+		CustomerID:     cfg.GoogleAdsCustomerID,
+	}, logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
 		mailerFor(cfg, logger), logger, workerTick)
@@ -104,7 +113,7 @@ func main() {
 
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(),
 		rateLimits{APIPerMinute: cfg.RateAPIPerMinute, AuthPerMinute: cfg.RateAuthPerMinute}, logger,
-		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod)
+		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod, ingestMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

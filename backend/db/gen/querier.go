@@ -38,6 +38,7 @@ type Querier interface {
 	// for. The empty-festival row is evergreen work, and is the baseline every
 	// tagged group gets compared against.
 	FestivalReach(ctx context.Context) ([]FestivalReachRow, error)
+	FinishIngestRun(ctx context.Context, arg FinishIngestRunParams) error
 	// The organisation predicate on every statement below is the tenant
 	// boundary. @org_system is true only for callers that are not requests —
 	// the report worker, the seeder, the CLI — which legitimately span
@@ -69,6 +70,7 @@ type Querier interface {
 	ListEnabledReportsByCadence(ctx context.Context, arg ListEnabledReportsByCadenceParams) ([]Report, error)
 	ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error)
 	ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
+	ListIngestRuns(ctx context.Context, arg ListIngestRunsParams) ([]ListIngestRunsRow, error)
 	ListOrganizationIDs(ctx context.Context) ([]string, error)
 	ListPendingCampaigns(ctx context.Context, arg ListPendingCampaignsParams) ([]Campaign, error)
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
@@ -90,6 +92,7 @@ type Querier interface {
 	// the url is empty. The avatar takes over again when it is cleared.
 	SetCreatorPhoto(ctx context.Context, arg SetCreatorPhotoParams) error
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
+	StartIngestRun(ctx context.Context, arg StartIngestRunParams) (pgtype.UUID, error)
 	// TopCreativePerCampaign is the lead asset for each campaign — the one a
 	// tile shows. Highest reach wins, which is the creative the campaign is
 	// actually known by.
@@ -110,6 +113,14 @@ type Querier interface {
 	// arch test's org-owned list because the table did not exist when that
 	// list was written; it is added there in the same change.
 	UpsertBenchmarkSnapshot(ctx context.Context, arg UpsertBenchmarkSnapshotParams) error
+	// The platform's own id is the match key. Names get edited and budgets
+	// change, so matching on either would create a duplicate the first time
+	// somebody renamed a campaign in the ad account.
+	// approval is deliberately absent from the update list. It is the
+	// agency's decision, not the platform's, and letting a sync reset an
+	// approved campaign to pending would undo somebody's sign-off every
+	// fifteen minutes.
+	UpsertExternalCampaign(ctx context.Context, arg UpsertExternalCampaignParams) (UpsertExternalCampaignRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

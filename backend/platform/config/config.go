@@ -87,6 +87,15 @@ type Config struct {
 	SMTPUser string
 	SMTPPass string
 	MailFrom string
+	// Google Ads ingestion. All five are required together: the
+	// developer token is issued per manager account on application, and
+	// the OAuth client and refresh token belong to a Google Cloud
+	// project, so there is no useful partial configuration.
+	GoogleAdsDeveloperToken string
+	GoogleAdsClientID       string
+	GoogleAdsClientSecret   string
+	GoogleAdsRefreshToken   string
+	GoogleAdsCustomerID     string
 }
 
 func Load() Config {
@@ -108,6 +117,12 @@ func Load() Config {
 		SMTPUser:             os.Getenv("SMTP_USERNAME"),
 		SMTPPass:             os.Getenv("SMTP_PASSWORD"),
 		MailFrom:             getenv("MAIL_FROM", "reports@campaigntracker.local"),
+
+		GoogleAdsDeveloperToken: os.Getenv("GOOGLE_ADS_DEVELOPER_TOKEN"),
+		GoogleAdsClientID:       os.Getenv("GOOGLE_ADS_CLIENT_ID"),
+		GoogleAdsClientSecret:   os.Getenv("GOOGLE_ADS_CLIENT_SECRET"),
+		GoogleAdsRefreshToken:   os.Getenv("GOOGLE_ADS_REFRESH_TOKEN"),
+		GoogleAdsCustomerID:     os.Getenv("GOOGLE_ADS_CUSTOMER_ID"),
 	}
 }
 

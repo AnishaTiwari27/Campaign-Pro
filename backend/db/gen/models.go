@@ -561,30 +561,32 @@ type BenchmarkSnapshot struct {
 }
 
 type Campaign struct {
-	ID          string             `json:"id"`
-	Name        string             `json:"name"`
-	SubjectType SubjectTypeT       `json:"subject_type"`
-	Role        pgtype.Text        `json:"role"`
-	Initials    string             `json:"initials"`
-	Category    string             `json:"category"`
-	Region      string             `json:"region"`
-	AdType      AdTypeT            `json:"ad_type"`
-	Platform    string             `json:"platform"`
-	Status      CampaignStatusT    `json:"status"`
-	DaysRunning int32              `json:"days_running"`
-	Reach       float64            `json:"reach"`
-	Spend       int64              `json:"spend"`
-	Budget      int64              `json:"budget"`
-	Frequency   float64            `json:"frequency"`
-	Approval    ApprovalStatusT    `json:"approval"`
-	CurveShape  CurveShapeT        `json:"curve_shape"`
-	FlagReason  pgtype.Text        `json:"flag_reason"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-	CreatorID   pgtype.Text        `json:"creator_id"`
-	BrandDomain pgtype.Text        `json:"brand_domain"`
-	FlightDays  pgtype.Int4        `json:"flight_days"`
-	OrgID       string             `json:"org_id"`
+	ID             string             `json:"id"`
+	Name           string             `json:"name"`
+	SubjectType    SubjectTypeT       `json:"subject_type"`
+	Role           pgtype.Text        `json:"role"`
+	Initials       string             `json:"initials"`
+	Category       string             `json:"category"`
+	Region         string             `json:"region"`
+	AdType         AdTypeT            `json:"ad_type"`
+	Platform       string             `json:"platform"`
+	Status         CampaignStatusT    `json:"status"`
+	DaysRunning    int32              `json:"days_running"`
+	Reach          float64            `json:"reach"`
+	Spend          int64              `json:"spend"`
+	Budget         int64              `json:"budget"`
+	Frequency      float64            `json:"frequency"`
+	Approval       ApprovalStatusT    `json:"approval"`
+	CurveShape     CurveShapeT        `json:"curve_shape"`
+	FlagReason     pgtype.Text        `json:"flag_reason"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	CreatorID      pgtype.Text        `json:"creator_id"`
+	BrandDomain    pgtype.Text        `json:"brand_domain"`
+	FlightDays     pgtype.Int4        `json:"flight_days"`
+	OrgID          string             `json:"org_id"`
+	ExternalSource pgtype.Text        `json:"external_source"`
+	ExternalID     pgtype.Text        `json:"external_id"`
 }
 
 type ClientCampaignGrant struct {
@@ -624,6 +626,19 @@ type Creator struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 	ImageUrl        pgtype.Text        `json:"image_url"`
 	OrgID           string             `json:"org_id"`
+}
+
+type IngestRun struct {
+	ID          pgtype.UUID        `json:"id"`
+	OrgID       string             `json:"org_id"`
+	Source      string             `json:"source"`
+	StartedAt   pgtype.Timestamptz `json:"started_at"`
+	FinishedAt  pgtype.Timestamptz `json:"finished_at"`
+	RowsSeen    int32              `json:"rows_seen"`
+	RowsCreated int32              `json:"rows_created"`
+	RowsUpdated int32              `json:"rows_updated"`
+	RowsFailed  int32              `json:"rows_failed"`
+	Error       pgtype.Text        `json:"error"`
 }
 
 type Organization struct {
