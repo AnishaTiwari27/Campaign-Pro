@@ -1,7 +1,9 @@
 package service
 
 import (
+	"campaigntrackerpro/services/analytics/internal/store"
 	"context"
+	"time"
 
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/campaigns"
@@ -38,8 +40,27 @@ type CreatorReader interface {
 type Analytics struct {
 	campaigns CampaignReader
 	creators  CreatorReader
+	// trends is optional so the service still constructs for callers
+	// that have no use for benchmark history; Trend and CaptureToday
+	// become no-ops rather than panics.
+	trends TrendStore
+}
+
+// TrendStore is the benchmark history. Declared as an interface here
+// rather than taking the concrete store so this package keeps no
+// dependency on its own storage layer's construction.
+type TrendStore interface {
+	Capture(ctx context.Context, orgID string, snap store.Snapshot) error
+	Trend(ctx context.Context, since time.Time) ([]store.Snapshot, error)
+	Organizations(ctx context.Context) ([]string, error)
 }
 
 func New(c CampaignReader, cr CreatorReader) *Analytics {
 	return &Analytics{campaigns: c, creators: cr}
+}
+
+// WithTrends attaches the benchmark history.
+func (a *Analytics) WithTrends(t TrendStore) *Analytics {
+	a.trends = t
+	return a
 }

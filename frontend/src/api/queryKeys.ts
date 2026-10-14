@@ -6,6 +6,7 @@ export const queryKeys = {
   anomalies: () => ["campaigns", "anomalies"] as const,
   overview: () => ["overview"] as const,
   benchmark: () => ["benchmark"] as const,
+  benchmarkTrend: () => ["benchmark", "trend"] as const,
   regions: () => ["regions"] as const,
   region: (id: string) => ["regions", id] as const,
   reports: () => ["reports"] as const,

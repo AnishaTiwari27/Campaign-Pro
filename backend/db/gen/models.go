@@ -550,6 +550,16 @@ type AuditEvent struct {
 	EntityID   pgtype.Text        `json:"entity_id"`
 }
 
+type BenchmarkSnapshot struct {
+	OrgID             string      `json:"org_id"`
+	Category          string      `json:"category"`
+	CapturedOn        pgtype.Date `json:"captured_on"`
+	MedianReach       float64     `json:"median_reach"`
+	TopReach          float64     `json:"top_reach"`
+	CampaignCount     int32       `json:"campaign_count"`
+	MedianCostPerLakh float64     `json:"median_cost_per_lakh"`
+}
+
 type Campaign struct {
 	ID          string             `json:"id"`
 	Name        string             `json:"name"`

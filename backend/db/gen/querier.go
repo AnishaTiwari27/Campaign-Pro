@@ -56,6 +56,7 @@ type Querier interface {
 	GrantCampaign(ctx context.Context, arg GrantCampaignParams) error
 	ListAllCreatives(ctx context.Context) ([]Creative, error)
 	ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error)
+	ListBenchmarkTrend(ctx context.Context, arg ListBenchmarkTrendParams) ([]ListBenchmarkTrendRow, error)
 	ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([]Campaign, error)
 	ListCampaignsByCreator(ctx context.Context, arg ListCampaignsByCreatorParams) ([]Campaign, error)
 	// ListCampaignsFiltered applies every /campaigns filter in one query;
@@ -68,6 +69,7 @@ type Querier interface {
 	ListEnabledReportsByCadence(ctx context.Context, arg ListEnabledReportsByCadenceParams) ([]Report, error)
 	ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error)
 	ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
+	ListOrganizationIDs(ctx context.Context) ([]string, error)
 	ListPendingCampaigns(ctx context.Context, arg ListPendingCampaignsParams) ([]Campaign, error)
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
 	ListReports(ctx context.Context, arg ListReportsParams) ([]Report, error)
@@ -103,6 +105,11 @@ type Querier interface {
 	// UpdateReport applies whichever fields are non-null; every field is
 	// independently optional so a PATCH can change just one of them.
 	UpdateReport(ctx context.Context, arg UpdateReportParams) (Report, error)
+	// Snapshots are written by the worker and are per-organisation, so they
+	// carry org_id like every other tenant-owned row. They are not in the
+	// arch test's org-owned list because the table did not exist when that
+	// list was written; it is added there in the same change.
+	UpsertBenchmarkSnapshot(ctx context.Context, arg UpsertBenchmarkSnapshotParams) error
 }
 
 var _ Querier = (*Queries)(nil)

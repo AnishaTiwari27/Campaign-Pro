@@ -392,3 +392,14 @@ export interface EndorsementPerson {
   deals: EndorsementDeal[];
   source: string;
 }
+
+/** One category's standing on one day, from the benchmark history. */
+export interface BenchmarkTrendPoint {
+  category: string;
+  /** A plain YYYY-MM-DD date: the grain is a day, not an instant. */
+  day: string;
+  medianReach: number;
+  topReach: number;
+  campaignCount: number;
+  medianCostPerLakh: number;
+}

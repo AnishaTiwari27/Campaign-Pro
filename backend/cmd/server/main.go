@@ -97,6 +97,11 @@ func main() {
 	// inherit the zero org, match nothing, and silently stop firing.
 	go reportsMod.Run(scope.SystemOrg(ctx))
 
+	// Benchmark history, on its own ticker rather than inside the report
+	// worker: reports has no business knowing about analytics, and the
+	// composition root is the one place allowed to know about both.
+	go captureBenchmarks(scope.SystemOrg(ctx), analyticsMod, logger)
+
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(),
 		rateLimits{APIPerMinute: cfg.RateAPIPerMinute, AuthPerMinute: cfg.RateAuthPerMinute}, logger,
 		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod)
@@ -143,5 +148,25 @@ func mailerFor(cfg config.Config, logger *slog.Logger) mail.Mailer {
 		Host: cfg.SMTPHost, Port: cfg.SMTPPort,
 		Username: cfg.SMTPUser, Password: cfg.SMTPPass,
 		From: cfg.MailFrom, Timeout: 30 * time.Second,
+	}
+}
+
+// benchmarkTick is how often the benchmark history is rewritten. The
+// write is keyed by day, so this only has to be often enough that a
+// restart or a sleeping instance does not lose the day entirely —
+// not often enough to catch every change.
+const benchmarkTick = 30 * time.Minute
+
+func captureBenchmarks(ctx context.Context, a *analytics.Module, logger *slog.Logger) {
+	ticker := time.NewTicker(benchmarkTick)
+	defer ticker.Stop()
+	a.CaptureBenchmarks(ctx)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			a.CaptureBenchmarks(ctx)
+		}
 	}
 }

@@ -4,6 +4,7 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { BarChart } from "../../components/BarChart";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
+import { BenchmarkTrend } from "./BenchmarkTrend";
 import "./BenchmarksPage.css";
 
 export function BenchmarksPage() {
@@ -107,6 +108,8 @@ export function BenchmarksPage() {
           </ul>
         </div>
       )}
+
+      <BenchmarkTrend categories={data.categories.map((c) => c.category)} />
     </div>
   );
 }

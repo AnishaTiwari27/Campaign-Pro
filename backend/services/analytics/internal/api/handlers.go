@@ -27,6 +27,7 @@ func (h *Handlers) Routes(r chi.Router) {
 	r.Get("/search", h.Search)
 	r.Get("/overview", h.GetOverview)
 	r.Get("/benchmark", h.GetBenchmark)
+	r.Get("/benchmark/trend", h.GetBenchmarkTrend)
 	r.Route("/regions", func(r chi.Router) {
 		r.Get("/", h.ListRegions)
 		r.Get("/{id}", h.GetRegion)

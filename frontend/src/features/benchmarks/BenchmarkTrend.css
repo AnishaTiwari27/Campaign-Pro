@@ -1,0 +1,63 @@
+.trend-panel {
+  padding: 14px 16px;
+  margin-top: 14px;
+}
+
+.trend-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.trend-head h4 { margin: 0; }
+
+.trend-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trend-select {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.trend-measures {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.trend-measure {
+  padding: 5px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: none;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.trend-measure + .trend-measure { border-left: 1px solid var(--line); }
+
+.trend-measure-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.trend-note,
+.trend-empty {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}

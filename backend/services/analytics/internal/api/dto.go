@@ -164,3 +164,30 @@ func searchDTOs(rs []service.SearchResult) []SearchResultDTO {
 	}
 	return out
 }
+
+type trendPointDTO struct {
+	Category string `json:"category"`
+	// A plain date rather than a timestamp: the grain is a day, and
+	// sending an instant would invite the client to render it in a
+	// local timezone and shift points across day boundaries.
+	Day               string  `json:"day"`
+	MedianReach       float64 `json:"medianReach"`
+	TopReach          float64 `json:"topReach"`
+	CampaignCount     int32   `json:"campaignCount"`
+	MedianCostPerLakh float64 `json:"medianCostPerLakh"`
+}
+
+func trendDTO(points []service.TrendPoint) []trendPointDTO {
+	out := make([]trendPointDTO, 0, len(points))
+	for _, p := range points {
+		out = append(out, trendPointDTO{
+			Category:          p.Category,
+			Day:               p.Day.Format("2006-01-02"),
+			MedianReach:       p.MedianReach,
+			TopReach:          p.TopReach,
+			CampaignCount:     p.CampaignCount,
+			MedianCostPerLakh: p.MedianCostPerLakh,
+		})
+	}
+	return out
+}
