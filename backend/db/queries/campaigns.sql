@@ -55,8 +55,34 @@ UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING *;
 -- name: UpdateCampaignFlag :one
 UPDATE campaigns SET flag_reason = $2, updated_at = now() WHERE id = $1 RETURNING *;
 
+-- The scope predicate below is the one every aggregate has to carry.
+-- Row reads get their visibility applied in Go after loading, but an
+-- aggregate has no rows left to filter by the time it returns a number,
+-- so the restriction has to be in the WHERE clause or the figure is the
+-- whole agency's. @restricted false means agency staff, who see
+-- everything; true with an empty list means a client whose grants are
+-- not set yet, who must see nothing rather than everything.
+
 -- name: CountPendingApprovals :one
-SELECT count(*) FROM campaigns WHERE approval = 'pending';
+SELECT count(*) FROM campaigns
+WHERE approval = 'pending'
+  AND (NOT @restricted::bool OR id = ANY(@visible_ids::text[]));
 
 -- name: TotalPendingSpend :one
-SELECT coalesce(sum(spend), 0)::bigint FROM campaigns WHERE approval = 'pending';
+SELECT coalesce(sum(spend), 0)::bigint FROM campaigns
+WHERE approval = 'pending'
+  AND (NOT @restricted::bool OR id = ANY(@visible_ids::text[]));
+
+-- OverviewTotals replaces loading every campaign and summing it in Go.
+-- One pass in the database instead of one row per campaign over the
+-- wire, decoded into a slice, walked once. At the current fixture size
+-- that is a wash; it is the shape that stops the overview getting
+-- slower in proportion to the book of business.
+-- name: OverviewTotals :one
+SELECT
+    count(*) FILTER (WHERE status = 'live')::bigint AS live_count,
+    coalesce(sum(reach) FILTER (WHERE status = 'live'), 0)::float8 AS reach_live,
+    coalesce(sum(spend), 0)::bigint AS spend_window,
+    coalesce(sum(budget) FILTER (WHERE approval = 'approved'), 0)::bigint AS approved_budget
+FROM campaigns
+WHERE (NOT @restricted::bool OR id = ANY(@visible_ids::text[]));

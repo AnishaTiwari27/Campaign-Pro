@@ -13,7 +13,14 @@ import (
 type Querier interface {
 	BulkUpdateApproval(ctx context.Context, arg BulkUpdateApprovalParams) ([]Campaign, error)
 	CountCreativesByCampaign(ctx context.Context, campaignID string) (int64, error)
-	CountPendingApprovals(ctx context.Context) (int64, error)
+	// The scope predicate below is the one every aggregate has to carry.
+	// Row reads get their visibility applied in Go after loading, but an
+	// aggregate has no rows left to filter by the time it returns a number,
+	// so the restriction has to be in the WHERE clause or the figure is the
+	// whole agency's. @restricted false means agency staff, who see
+	// everything; true with an empty list means a client whose grants are
+	// not set yet, who must see nothing rather than everything.
+	CountPendingApprovals(ctx context.Context, arg CountPendingApprovalsParams) (int64, error)
 	CreateAuditEvent(ctx context.Context, arg CreateAuditEventParams) (AuditEvent, error)
 	CreateCampaign(ctx context.Context, arg CreateCampaignParams) (Campaign, error)
 	CreateCreative(ctx context.Context, arg CreateCreativeParams) (Creative, error)
@@ -60,6 +67,12 @@ type Querier interface {
 	ListRunningCampaigns(ctx context.Context) ([]Campaign, error)
 	ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error)
 	ListUsers(ctx context.Context) ([]User, error)
+	// OverviewTotals replaces loading every campaign and summing it in Go.
+	// One pass in the database instead of one row per campaign over the
+	// wire, decoded into a slice, walked once. At the current fixture size
+	// that is a wash; it is the shape that stops the overview getting
+	// slower in proportion to the book of business.
+	OverviewTotals(ctx context.Context, arg OverviewTotalsParams) (OverviewTotalsRow, error)
 	// SessionUser resolves a session to its user in one round trip, and only
 	// when the session has not expired.
 	SessionUser(ctx context.Context, tokenHash []byte) (SessionUserRow, error)
@@ -72,7 +85,7 @@ type Querier interface {
 	// tile shows. Highest reach wins, which is the creative the campaign is
 	// actually known by.
 	TopCreativePerCampaign(ctx context.Context) ([]TopCreativePerCampaignRow, error)
-	TotalPendingSpend(ctx context.Context) (int64, error)
+	TotalPendingSpend(ctx context.Context, arg TotalPendingSpendParams) (int64, error)
 	TouchUserLogin(ctx context.Context, id pgtype.UUID) error
 	UpdateCampaignDecision(ctx context.Context, arg UpdateCampaignDecisionParams) (Campaign, error)
 	UpdateCampaignFlag(ctx context.Context, arg UpdateCampaignFlagParams) (Campaign, error)

@@ -47,19 +47,17 @@ func (a *Analytics) Get(ctx context.Context) (Overview, error) {
 	running := campaigns.Running(all)
 	sparklinePoints := campaigns.Sparkline(running)
 
-	var liveCount int
-	var reachLive float64
-	var spendWindow, approvedBudget int64
-	for _, c := range all {
-		if c.Status == campaigns.StatusLive {
-			liveCount++
-			reachLive += c.Reach
-		}
-		spendWindow += c.Spend
-		if c.Approval == campaigns.ApprovalApproved {
-			approvedBudget += c.Budget
-		}
+	// Summed in the database rather than here. The rows above are still
+	// loaded, because the ranking below genuinely needs them, but the
+	// headline figures no longer get slower in proportion to the book.
+	totals, err := a.campaigns.Totals(ctx)
+	if err != nil {
+		return Overview{}, err
 	}
+	liveCount := int(totals.LiveCount)
+	reachLive := totals.ReachLive
+	spendWindow, approvedBudget := totals.SpendWindow, totals.ApprovedBudget
+
 	pendingCount, err := a.campaigns.PendingCount(ctx)
 	if err != nil {
 		return Overview{}, err

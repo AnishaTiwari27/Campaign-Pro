@@ -66,11 +66,26 @@ func (q *Queries) BulkUpdateApproval(ctx context.Context, arg BulkUpdateApproval
 }
 
 const countPendingApprovals = `-- name: CountPendingApprovals :one
-SELECT count(*) FROM campaigns WHERE approval = 'pending'
+
+SELECT count(*) FROM campaigns
+WHERE approval = 'pending'
+  AND (NOT $1::bool OR id = ANY($2::text[]))
 `
 
-func (q *Queries) CountPendingApprovals(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countPendingApprovals)
+type CountPendingApprovalsParams struct {
+	Restricted bool     `json:"restricted"`
+	VisibleIds []string `json:"visible_ids"`
+}
+
+// The scope predicate below is the one every aggregate has to carry.
+// Row reads get their visibility applied in Go after loading, but an
+// aggregate has no rows left to filter by the time it returns a number,
+// so the restriction has to be in the WHERE clause or the figure is the
+// whole agency's. @restricted false means agency staff, who see
+// everything; true with an empty list means a client whose grants are
+// not set yet, who must see nothing rather than everything.
+func (q *Queries) CountPendingApprovals(ctx context.Context, arg CountPendingApprovalsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countPendingApprovals, arg.Restricted, arg.VisibleIds)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -471,12 +486,58 @@ func (q *Queries) ListRunningCampaigns(ctx context.Context) ([]Campaign, error) 
 	return items, nil
 }
 
-const totalPendingSpend = `-- name: TotalPendingSpend :one
-SELECT coalesce(sum(spend), 0)::bigint FROM campaigns WHERE approval = 'pending'
+const overviewTotals = `-- name: OverviewTotals :one
+SELECT
+    count(*) FILTER (WHERE status = 'live')::bigint AS live_count,
+    coalesce(sum(reach) FILTER (WHERE status = 'live'), 0)::float8 AS reach_live,
+    coalesce(sum(spend), 0)::bigint AS spend_window,
+    coalesce(sum(budget) FILTER (WHERE approval = 'approved'), 0)::bigint AS approved_budget
+FROM campaigns
+WHERE (NOT $1::bool OR id = ANY($2::text[]))
 `
 
-func (q *Queries) TotalPendingSpend(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, totalPendingSpend)
+type OverviewTotalsParams struct {
+	Restricted bool     `json:"restricted"`
+	VisibleIds []string `json:"visible_ids"`
+}
+
+type OverviewTotalsRow struct {
+	LiveCount      int64   `json:"live_count"`
+	ReachLive      float64 `json:"reach_live"`
+	SpendWindow    int64   `json:"spend_window"`
+	ApprovedBudget int64   `json:"approved_budget"`
+}
+
+// OverviewTotals replaces loading every campaign and summing it in Go.
+// One pass in the database instead of one row per campaign over the
+// wire, decoded into a slice, walked once. At the current fixture size
+// that is a wash; it is the shape that stops the overview getting
+// slower in proportion to the book of business.
+func (q *Queries) OverviewTotals(ctx context.Context, arg OverviewTotalsParams) (OverviewTotalsRow, error) {
+	row := q.db.QueryRow(ctx, overviewTotals, arg.Restricted, arg.VisibleIds)
+	var i OverviewTotalsRow
+	err := row.Scan(
+		&i.LiveCount,
+		&i.ReachLive,
+		&i.SpendWindow,
+		&i.ApprovedBudget,
+	)
+	return i, err
+}
+
+const totalPendingSpend = `-- name: TotalPendingSpend :one
+SELECT coalesce(sum(spend), 0)::bigint FROM campaigns
+WHERE approval = 'pending'
+  AND (NOT $1::bool OR id = ANY($2::text[]))
+`
+
+type TotalPendingSpendParams struct {
+	Restricted bool     `json:"restricted"`
+	VisibleIds []string `json:"visible_ids"`
+}
+
+func (q *Queries) TotalPendingSpend(ctx context.Context, arg TotalPendingSpendParams) (int64, error) {
+	row := q.db.QueryRow(ctx, totalPendingSpend, arg.Restricted, arg.VisibleIds)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err

@@ -185,11 +185,35 @@ func (s *Store) UpdateCampaignFlag(ctx context.Context, id string, reason string
 }
 
 func (s *Store) CountPendingApprovals(ctx context.Context) (int64, error) {
-	return s.db.Queries.CountPendingApprovals(ctx)
+	restricted, ids := scopeParams(ctx)
+	return s.db.Queries.CountPendingApprovals(ctx, gen.CountPendingApprovalsParams{
+		Restricted: restricted, VisibleIds: ids,
+	})
 }
 
 func (s *Store) TotalPendingSpend(ctx context.Context) (int64, error) {
-	return s.db.Queries.TotalPendingSpend(ctx)
+	restricted, ids := scopeParams(ctx)
+	return s.db.Queries.TotalPendingSpend(ctx, gen.TotalPendingSpendParams{
+		Restricted: restricted, VisibleIds: ids,
+	})
+}
+
+// OverviewTotals is the whole of the overview's headline arithmetic, done
+// in one query rather than by loading every campaign and summing it here.
+func (s *Store) OverviewTotals(ctx context.Context) (campaigns.Totals, error) {
+	restricted, ids := scopeParams(ctx)
+	row, err := s.db.Queries.OverviewTotals(ctx, gen.OverviewTotalsParams{
+		Restricted: restricted, VisibleIds: ids,
+	})
+	if err != nil {
+		return campaigns.Totals{}, err
+	}
+	return campaigns.Totals{
+		LiveCount:      row.LiveCount,
+		ReachLive:      row.ReachLive,
+		SpendWindow:    row.SpendWindow,
+		ApprovedBudget: row.ApprovedBudget,
+	}, nil
 }
 
 // SetCampaignCreator links a campaign to the creator who ran it. The
@@ -216,6 +240,28 @@ func (s *Store) ListCampaignsByCreator(ctx context.Context, creatorID string) ([
 //
 // With an unrestricted scope this is a no-op, which is every caller that
 // is not a client request.
+// scopeParams is the aggregate counterpart of scoped(). A row query can
+// load and then filter; an aggregate cannot, because by the time it
+// returns there are no rows left to drop. Anything that returns a number
+// rather than rows has to go through here.
+//
+// The empty-but-restricted case is the one that matters: a client whose
+// grants have not been set yet gets an empty id list, and `id = ANY('{}')`
+// matches nothing — which is the safe answer. Treating it as unrestricted
+// instead, the easy mistake because an empty filter usually means no
+// filter, would hand them the whole agency's totals.
+func scopeParams(ctx context.Context) (bool, []string) {
+	sc := scope.CampaignsFrom(ctx)
+	if !sc.Restricted {
+		return false, nil
+	}
+	ids := sc.IDs
+	if ids == nil {
+		ids = []string{}
+	}
+	return true, ids
+}
+
 func scoped(ctx context.Context, cs []campaigns.Campaign) []campaigns.Campaign {
 	sc := scope.CampaignsFrom(ctx)
 	if !sc.Restricted {

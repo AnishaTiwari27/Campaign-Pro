@@ -557,6 +557,11 @@ func (c *Campaigns) PendingSpend(ctx context.Context) (int64, error) {
 	return c.Store.TotalPendingSpend(ctx)
 }
 
+// Totals is the overview's arithmetic, done in SQL. See store.OverviewTotals.
+func (c *Campaigns) Totals(ctx context.Context) (campaigns.Totals, error) {
+	return c.Store.OverviewTotals(ctx)
+}
+
 func (c *Campaigns) Flagged(ctx context.Context) ([]campaigns.Campaign, error) {
 	return c.Store.ListFlaggedCampaigns(ctx)
 }

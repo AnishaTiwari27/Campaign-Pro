@@ -87,3 +87,13 @@ type LeadCreative struct {
 	Duration string
 	Festival string
 }
+
+// Totals is the overview's headline arithmetic, computed in the database
+// rather than by walking every campaign in Go. Scoped like every other
+// read: a client account's totals cover only the campaigns they hold.
+type Totals struct {
+	LiveCount      int64
+	ReachLive      float64
+	SpendWindow    int64
+	ApprovedBudget int64
+}

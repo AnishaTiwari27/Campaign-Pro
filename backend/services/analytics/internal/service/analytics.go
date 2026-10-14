@@ -23,6 +23,7 @@ type CampaignReader interface {
 	All(ctx context.Context) ([]campaigns.Campaign, error)
 	Enrich(ctx context.Context, all []campaigns.Campaign) map[string]campaigns.CampaignRow
 	List(ctx context.Context, p campaigns.ListParams) (campaigns.ListResult, error)
+	Totals(ctx context.Context) (campaigns.Totals, error)
 	PendingCount(ctx context.Context) (int64, error)
 	PendingSpend(ctx context.Context) (int64, error)
 	Flagged(ctx context.Context) ([]campaigns.Campaign, error)
