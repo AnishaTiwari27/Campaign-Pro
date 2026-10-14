@@ -72,7 +72,7 @@ func (q *Queries) DeleteUserSessions(ctx context.Context, userID pgtype.UUID) er
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, name, role, can_approve, is_agency, password_hash, created_at
+SELECT id, email, name, role, can_approve, is_agency, password_hash, created_at, org_id
 FROM users WHERE id = $1
 `
 
@@ -85,6 +85,7 @@ type GetUserByIDRow struct {
 	IsAgency     bool               `json:"is_agency"`
 	PasswordHash pgtype.Text        `json:"password_hash"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	OrgID        string             `json:"org_id"`
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error) {
@@ -99,12 +100,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDR
 		&i.IsAgency,
 		&i.PasswordHash,
 		&i.CreatedAt,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const getUserForAuth = `-- name: GetUserForAuth :one
-SELECT id, email, name, role, can_approve, is_agency, password_hash, created_at
+SELECT id, email, name, role, can_approve, is_agency, password_hash, created_at, org_id
 FROM users WHERE email = $1
 `
 
@@ -117,6 +119,7 @@ type GetUserForAuthRow struct {
 	IsAgency     bool               `json:"is_agency"`
 	PasswordHash pgtype.Text        `json:"password_hash"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	OrgID        string             `json:"org_id"`
 }
 
 func (q *Queries) GetUserForAuth(ctx context.Context, email string) (GetUserForAuthRow, error) {
@@ -131,12 +134,13 @@ func (q *Queries) GetUserForAuth(ctx context.Context, email string) (GetUserForA
 		&i.IsAgency,
 		&i.PasswordHash,
 		&i.CreatedAt,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const sessionUser = `-- name: SessionUser :one
-SELECT u.id, u.email, u.name, u.role, u.can_approve, u.is_agency, u.password_hash, u.created_at
+SELECT u.id, u.email, u.name, u.role, u.can_approve, u.is_agency, u.password_hash, u.created_at, u.org_id
 FROM sessions s JOIN users u ON u.id = s.user_id
 WHERE s.token_hash = $1 AND s.expires_at > now()
 `
@@ -150,6 +154,7 @@ type SessionUserRow struct {
 	IsAgency     bool               `json:"is_agency"`
 	PasswordHash pgtype.Text        `json:"password_hash"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	OrgID        string             `json:"org_id"`
 }
 
 // SessionUser resolves a session to its user in one round trip, and only
@@ -166,21 +171,29 @@ func (q *Queries) SessionUser(ctx context.Context, tokenHash []byte) (SessionUse
 		&i.IsAgency,
 		&i.PasswordHash,
 		&i.CreatedAt,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const setUserPassword = `-- name: SetUserPassword :exec
-UPDATE users SET password_hash = $2 WHERE id = $1
+UPDATE users SET password_hash = $2 WHERE id = $1 AND ($3::bool OR org_id = $4::text)
 `
 
 type SetUserPasswordParams struct {
 	ID           pgtype.UUID `json:"id"`
 	PasswordHash pgtype.Text `json:"password_hash"`
+	OrgSystem    bool        `json:"org_system"`
+	OrgID        string      `json:"org_id"`
 }
 
 func (q *Queries) SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error {
-	_, err := q.db.Exec(ctx, setUserPassword, arg.ID, arg.PasswordHash)
+	_, err := q.db.Exec(ctx, setUserPassword,
+		arg.ID,
+		arg.PasswordHash,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
 	return err
 }
 

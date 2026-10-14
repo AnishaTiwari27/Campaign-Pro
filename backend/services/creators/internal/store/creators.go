@@ -2,6 +2,7 @@ package store
 
 import (
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/creators"
 	"context"
 	"errors"
@@ -30,7 +31,8 @@ func toDomainCreator(c gen.Creator) creators.Creator {
 }
 
 func (s *Store) ListCreators(ctx context.Context) ([]creators.Creator, error) {
-	cs, err := s.db.Queries.ListCreators(ctx)
+	sys, org := orgParams(ctx)
+	cs, err := s.db.Queries.ListCreators(ctx, gen.ListCreatorsParams{OrgSystem: sys, OrgID: org})
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +44,8 @@ func (s *Store) ListCreators(ctx context.Context) ([]creators.Creator, error) {
 }
 
 func (s *Store) GetCreator(ctx context.Context, id string) (creators.Creator, error) {
-	c, err := s.db.Queries.GetCreator(ctx, id)
+	sys, org := orgParams(ctx)
+	c, err := s.db.Queries.GetCreator(ctx, gen.GetCreatorParams{ID: id, OrgSystem: sys, OrgID: org})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return creators.Creator{}, database.ErrNotFound
@@ -53,8 +56,10 @@ func (s *Store) GetCreator(ctx context.Context, id string) (creators.Creator, er
 }
 
 func (s *Store) CreateCreator(ctx context.Context, c creators.Creator) (creators.Creator, error) {
+	_, org := orgParams(ctx)
 	created, err := s.db.Queries.CreateCreator(ctx, gen.CreateCreatorParams{
-		ID: c.ID, Name: c.Name, Role: c.Role, Initials: c.Initials,
+		OrgID: org,
+		ID:    c.ID, Name: c.Name, Role: c.Role, Initials: c.Initials,
 		Category: c.Category, Region: c.Region, Tier: gen.CreatorTierT(c.Tier),
 		Followers: c.Followers, PrimaryPlatform: c.PrimaryPlatform, Languages: c.Languages,
 	})
@@ -74,4 +79,17 @@ func (s *Store) All(ctx context.Context) ([]creators.Creator, error) {
 // is empty.
 func (s *Store) SetPhoto(ctx context.Context, creatorID, imageURL string) error {
 	return s.db.Queries.SetCreatorPhoto(ctx, gen.SetCreatorPhotoParams{ID: creatorID, Column2: imageURL})
+}
+
+// orgParams turns the request's tenant into query parameters. Every
+// statement touching an org-owned table takes these; platform/arch's
+// tenancy test fails the build if one is added that does not.
+//
+// A system context spans organisations, which is right for the worker,
+// the seeder and the CLI. Anything else is confined to one, and an
+// unresolved organisation is the empty string — which matches no row, so
+// forgetting to set it yields an empty result rather than a leak.
+func orgParams(ctx context.Context) (bool, string) {
+	o := scope.OrgFrom(ctx)
+	return o.System, o.ID
 }

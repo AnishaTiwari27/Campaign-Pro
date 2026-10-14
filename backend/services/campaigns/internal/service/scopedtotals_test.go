@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"testing"
 
 	"campaigntrackerpro/platform/scope"
@@ -22,7 +21,7 @@ import (
 // one.
 func TestAggregatesAreScopedToWhatTheCallerMaySee(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	mine := "svctest-scope-mine"
@@ -59,7 +58,7 @@ func TestAggregatesAreScopedToWhatTheCallerMaySee(t *testing.T) {
 // client account the entire agency's totals on their first login.
 func TestARestrictedCallerWithNoGrantsSeesNothing(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	id := "svctest-scope-nogrants"
@@ -88,7 +87,7 @@ func TestARestrictedCallerWithNoGrantsSeesNothing(t *testing.T) {
 // predicate cannot be a blanket filter.
 func TestUnrestrictedCallerSeesTheWholeBook(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	id := "svctest-scope-agency"

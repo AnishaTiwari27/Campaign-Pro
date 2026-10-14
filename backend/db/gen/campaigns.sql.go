@@ -13,16 +13,23 @@ import (
 
 const bulkUpdateApproval = `-- name: BulkUpdateApproval :many
 UPDATE campaigns SET approval = $1::approval_status_t, updated_at = now()
-WHERE id = ANY($2::text[]) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
+WHERE id = ANY($2::text[]) AND ($3::bool OR org_id = $4::text) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id
 `
 
 type BulkUpdateApprovalParams struct {
-	Approval ApprovalStatusT `json:"approval"`
-	Ids      []string        `json:"ids"`
+	Approval  ApprovalStatusT `json:"approval"`
+	Ids       []string        `json:"ids"`
+	OrgSystem bool            `json:"org_system"`
+	OrgID     string          `json:"org_id"`
 }
 
 func (q *Queries) BulkUpdateApproval(ctx context.Context, arg BulkUpdateApprovalParams) ([]Campaign, error) {
-	rows, err := q.db.Query(ctx, bulkUpdateApproval, arg.Approval, arg.Ids)
+	rows, err := q.db.Query(ctx, bulkUpdateApproval,
+		arg.Approval,
+		arg.Ids,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +61,7 @@ func (q *Queries) BulkUpdateApproval(ctx context.Context, arg BulkUpdateApproval
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -69,10 +77,13 @@ const countPendingApprovals = `-- name: CountPendingApprovals :one
 
 SELECT count(*) FROM campaigns
 WHERE approval = 'pending'
-  AND (NOT $1::bool OR id = ANY($2::text[]))
+  AND ($1::bool OR org_id = $2::text)
+  AND (NOT $3::bool OR id = ANY($4::text[]))
 `
 
 type CountPendingApprovalsParams struct {
+	OrgSystem  bool     `json:"org_system"`
+	OrgID      string   `json:"org_id"`
 	Restricted bool     `json:"restricted"`
 	VisibleIds []string `json:"visible_ids"`
 }
@@ -85,7 +96,12 @@ type CountPendingApprovalsParams struct {
 // everything; true with an empty list means a client whose grants are
 // not set yet, who must see nothing rather than everything.
 func (q *Queries) CountPendingApprovals(ctx context.Context, arg CountPendingApprovalsParams) (int64, error) {
-	row := q.db.QueryRow(ctx, countPendingApprovals, arg.Restricted, arg.VisibleIds)
+	row := q.db.QueryRow(ctx, countPendingApprovals,
+		arg.OrgSystem,
+		arg.OrgID,
+		arg.Restricted,
+		arg.VisibleIds,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -95,10 +111,11 @@ const createCampaign = `-- name: CreateCampaign :one
 INSERT INTO campaigns (
     id, name, subject_type, role, initials, category, region, ad_type, platform,
     status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason,
-    brand_domain, flight_days
+    brand_domain, flight_days, org_id
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
-) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+    $21
+) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id
 `
 
 type CreateCampaignParams struct {
@@ -122,6 +139,7 @@ type CreateCampaignParams struct {
 	FlagReason  pgtype.Text     `json:"flag_reason"`
 	BrandDomain pgtype.Text     `json:"brand_domain"`
 	FlightDays  pgtype.Int4     `json:"flight_days"`
+	OrgID       string          `json:"org_id"`
 }
 
 func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) (Campaign, error) {
@@ -146,6 +164,7 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		arg.FlagReason,
 		arg.BrandDomain,
 		arg.FlightDays,
+		arg.OrgID,
 	)
 	var i Campaign
 	err := row.Scan(
@@ -172,16 +191,31 @@ func (q *Queries) CreateCampaign(ctx context.Context, arg CreateCampaignParams) 
 		&i.CreatorID,
 		&i.BrandDomain,
 		&i.FlightDays,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const getCampaign = `-- name: GetCampaign :one
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE id = $1
+
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
-func (q *Queries) GetCampaign(ctx context.Context, id string) (Campaign, error) {
-	row := q.db.QueryRow(ctx, getCampaign, id)
+type GetCampaignParams struct {
+	ID        string `json:"id"`
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+// The organisation predicate on every statement below is the tenant
+// boundary. @org_system is true only for callers that are not requests —
+// the report worker, the seeder, the CLI — which legitimately span
+// organisations. For a request it is false, and org_id is the signed-in
+// user's; an unresolved organisation is the empty string, which matches
+// nothing, so the failure mode of forgetting it is a blank page rather
+// than another tenant's data.
+func (q *Queries) GetCampaign(ctx context.Context, arg GetCampaignParams) (Campaign, error) {
+	row := q.db.QueryRow(ctx, getCampaign, arg.ID, arg.OrgSystem, arg.OrgID)
 	var i Campaign
 	err := row.Scan(
 		&i.ID,
@@ -207,16 +241,22 @@ func (q *Queries) GetCampaign(ctx context.Context, id string) (Campaign, error) 
 		&i.CreatorID,
 		&i.BrandDomain,
 		&i.FlightDays,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const listCampaigns = `-- name: ListCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE ($1::bool OR org_id = $2::text) ORDER BY created_at DESC
 `
 
-func (q *Queries) ListCampaigns(ctx context.Context) ([]Campaign, error) {
-	rows, err := q.db.Query(ctx, listCampaigns)
+type ListCampaignsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([]Campaign, error) {
+	rows, err := q.db.Query(ctx, listCampaigns, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -248,6 +288,7 @@ func (q *Queries) ListCampaigns(ctx context.Context) ([]Campaign, error) {
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -260,24 +301,27 @@ func (q *Queries) ListCampaigns(ctx context.Context) ([]Campaign, error) {
 }
 
 const listCampaignsFiltered = `-- name: ListCampaignsFiltered :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns
-WHERE ($1::subject_type_t IS NULL OR subject_type = $1::subject_type_t)
-  AND ($2::text IS NULL OR category = $2::text)
-  AND ($3::text IS NULL OR region = $3::text)
-  AND ($4::ad_type_t IS NULL OR ad_type = $4::ad_type_t)
-  AND ($5::campaign_status_t IS NULL OR status = $5::campaign_status_t)
-  AND ($6::approval_status_t IS NULL OR approval = $6::approval_status_t)
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns
+WHERE ($1::bool OR org_id = $2::text)
+  AND ($3::subject_type_t IS NULL OR subject_type = $3::subject_type_t)
+  AND ($4::text IS NULL OR category = $4::text)
+  AND ($5::text IS NULL OR region = $5::text)
+  AND ($6::ad_type_t IS NULL OR ad_type = $6::ad_type_t)
+  AND ($7::campaign_status_t IS NULL OR status = $7::campaign_status_t)
+  AND ($8::approval_status_t IS NULL OR approval = $8::approval_status_t)
   AND (
-    $7::text IS NULL
-    OR name ILIKE '%' || $7::text || '%'
-    OR category ILIKE '%' || $7::text || '%'
-    OR region ILIKE '%' || $7::text || '%'
-    OR ad_type::text ILIKE '%' || $7::text || '%'
-    OR coalesce(role, '') ILIKE '%' || $7::text || '%'
+    $9::text IS NULL
+    OR name ILIKE '%' || $9::text || '%'
+    OR category ILIKE '%' || $9::text || '%'
+    OR region ILIKE '%' || $9::text || '%'
+    OR ad_type::text ILIKE '%' || $9::text || '%'
+    OR coalesce(role, '') ILIKE '%' || $9::text || '%'
   )
 `
 
 type ListCampaignsFilteredParams struct {
+	OrgSystem   bool                `json:"org_system"`
+	OrgID       string              `json:"org_id"`
 	SubjectType NullSubjectTypeT    `json:"subject_type"`
 	Category    pgtype.Text         `json:"category"`
 	Region      pgtype.Text         `json:"region"`
@@ -292,6 +336,8 @@ type ListCampaignsFilteredParams struct {
 // in Go since sqlc can't parameterize ORDER BY columns.
 func (q *Queries) ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFilteredParams) ([]Campaign, error) {
 	rows, err := q.db.Query(ctx, listCampaignsFiltered,
+		arg.OrgSystem,
+		arg.OrgID,
 		arg.SubjectType,
 		arg.Category,
 		arg.Region,
@@ -331,6 +377,7 @@ func (q *Queries) ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFi
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -343,11 +390,16 @@ func (q *Queries) ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFi
 }
 
 const listFlaggedCampaigns = `-- name: ListFlaggedCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE flag_reason IS NOT NULL ORDER BY updated_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE flag_reason IS NOT NULL AND ($1::bool OR org_id = $2::text) ORDER BY updated_at DESC
 `
 
-func (q *Queries) ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error) {
-	rows, err := q.db.Query(ctx, listFlaggedCampaigns)
+type ListFlaggedCampaignsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error) {
+	rows, err := q.db.Query(ctx, listFlaggedCampaigns, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -379,6 +431,7 @@ func (q *Queries) ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error) 
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -391,11 +444,16 @@ func (q *Queries) ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error) 
 }
 
 const listPendingCampaigns = `-- name: ListPendingCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE approval = 'pending' ORDER BY spend DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE approval = 'pending' AND ($1::bool OR org_id = $2::text) ORDER BY spend DESC
 `
 
-func (q *Queries) ListPendingCampaigns(ctx context.Context) ([]Campaign, error) {
-	rows, err := q.db.Query(ctx, listPendingCampaigns)
+type ListPendingCampaignsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListPendingCampaigns(ctx context.Context, arg ListPendingCampaignsParams) ([]Campaign, error) {
+	rows, err := q.db.Query(ctx, listPendingCampaigns, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -427,6 +485,7 @@ func (q *Queries) ListPendingCampaigns(ctx context.Context) ([]Campaign, error) 
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -439,11 +498,16 @@ func (q *Queries) ListPendingCampaigns(ctx context.Context) ([]Campaign, error) 
 }
 
 const listRunningCampaigns = `-- name: ListRunningCampaigns :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE status != 'scheduled' ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE status != 'scheduled' AND ($1::bool OR org_id = $2::text) ORDER BY created_at DESC
 `
 
-func (q *Queries) ListRunningCampaigns(ctx context.Context) ([]Campaign, error) {
-	rows, err := q.db.Query(ctx, listRunningCampaigns)
+type ListRunningCampaignsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListRunningCampaigns(ctx context.Context, arg ListRunningCampaignsParams) ([]Campaign, error) {
+	rows, err := q.db.Query(ctx, listRunningCampaigns, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -475,6 +539,7 @@ func (q *Queries) ListRunningCampaigns(ctx context.Context) ([]Campaign, error) 
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -493,10 +558,13 @@ SELECT
     coalesce(sum(spend), 0)::bigint AS spend_window,
     coalesce(sum(budget) FILTER (WHERE approval = 'approved'), 0)::bigint AS approved_budget
 FROM campaigns
-WHERE (NOT $1::bool OR id = ANY($2::text[]))
+WHERE ($1::bool OR org_id = $2::text)
+  AND (NOT $3::bool OR id = ANY($4::text[]))
 `
 
 type OverviewTotalsParams struct {
+	OrgSystem  bool     `json:"org_system"`
+	OrgID      string   `json:"org_id"`
 	Restricted bool     `json:"restricted"`
 	VisibleIds []string `json:"visible_ids"`
 }
@@ -514,7 +582,12 @@ type OverviewTotalsRow struct {
 // that is a wash; it is the shape that stops the overview getting
 // slower in proportion to the book of business.
 func (q *Queries) OverviewTotals(ctx context.Context, arg OverviewTotalsParams) (OverviewTotalsRow, error) {
-	row := q.db.QueryRow(ctx, overviewTotals, arg.Restricted, arg.VisibleIds)
+	row := q.db.QueryRow(ctx, overviewTotals,
+		arg.OrgSystem,
+		arg.OrgID,
+		arg.Restricted,
+		arg.VisibleIds,
+	)
 	var i OverviewTotalsRow
 	err := row.Scan(
 		&i.LiveCount,
@@ -528,32 +601,48 @@ func (q *Queries) OverviewTotals(ctx context.Context, arg OverviewTotalsParams) 
 const totalPendingSpend = `-- name: TotalPendingSpend :one
 SELECT coalesce(sum(spend), 0)::bigint FROM campaigns
 WHERE approval = 'pending'
-  AND (NOT $1::bool OR id = ANY($2::text[]))
+  AND ($1::bool OR org_id = $2::text)
+  AND (NOT $3::bool OR id = ANY($4::text[]))
 `
 
 type TotalPendingSpendParams struct {
+	OrgSystem  bool     `json:"org_system"`
+	OrgID      string   `json:"org_id"`
 	Restricted bool     `json:"restricted"`
 	VisibleIds []string `json:"visible_ids"`
 }
 
 func (q *Queries) TotalPendingSpend(ctx context.Context, arg TotalPendingSpendParams) (int64, error) {
-	row := q.db.QueryRow(ctx, totalPendingSpend, arg.Restricted, arg.VisibleIds)
+	row := q.db.QueryRow(ctx, totalPendingSpend,
+		arg.OrgSystem,
+		arg.OrgID,
+		arg.Restricted,
+		arg.VisibleIds,
+	)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
 }
 
 const updateCampaignDecision = `-- name: UpdateCampaignDecision :one
-UPDATE campaigns SET approval = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
+UPDATE campaigns SET approval = $1, updated_at = now()
+WHERE id = $2 AND ($3::bool OR org_id = $4::text) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id
 `
 
 type UpdateCampaignDecisionParams struct {
-	ID       string          `json:"id"`
-	Approval ApprovalStatusT `json:"approval"`
+	Approval  ApprovalStatusT `json:"approval"`
+	ID        string          `json:"id"`
+	OrgSystem bool            `json:"org_system"`
+	OrgID     string          `json:"org_id"`
 }
 
 func (q *Queries) UpdateCampaignDecision(ctx context.Context, arg UpdateCampaignDecisionParams) (Campaign, error) {
-	row := q.db.QueryRow(ctx, updateCampaignDecision, arg.ID, arg.Approval)
+	row := q.db.QueryRow(ctx, updateCampaignDecision,
+		arg.Approval,
+		arg.ID,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
 	var i Campaign
 	err := row.Scan(
 		&i.ID,
@@ -579,21 +668,30 @@ func (q *Queries) UpdateCampaignDecision(ctx context.Context, arg UpdateCampaign
 		&i.CreatorID,
 		&i.BrandDomain,
 		&i.FlightDays,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const updateCampaignFlag = `-- name: UpdateCampaignFlag :one
-UPDATE campaigns SET flag_reason = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
+UPDATE campaigns SET flag_reason = $1, updated_at = now()
+WHERE id = $2 AND ($3::bool OR org_id = $4::text) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id
 `
 
 type UpdateCampaignFlagParams struct {
-	ID         string      `json:"id"`
 	FlagReason pgtype.Text `json:"flag_reason"`
+	ID         string      `json:"id"`
+	OrgSystem  bool        `json:"org_system"`
+	OrgID      string      `json:"org_id"`
 }
 
 func (q *Queries) UpdateCampaignFlag(ctx context.Context, arg UpdateCampaignFlagParams) (Campaign, error) {
-	row := q.db.QueryRow(ctx, updateCampaignFlag, arg.ID, arg.FlagReason)
+	row := q.db.QueryRow(ctx, updateCampaignFlag,
+		arg.FlagReason,
+		arg.ID,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
 	var i Campaign
 	err := row.Scan(
 		&i.ID,
@@ -619,21 +717,30 @@ func (q *Queries) UpdateCampaignFlag(ctx context.Context, arg UpdateCampaignFlag
 		&i.CreatorID,
 		&i.BrandDomain,
 		&i.FlightDays,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const updateCampaignStatus = `-- name: UpdateCampaignStatus :one
-UPDATE campaigns SET status = $2, updated_at = now() WHERE id = $1 RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days
+UPDATE campaigns SET status = $1, updated_at = now()
+WHERE id = $2 AND ($3::bool OR org_id = $4::text) RETURNING id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id
 `
 
 type UpdateCampaignStatusParams struct {
-	ID     string          `json:"id"`
-	Status CampaignStatusT `json:"status"`
+	Status    CampaignStatusT `json:"status"`
+	ID        string          `json:"id"`
+	OrgSystem bool            `json:"org_system"`
+	OrgID     string          `json:"org_id"`
 }
 
 func (q *Queries) UpdateCampaignStatus(ctx context.Context, arg UpdateCampaignStatusParams) (Campaign, error) {
-	row := q.db.QueryRow(ctx, updateCampaignStatus, arg.ID, arg.Status)
+	row := q.db.QueryRow(ctx, updateCampaignStatus,
+		arg.Status,
+		arg.ID,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
 	var i Campaign
 	err := row.Scan(
 		&i.ID,
@@ -659,6 +766,7 @@ func (q *Queries) UpdateCampaignStatus(ctx context.Context, arg UpdateCampaignSt
 		&i.CreatorID,
 		&i.BrandDomain,
 		&i.FlightDays,
+		&i.OrgID,
 	)
 	return i, err
 }

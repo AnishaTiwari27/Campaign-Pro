@@ -12,8 +12,8 @@ import (
 )
 
 const createReport = `-- name: CreateReport :one
-INSERT INTO reports (name, enabled, cadence, recipients, scope_filters, scope_label, columns)
-VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at
+INSERT INTO reports (name, enabled, cadence, recipients, scope_filters, scope_label, columns, org_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at, org_id
 `
 
 type CreateReportParams struct {
@@ -24,6 +24,7 @@ type CreateReportParams struct {
 	ScopeFilters []byte         `json:"scope_filters"`
 	ScopeLabel   string         `json:"scope_label"`
 	Columns      []string       `json:"columns"`
+	OrgID        string         `json:"org_id"`
 }
 
 func (q *Queries) CreateReport(ctx context.Context, arg CreateReportParams) (Report, error) {
@@ -35,6 +36,7 @@ func (q *Queries) CreateReport(ctx context.Context, arg CreateReportParams) (Rep
 		arg.ScopeFilters,
 		arg.ScopeLabel,
 		arg.Columns,
+		arg.OrgID,
 	)
 	var i Report
 	err := row.Scan(
@@ -48,25 +50,38 @@ func (q *Queries) CreateReport(ctx context.Context, arg CreateReportParams) (Rep
 		&i.Columns,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const deleteReport = `-- name: DeleteReport :exec
-DELETE FROM reports WHERE id = $1
+DELETE FROM reports WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
-func (q *Queries) DeleteReport(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, deleteReport, id)
+type DeleteReportParams struct {
+	ID        pgtype.UUID `json:"id"`
+	OrgSystem bool        `json:"org_system"`
+	OrgID     string      `json:"org_id"`
+}
+
+func (q *Queries) DeleteReport(ctx context.Context, arg DeleteReportParams) error {
+	_, err := q.db.Exec(ctx, deleteReport, arg.ID, arg.OrgSystem, arg.OrgID)
 	return err
 }
 
 const getReport = `-- name: GetReport :one
-SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at FROM reports WHERE id = $1
+SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at, org_id FROM reports WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
-func (q *Queries) GetReport(ctx context.Context, id pgtype.UUID) (Report, error) {
-	row := q.db.QueryRow(ctx, getReport, id)
+type GetReportParams struct {
+	ID        pgtype.UUID `json:"id"`
+	OrgSystem bool        `json:"org_system"`
+	OrgID     string      `json:"org_id"`
+}
+
+func (q *Queries) GetReport(ctx context.Context, arg GetReportParams) (Report, error) {
+	row := q.db.QueryRow(ctx, getReport, arg.ID, arg.OrgSystem, arg.OrgID)
 	var i Report
 	err := row.Scan(
 		&i.ID,
@@ -79,16 +94,22 @@ func (q *Queries) GetReport(ctx context.Context, id pgtype.UUID) (Report, error)
 		&i.Columns,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const listEnabledReports = `-- name: ListEnabledReports :many
-SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at FROM reports WHERE enabled = true
+SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at, org_id FROM reports WHERE enabled = true AND ($1::bool OR org_id = $2::text)
 `
 
-func (q *Queries) ListEnabledReports(ctx context.Context) ([]Report, error) {
-	rows, err := q.db.Query(ctx, listEnabledReports)
+type ListEnabledReportsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListEnabledReports(ctx context.Context, arg ListEnabledReportsParams) ([]Report, error) {
+	rows, err := q.db.Query(ctx, listEnabledReports, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -107,6 +128,7 @@ func (q *Queries) ListEnabledReports(ctx context.Context) ([]Report, error) {
 			&i.Columns,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -119,11 +141,17 @@ func (q *Queries) ListEnabledReports(ctx context.Context) ([]Report, error) {
 }
 
 const listEnabledReportsByCadence = `-- name: ListEnabledReportsByCadence :many
-SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at FROM reports WHERE enabled = true AND cadence = $1
+SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at, org_id FROM reports WHERE enabled = true AND cadence = $1 AND ($2::bool OR org_id = $3::text)
 `
 
-func (q *Queries) ListEnabledReportsByCadence(ctx context.Context, cadence ReportCadenceT) ([]Report, error) {
-	rows, err := q.db.Query(ctx, listEnabledReportsByCadence, cadence)
+type ListEnabledReportsByCadenceParams struct {
+	Cadence   ReportCadenceT `json:"cadence"`
+	OrgSystem bool           `json:"org_system"`
+	OrgID     string         `json:"org_id"`
+}
+
+func (q *Queries) ListEnabledReportsByCadence(ctx context.Context, arg ListEnabledReportsByCadenceParams) ([]Report, error) {
+	rows, err := q.db.Query(ctx, listEnabledReportsByCadence, arg.Cadence, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -142,6 +170,7 @@ func (q *Queries) ListEnabledReportsByCadence(ctx context.Context, cadence Repor
 			&i.Columns,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -154,11 +183,16 @@ func (q *Queries) ListEnabledReportsByCadence(ctx context.Context, cadence Repor
 }
 
 const listReports = `-- name: ListReports :many
-SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at FROM reports ORDER BY created_at DESC
+SELECT id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at, org_id FROM reports WHERE ($1::bool OR org_id = $2::text) ORDER BY created_at DESC
 `
 
-func (q *Queries) ListReports(ctx context.Context) ([]Report, error) {
-	rows, err := q.db.Query(ctx, listReports)
+type ListReportsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListReports(ctx context.Context, arg ListReportsParams) ([]Report, error) {
+	rows, err := q.db.Query(ctx, listReports, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +211,7 @@ func (q *Queries) ListReports(ctx context.Context) ([]Report, error) {
 			&i.Columns,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -198,8 +233,8 @@ UPDATE reports SET
     scope_label   = coalesce($6::text, scope_label),
     columns       = coalesce($7::text[], columns),
     updated_at    = now()
-WHERE id = $8
-RETURNING id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at
+WHERE id = $8 AND ($9::bool OR org_id = $10::text)
+RETURNING id, name, enabled, cadence, recipients, scope_filters, scope_label, columns, created_at, updated_at, org_id
 `
 
 type UpdateReportParams struct {
@@ -211,6 +246,8 @@ type UpdateReportParams struct {
 	ScopeLabel   pgtype.Text        `json:"scope_label"`
 	Columns      []string           `json:"columns"`
 	ID           pgtype.UUID        `json:"id"`
+	OrgSystem    bool               `json:"org_system"`
+	OrgID        string             `json:"org_id"`
 }
 
 // UpdateReport applies whichever fields are non-null; every field is
@@ -225,6 +262,8 @@ func (q *Queries) UpdateReport(ctx context.Context, arg UpdateReportParams) (Rep
 		arg.ScopeLabel,
 		arg.Columns,
 		arg.ID,
+		arg.OrgSystem,
+		arg.OrgID,
 	)
 	var i Report
 	err := row.Scan(
@@ -238,6 +277,7 @@ func (q *Queries) UpdateReport(ctx context.Context, arg UpdateReportParams) (Rep
 		&i.Columns,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OrgID,
 	)
 	return i, err
 }

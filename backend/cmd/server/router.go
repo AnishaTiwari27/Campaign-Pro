@@ -107,6 +107,10 @@ func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup
 			// handler runs, so every read below inherits the caller's
 			// visibility. A client with no grants sees nothing, which is
 			// the safe end of the switch.
+			// The tenant wall goes on before the client narrowing, and
+			// before any handler: everything below reads inside one
+			// organisation or reads nothing at all.
+			r.Use(orgScope(logger))
 			r.Use(clientScope(grants, logger))
 			r.Get("/health", health)
 			for _, m := range modules {
@@ -160,6 +164,35 @@ func clientScope(grants grantLookup, logger *slog.Logger) func(http.Handler) htt
 				ids = nil
 			}
 			ctx := scope.WithCampaigns(r.Context(), scope.Campaigns{Restricted: true, IDs: ids})
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// orgPrincipal is the one thing the tenant middleware asks of the session.
+type orgPrincipal interface {
+	Organisation() string
+}
+
+// orgScope confines the request to the signed-in user's organisation.
+//
+// A principal that cannot name one is a bug rather than a permission
+// problem — every user row carries org_id NOT NULL — so it refuses the
+// request instead of carrying on unscoped. Letting it through would mean
+// a context with no organisation, and while the queries treat that as
+// "match nothing", relying on that as the only defence puts the whole
+// boundary on one empty string.
+func orgScope(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			v, _ := httpx.UserFromContext(r.Context())
+			p, ok := v.(orgPrincipal)
+			if !ok || p.Organisation() == "" {
+				logger.Error("request principal carries no organisation", "path", r.URL.Path)
+				httpx.WriteForbidden(w, "this account is not attached to an organisation")
+				return
+			}
+			ctx := scope.WithOrg(r.Context(), scope.Org{ID: p.Organisation()})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

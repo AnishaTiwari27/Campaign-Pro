@@ -574,6 +574,7 @@ type Campaign struct {
 	CreatorID   pgtype.Text        `json:"creator_id"`
 	BrandDomain pgtype.Text        `json:"brand_domain"`
 	FlightDays  pgtype.Int4        `json:"flight_days"`
+	OrgID       string             `json:"org_id"`
 }
 
 type ClientCampaignGrant struct {
@@ -612,6 +613,13 @@ type Creator struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 	ImageUrl        pgtype.Text        `json:"image_url"`
+	OrgID           string             `json:"org_id"`
+}
+
+type Organization struct {
+	ID        string             `json:"id"`
+	Name      string             `json:"name"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type Report struct {
@@ -625,6 +633,7 @@ type Report struct {
 	Columns      []string           `json:"columns"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	OrgID        string             `json:"org_id"`
 }
 
 type ReportRun struct {
@@ -654,4 +663,5 @@ type User struct {
 	PasswordHash pgtype.Text        `json:"password_hash"`
 	IsAgency     bool               `json:"is_agency"`
 	LastLoginAt  pgtype.Timestamptz `json:"last_login_at"`
+	OrgID        string             `json:"org_id"`
 }

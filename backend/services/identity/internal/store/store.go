@@ -8,6 +8,7 @@ import (
 
 	"campaigntrackerpro/db/gen"
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/identity"
 
 	"github.com/jackc/pgx/v5"
@@ -33,7 +34,7 @@ type authUser struct {
 }
 
 func toUser(id pgtype.UUID, email, name string, role gen.UserRoleT, isAgency bool,
-	hash pgtype.Text, created pgtype.Timestamptz) authUser {
+	hash pgtype.Text, created pgtype.Timestamptz, orgID string) authUser {
 	return authUser{
 		User: identity.User{
 			ID:        database.UuidToString(id),
@@ -41,6 +42,7 @@ func toUser(id pgtype.UUID, email, name string, role gen.UserRoleT, isAgency boo
 			Name:      name,
 			Role:      identity.Role(role),
 			IsAgency:  isAgency,
+			OrgID:     orgID,
 			CreatedAt: database.TimeOf(created),
 		},
 		PasswordHash: database.TextOrEmpty(hash),
@@ -55,7 +57,7 @@ func (s *Store) UserForAuth(ctx context.Context, email string) (identity.User, s
 		}
 		return identity.User{}, "", err
 	}
-	u := toUser(r.ID, r.Email, r.Name, r.Role, r.IsAgency, r.PasswordHash, r.CreatedAt)
+	u := toUser(r.ID, r.Email, r.Name, r.Role, r.IsAgency, r.PasswordHash, r.CreatedAt, r.OrgID)
 	return u.User, u.PasswordHash, nil
 }
 
@@ -69,7 +71,7 @@ func (s *Store) UserForSession(ctx context.Context, token string) (identity.User
 		}
 		return identity.User{}, err
 	}
-	return toUser(r.ID, r.Email, r.Name, r.Role, r.IsAgency, r.PasswordHash, r.CreatedAt).User, nil
+	return toUser(r.ID, r.Email, r.Name, r.Role, r.IsAgency, r.PasswordHash, r.CreatedAt, r.OrgID).User, nil
 }
 
 func (s *Store) CreateSession(ctx context.Context, token, userID, userAgent, ip string) error {
@@ -101,15 +103,30 @@ func (s *Store) TouchLogin(ctx context.Context, userID string) error {
 }
 
 func (s *Store) SetPassword(ctx context.Context, userID, hash string) error {
+	sys, org := orgParams(ctx)
 	uid, err := database.UuidParam(userID)
 	if err != nil {
 		return err
 	}
-	return s.db.Queries.SetUserPassword(ctx, gen.SetUserPasswordParams{ID: uid, PasswordHash: database.TextParam(hash)})
+	return s.db.Queries.SetUserPassword(ctx, gen.SetUserPasswordParams{
+		OrgSystem: sys, OrgID: org, ID: uid, PasswordHash: database.TextParam(hash)})
 }
 
 // PurgeExpired clears sessions past their expiry. Expired sessions are
 // already rejected on read; this just stops the table growing forever.
 func (s *Store) PurgeExpired(ctx context.Context) error {
 	return s.db.Queries.DeleteExpiredSessions(ctx)
+}
+
+// orgParams turns the request's tenant into query parameters. Every
+// statement touching an org-owned table takes these; platform/arch's
+// tenancy test fails the build if one is added that does not.
+//
+// A system context spans organisations, which is right for the worker,
+// the seeder and the CLI. Anything else is confined to one, and an
+// unresolved organisation is the empty string — which matches no row, so
+// forgetting to set it yields an empty result rather than a leak.
+func orgParams(ctx context.Context) (bool, string) {
+	o := scope.OrgFrom(ctx)
+	return o.System, o.ID
 }

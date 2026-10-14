@@ -17,6 +17,7 @@
 package main
 
 import (
+	"campaigntrackerpro/platform/scope"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -62,7 +63,9 @@ func main() {
 		}
 	}
 
-	ctx := context.Background()
+	// A CLI invocation is not a request. It creates the account in the
+	// default organisation; multi-org provisioning is a separate job.
+	ctx := scope.SystemOrgIn(context.Background(), scope.DefaultOrg)
 	cfg := config.Load()
 	// Nothing this command does is worth logging; errors are reported to the
 	// operator on stderr instead.

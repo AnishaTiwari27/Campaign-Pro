@@ -31,42 +31,49 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteExpiredSessions(ctx context.Context) error
 	DeleteGrantsForUser(ctx context.Context, userID pgtype.UUID) error
-	DeleteReport(ctx context.Context, id pgtype.UUID) error
+	DeleteReport(ctx context.Context, arg DeleteReportParams) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
 	// FestivalReach groups analysed creatives by the festival they were cut
 	// for. The empty-festival row is evergreen work, and is the baseline every
 	// tagged group gets compared against.
 	FestivalReach(ctx context.Context) ([]FestivalReachRow, error)
-	GetCampaign(ctx context.Context, id string) (Campaign, error)
-	GetCreator(ctx context.Context, id string) (Creator, error)
+	// The organisation predicate on every statement below is the tenant
+	// boundary. @org_system is true only for callers that are not requests —
+	// the report worker, the seeder, the CLI — which legitimately span
+	// organisations. For a request it is false, and org_id is the signed-in
+	// user's; an unresolved organisation is the empty string, which matches
+	// nothing, so the failure mode of forgetting it is a blank page rather
+	// than another tenant's data.
+	GetCampaign(ctx context.Context, arg GetCampaignParams) (Campaign, error)
+	GetCreator(ctx context.Context, arg GetCreatorParams) (Creator, error)
 	GetLastReportRun(ctx context.Context, reportID pgtype.UUID) (ReportRun, error)
-	GetReport(ctx context.Context, id pgtype.UUID) (Report, error)
-	GetUser(ctx context.Context, id pgtype.UUID) (User, error)
+	GetReport(ctx context.Context, arg GetReportParams) (Report, error)
+	GetUser(ctx context.Context, arg GetUserParams) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error)
 	GetUserForAuth(ctx context.Context, email string) (GetUserForAuthRow, error)
 	GrantCampaign(ctx context.Context, arg GrantCampaignParams) error
 	ListAllCreatives(ctx context.Context) ([]Creative, error)
 	ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error)
-	ListCampaigns(ctx context.Context) ([]Campaign, error)
-	ListCampaignsByCreator(ctx context.Context, creatorID pgtype.Text) ([]Campaign, error)
+	ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([]Campaign, error)
+	ListCampaignsByCreator(ctx context.Context, arg ListCampaignsByCreatorParams) ([]Campaign, error)
 	// ListCampaignsFiltered applies every /campaigns filter in one query;
 	// sort, pagination and derived fields (pace, cpm, index, trend) are done
 	// in Go since sqlc can't parameterize ORDER BY columns.
 	ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFilteredParams) ([]Campaign, error)
 	ListCreativesByCampaign(ctx context.Context, campaignID string) ([]Creative, error)
-	ListCreators(ctx context.Context) ([]Creator, error)
-	ListEnabledReports(ctx context.Context) ([]Report, error)
-	ListEnabledReportsByCadence(ctx context.Context, cadence ReportCadenceT) ([]Report, error)
-	ListFlaggedCampaigns(ctx context.Context) ([]Campaign, error)
+	ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error)
+	ListEnabledReports(ctx context.Context, arg ListEnabledReportsParams) ([]Report, error)
+	ListEnabledReportsByCadence(ctx context.Context, arg ListEnabledReportsByCadenceParams) ([]Report, error)
+	ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error)
 	ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
-	ListPendingCampaigns(ctx context.Context) ([]Campaign, error)
+	ListPendingCampaigns(ctx context.Context, arg ListPendingCampaignsParams) ([]Campaign, error)
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
-	ListReports(ctx context.Context) ([]Report, error)
-	ListRunningCampaigns(ctx context.Context) ([]Campaign, error)
+	ListReports(ctx context.Context, arg ListReportsParams) ([]Report, error)
+	ListRunningCampaigns(ctx context.Context, arg ListRunningCampaignsParams) ([]Campaign, error)
 	ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error)
-	ListUsers(ctx context.Context) ([]User, error)
+	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	// OverviewTotals replaces loading every campaign and summing it in Go.
 	// One pass in the database instead of one row per campaign over the
 	// wire, decoded into a slice, walked once. At the current fixture size

@@ -12,8 +12,8 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (email, name, role, can_approve)
-VALUES ($1, $2, $3, $4) RETURNING id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at
+INSERT INTO users (email, name, role, can_approve, org_id)
+VALUES ($1, $2, $3, $4, $5) RETURNING id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at, org_id
 `
 
 type CreateUserParams struct {
@@ -21,6 +21,7 @@ type CreateUserParams struct {
 	Name       string    `json:"name"`
 	Role       UserRoleT `json:"role"`
 	CanApprove bool      `json:"can_approve"`
+	OrgID      string    `json:"org_id"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -29,6 +30,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Name,
 		arg.Role,
 		arg.CanApprove,
+		arg.OrgID,
 	)
 	var i User
 	err := row.Scan(
@@ -41,6 +43,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.IsAgency,
 		&i.LastLoginAt,
+		&i.OrgID,
 	)
 	return i, err
 }
@@ -55,11 +58,17 @@ func (q *Queries) DeleteGrantsForUser(ctx context.Context, userID pgtype.UUID) e
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users WHERE id = $1
+SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at, org_id FROM users WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
-func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
-	row := q.db.QueryRow(ctx, getUser, id)
+type GetUserParams struct {
+	ID        pgtype.UUID `json:"id"`
+	OrgSystem bool        `json:"org_system"`
+	OrgID     string      `json:"org_id"`
+}
+
+func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, arg.ID, arg.OrgSystem, arg.OrgID)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -71,12 +80,13 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
 		&i.PasswordHash,
 		&i.IsAgency,
 		&i.LastLoginAt,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users WHERE email = $1
+SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at, org_id FROM users WHERE email = $1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -92,6 +102,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.IsAgency,
 		&i.LastLoginAt,
+		&i.OrgID,
 	)
 	return i, err
 }
@@ -136,11 +147,16 @@ func (q *Queries) ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at FROM users ORDER BY created_at ASC
+SELECT id, email, name, role, can_approve, created_at, password_hash, is_agency, last_login_at, org_id FROM users WHERE ($1::bool OR org_id = $2::text) ORDER BY created_at ASC
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsers)
+type ListUsersParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsers, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -158,6 +174,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.PasswordHash,
 			&i.IsAgency,
 			&i.LastLoginAt,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}

@@ -16,6 +16,7 @@ import (
 	"campaigntrackerpro/platform/config"
 	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/platform/mail"
+	"campaigntrackerpro/platform/scope"
 	analytics "campaigntrackerpro/services/analytics/module"
 	campaigns "campaigntrackerpro/services/campaigns/module"
 	creators "campaigntrackerpro/services/creators/module"
@@ -91,7 +92,10 @@ func main() {
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
 		mail.LogMailer{Logger: logger}, logger, workerTick)
 
-	go reportsMod.Run(ctx)
+	// The worker is not a request and is not confined to one tenant: it
+	// runs every organisation's due reports. Without this it would
+	// inherit the zero org, match nothing, and silently stop firing.
+	go reportsMod.Run(scope.SystemOrg(ctx))
 
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(),
 		rateLimits{APIPerMinute: cfg.RateAPIPerMinute, AuthPerMinute: cfg.RateAuthPerMinute}, logger,

@@ -49,3 +49,59 @@ func (c Campaigns) Allows(id string) bool {
 	}
 	return false
 }
+
+type orgKey struct{}
+
+// Org is the tenant boundary: a hard wall that applies to every account,
+// admins included. It is a different thing from Campaigns above, which
+// narrows what one client account sees *inside* an organisation.
+//
+// System is the escape hatch for callers that are not requests — the
+// report worker, the seeder, the CLI. They legitimately operate across
+// organisations, and the alternative (inventing a request context for
+// the worker) would mean the worker could only ever serve one tenant.
+//
+// The zero value is neither: no id and not system, which every query
+// below reads as "matches nothing". That is deliberate. A request whose
+// organisation could not be resolved must return an empty screen, not
+// somebody else's book of business — the failure mode of forgetting to
+// set this has to be a blank page, never a leak.
+type Org struct {
+	ID     string
+	System bool
+}
+
+// WithOrg attaches the tenant to the context.
+func WithOrg(ctx context.Context, o Org) context.Context {
+	return context.WithValue(ctx, orgKey{}, o)
+}
+
+// DefaultOrg is the organisation every existing row was backfilled into
+// by the tenancy migration, and the one a CLI or seeder writes to unless
+// told otherwise.
+const DefaultOrg = "default"
+
+// SystemOrg marks a context as running outside any request, so its reads
+// are not confined to one tenant. Used by the report worker, which runs
+// every organisation's due reports.
+//
+// It names no organisation, which is right for a pure reader and wrong
+// for anything that inserts: a write has to say which tenant owns the
+// row, and an insert under this context fails the foreign key rather
+// than landing somewhere arbitrary. Writers use SystemOrgIn.
+func SystemOrg(ctx context.Context) context.Context {
+	return WithOrg(ctx, Org{System: true})
+}
+
+// SystemOrgIn is SystemOrg for a caller that also writes: reads span
+// organisations, and anything inserted belongs to the one named.
+func SystemOrgIn(ctx context.Context, orgID string) context.Context {
+	return WithOrg(ctx, Org{ID: orgID, System: true})
+}
+
+// OrgFrom reads the tenant back. An absent org is the zero value, which
+// matches nothing — see the note on Org.
+func OrgFrom(ctx context.Context) Org {
+	o, _ := ctx.Value(orgKey{}).(Org)
+	return o
+}

@@ -12,9 +12,9 @@ import (
 )
 
 const createCreator = `-- name: CreateCreator :one
-INSERT INTO creators (id, name, role, initials, category, region, tier, followers, primary_platform, languages)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url
+INSERT INTO creators (id, name, role, initials, category, region, tier, followers, primary_platform, languages, org_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id
 `
 
 type CreateCreatorParams struct {
@@ -28,6 +28,7 @@ type CreateCreatorParams struct {
 	Followers       int64        `json:"followers"`
 	PrimaryPlatform string       `json:"primary_platform"`
 	Languages       []string     `json:"languages"`
+	OrgID           string       `json:"org_id"`
 }
 
 func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (Creator, error) {
@@ -42,6 +43,7 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 		arg.Followers,
 		arg.PrimaryPlatform,
 		arg.Languages,
+		arg.OrgID,
 	)
 	var i Creator
 	err := row.Scan(
@@ -58,16 +60,23 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ImageUrl,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const getCreator = `-- name: GetCreator :one
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url FROM creators WHERE id = $1
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id FROM creators WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
-func (q *Queries) GetCreator(ctx context.Context, id string) (Creator, error) {
-	row := q.db.QueryRow(ctx, getCreator, id)
+type GetCreatorParams struct {
+	ID        string `json:"id"`
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) GetCreator(ctx context.Context, arg GetCreatorParams) (Creator, error) {
+	row := q.db.QueryRow(ctx, getCreator, arg.ID, arg.OrgSystem, arg.OrgID)
 	var i Creator
 	err := row.Scan(
 		&i.ID,
@@ -83,16 +92,23 @@ func (q *Queries) GetCreator(ctx context.Context, id string) (Creator, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.ImageUrl,
+		&i.OrgID,
 	)
 	return i, err
 }
 
 const listCampaignsByCreator = `-- name: ListCampaignsByCreator :many
-SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days FROM campaigns WHERE creator_id = $1 ORDER BY created_at DESC
+SELECT id, name, subject_type, role, initials, category, region, ad_type, platform, status, days_running, reach, spend, budget, frequency, approval, curve_shape, flag_reason, created_at, updated_at, creator_id, brand_domain, flight_days, org_id FROM campaigns WHERE creator_id = $1 AND ($2::bool OR org_id = $3::text) ORDER BY created_at DESC
 `
 
-func (q *Queries) ListCampaignsByCreator(ctx context.Context, creatorID pgtype.Text) ([]Campaign, error) {
-	rows, err := q.db.Query(ctx, listCampaignsByCreator, creatorID)
+type ListCampaignsByCreatorParams struct {
+	CreatorID pgtype.Text `json:"creator_id"`
+	OrgSystem bool        `json:"org_system"`
+	OrgID     string      `json:"org_id"`
+}
+
+func (q *Queries) ListCampaignsByCreator(ctx context.Context, arg ListCampaignsByCreatorParams) ([]Campaign, error) {
+	rows, err := q.db.Query(ctx, listCampaignsByCreator, arg.CreatorID, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -124,6 +140,7 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, creatorID pgtype.T
 			&i.CreatorID,
 			&i.BrandDomain,
 			&i.FlightDays,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}
@@ -136,11 +153,16 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, creatorID pgtype.T
 }
 
 const listCreators = `-- name: ListCreators :many
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url FROM creators ORDER BY followers DESC
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id FROM creators WHERE ($1::bool OR org_id = $2::text) ORDER BY followers DESC
 `
 
-func (q *Queries) ListCreators(ctx context.Context) ([]Creator, error) {
-	rows, err := q.db.Query(ctx, listCreators)
+type ListCreatorsParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error) {
+	rows, err := q.db.Query(ctx, listCreators, arg.OrgSystem, arg.OrgID)
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +184,7 @@ func (q *Queries) ListCreators(ctx context.Context) ([]Creator, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.ImageUrl,
+			&i.OrgID,
 		); err != nil {
 			return nil, err
 		}

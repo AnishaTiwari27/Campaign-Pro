@@ -5,6 +5,7 @@
 package main
 
 import (
+	"campaigntrackerpro/platform/scope"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
@@ -44,7 +45,9 @@ type campaignSeed struct {
 }
 
 func main() {
-	ctx := context.Background()
+	// The seeder writes the fixture organisation's data and is not a
+	// request, so it runs as a system caller.
+	ctx := scope.SystemOrgIn(context.Background(), scope.DefaultOrg)
 	cfg := config.Load()
 
 	pool, err := database.Connect(ctx, cfg.DatabaseURL)

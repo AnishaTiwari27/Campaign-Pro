@@ -36,7 +36,11 @@ type User struct {
 	Role  Role
 	// IsAgency users see every account. Client users see only the
 	// accounts granted to them.
-	IsAgency  bool
+	IsAgency bool
+	// OrgID is the tenant this account belongs to. Every read the request
+	// goes on to make is confined to it, so it travels on the principal
+	// rather than being looked up again per query.
+	OrgID     string
 	CreatedAt time.Time
 }
 
@@ -90,3 +94,8 @@ type CampaignChoice struct {
 	Name string
 	Meta string
 }
+
+// Organisation is what the tenant middleware reads off the principal.
+// A method rather than a bare field so the composition root can state
+// what it needs as an interface without importing this package.
+func (u User) Organisation() string { return u.OrgID }

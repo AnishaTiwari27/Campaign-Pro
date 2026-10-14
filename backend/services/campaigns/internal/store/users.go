@@ -35,7 +35,8 @@ func (s *Store) GetUserByEmail(ctx context.Context, email string) (campaigns.Use
 }
 
 func (s *Store) ListUsers(ctx context.Context) ([]campaigns.User, error) {
-	us, err := s.db.Queries.ListUsers(ctx)
+	sys, org := orgParams(ctx)
+	us, err := s.db.Queries.ListUsers(ctx, gen.ListUsersParams{OrgSystem: sys, OrgID: org})
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +48,9 @@ func (s *Store) ListUsers(ctx context.Context) ([]campaigns.User, error) {
 }
 
 func (s *Store) CreateUser(ctx context.Context, email, name, role string, canApprove bool) (campaigns.User, error) {
+	_, org := orgParams(ctx)
 	u, err := s.db.Queries.CreateUser(ctx, gen.CreateUserParams{
+		OrgID: org,
 		Email: email, Name: name, Role: gen.UserRoleT(role), CanApprove: canApprove,
 	})
 	if err != nil {

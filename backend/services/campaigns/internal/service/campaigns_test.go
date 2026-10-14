@@ -17,6 +17,7 @@ import (
 
 	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/platform/httpx"
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/campaigns/internal/store"
 
 	"github.com/stretchr/testify/require"
@@ -36,6 +37,13 @@ func testStore(t *testing.T) *store.Store {
 	return store.New(database.New(pool))
 }
 
+// testCtx is a background context inside the default organisation.
+// Fixtures have to be written into a real tenant now that campaigns
+// carry org_id, and reads have to name one to see them back.
+func testCtx() context.Context {
+	return scope.WithOrg(context.Background(), scope.Org{ID: scope.DefaultOrg})
+}
+
 func mkTestCampaign(id string, reach float64, spend, budget int64, approval campaigns.Approval, status campaigns.Status) campaigns.Campaign {
 	return campaigns.Campaign{
 		ID: id, Name: "Test " + id, SubjectType: campaigns.SubjectBrand, Initials: "TC",
@@ -48,7 +56,7 @@ func mkTestCampaign(id string, reach float64, spend, budget int64, approval camp
 func cleanup(t *testing.T, s *store.Store, ids ...string) {
 	t.Helper()
 	t.Cleanup(func() {
-		ctx := context.Background()
+		ctx := testCtx()
 		for _, id := range ids {
 			_ = s.Exec(ctx, `DELETE FROM campaigns WHERE id = $1`, id)
 		}
@@ -60,7 +68,7 @@ func cleanup(t *testing.T, s *store.Store, ids ...string) {
 // against a write the database would have rejected in production.
 func testActor(t *testing.T, s *store.Store) Actor {
 	t.Helper()
-	ctx := context.Background()
+	ctx := testCtx()
 	email := fmt.Sprintf("svctest-%s-%d@example.test", t.Name(), time.Now().UnixNano())
 	u, err := s.CreateUser(ctx, email, "Svctest Reviewer", "approver", true)
 	require.NoError(t, err)
@@ -76,7 +84,7 @@ func testActor(t *testing.T, s *store.Store) Actor {
 
 func TestCampaignsListFilterSortPage(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	ids := []string{"svctest-a", "svctest-b", "svctest-c"}
@@ -123,7 +131,7 @@ func TestCampaignsListFilterSortPage(t *testing.T) {
 
 func TestCampaignsDecisionApproveRejectReopen(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	id := "svctest-decision"
@@ -170,7 +178,7 @@ func TestCampaignsDecisionApproveRejectReopen(t *testing.T) {
 // how an approver responds to an over-budget campaign.
 func TestDecisionBlockedOverBudget(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 	actor := testActor(t, s)
 
@@ -221,7 +229,7 @@ func TestDecisionBlockedOverBudget(t *testing.T) {
 // of their selection went through.
 func TestBulkDecisionBlockedIsAllOrNothing(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 	actor := testActor(t, s)
 
@@ -248,7 +256,7 @@ func TestBulkDecisionBlockedIsAllOrNothing(t *testing.T) {
 
 func TestCampaignsPauseToggle(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	id := "svctest-pause"
@@ -277,7 +285,7 @@ func TestCampaignsPauseToggle(t *testing.T) {
 
 func TestCampaignsBulkDecision(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 
 	ids := []string{"svctest-bulk-1", "svctest-bulk-2"}
@@ -309,7 +317,7 @@ func TestCampaignsBulkDecision(t *testing.T) {
 
 func TestAnomalyDetectorFlagsAndClears(t *testing.T) {
 	s := testStore(t)
-	ctx := context.Background()
+	ctx := testCtx()
 	c := NewCampaigns(s)
 	detector := NewAnomalyDetector(c, slog.New(slog.NewTextHandler(io.Discard, nil)))
 
@@ -364,7 +372,7 @@ func TestGetDetailUnknownIDIsNotFound(t *testing.T) {
 func TestDecisionIsRefusedWhenItChangesNothing(t *testing.T) {
 	st := testStore(t)
 	c := NewCampaigns(st)
-	ctx := context.Background()
+	ctx := testCtx()
 
 	id := "svctest-nochange"
 	cleanup(t, st, id)
