@@ -77,6 +77,16 @@ type Config struct {
 	// limiter.
 	RateAPIPerMinute  int
 	RateAuthPerMinute int
+	// SMTP settings for scheduled report digests. MailMode picks the
+	// implementation: "log" writes the message to the log and is the
+	// default, "smtp" sends it. Deliberately opt-in — a misconfigured
+	// host that silently mails nobody is worse than one that plainly
+	// says it is in log mode.
+	SMTPHost string
+	SMTPPort string
+	SMTPUser string
+	SMTPPass string
+	MailFrom string
 }
 
 func Load() Config {
@@ -93,6 +103,11 @@ func Load() Config {
 		AllowSignup:          getenv("ALLOW_SIGNUP", "true") == "true",
 		RateAPIPerMinute:     getint("RATE_API_PER_MINUTE", 600),
 		RateAuthPerMinute:    getint("RATE_AUTH_PER_MINUTE", 30),
+		SMTPHost:             os.Getenv("SMTP_HOST"),
+		SMTPPort:             getenv("SMTP_PORT", "587"),
+		SMTPUser:             os.Getenv("SMTP_USERNAME"),
+		SMTPPass:             os.Getenv("SMTP_PASSWORD"),
+		MailFrom:             getenv("MAIL_FROM", "reports@campaigntracker.local"),
 	}
 }
 

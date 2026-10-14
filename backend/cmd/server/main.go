@@ -90,7 +90,7 @@ func main() {
 	endorsementsMod := endorsements.New(logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
-		mail.LogMailer{Logger: logger}, logger, workerTick)
+		mailerFor(cfg, logger), logger, workerTick)
 
 	// The worker is not a request and is not confined to one tenant: it
 	// runs every organisation's due reports. Without this it would
@@ -124,4 +124,24 @@ func main() {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shutdownCtx)
+}
+
+// mailerFor picks the delivery implementation. Log mode is the default
+// and stays the default: a deployment with no SMTP configured should
+// say so in its logs rather than appear to be sending digests that
+// nobody receives.
+func mailerFor(cfg config.Config, logger *slog.Logger) mail.Mailer {
+	if cfg.MailMode != "smtp" {
+		return mail.LogMailer{Logger: logger}
+	}
+	if cfg.SMTPHost == "" {
+		logger.Error("MAIL_MODE=smtp but SMTP_HOST is unset — falling back to log mode")
+		return mail.LogMailer{Logger: logger}
+	}
+	logger.Info("sending report digests over smtp", "host", cfg.SMTPHost, "from", cfg.MailFrom)
+	return mail.SMTPMailer{
+		Host: cfg.SMTPHost, Port: cfg.SMTPPort,
+		Username: cfg.SMTPUser, Password: cfg.SMTPPass,
+		From: cfg.MailFrom, Timeout: 30 * time.Second,
+	}
 }
