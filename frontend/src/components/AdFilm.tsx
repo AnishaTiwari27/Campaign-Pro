@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { AdFilm as AdFilmData } from "../data/adFilms";
+import { adFilmThumb, type AdFilm as AdFilmData } from "../data/adFilms";
 import "./AdFilm.css";
 
 /** The campaign's actual ad film, played in place.
@@ -30,13 +30,13 @@ export function AdFilm({
   const [playing, setPlaying] = useState(false);
   // maxres does not exist for every upload — plenty of ad films predate
   // it — so a miss falls back to the size that always does.
-  const [thumb, setThumb] = useState(`https://i.ytimg.com/vi/${film.id}/maxresdefault.jpg`);
+  const [thumb, setThumb] = useState(adFilmThumb(film.id, "hero"));
 
   // A different campaign is a different film: stop the old one rather
   // than leave it playing under new numbers.
   useEffect(() => {
     setPlaying(false);
-    setThumb(`https://i.ytimg.com/vi/${film.id}/maxresdefault.jpg`);
+    setThumb(adFilmThumb(film.id, "hero"));
   }, [film.id]);
 
   useEffect(() => {
@@ -67,7 +67,8 @@ export function AdFilm({
               src={thumb}
               alt=""
               loading="lazy"
-              onError={() => setThumb(`https://i.ytimg.com/vi/${film.id}/hqdefault.jpg`)}
+              // hq720 keeps the 16:9 frame; hqdefault would letterbox it.
+              onError={() => setThumb(`https://i.ytimg.com/vi/${film.id}/hq720.jpg`)}
             />
             <span className="ad-film-scrim" aria-hidden="true" />
             <span className="ad-film-play" aria-hidden="true">

@@ -121,3 +121,17 @@ export const AD_FILMS: Record<string, AdFilm> = {
 export function adFilmFor(campaignId: string): AdFilm | undefined {
   return AD_FILMS[campaignId];
 }
+
+/** A still from the film, served by YouTube.
+ *
+ *  Size matters more than it looks. `hqdefault` is 480x360 — a 4:3
+ *  frame with black bars baked in for a 16:9 video — so it is the
+ *  wrong default despite being the one that always exists.
+ *  `mqdefault` is 320x180, genuinely 16:9, and also always exists,
+ *  which makes it right for a tile. `maxresdefault` is 1280x720 but
+ *  is missing on plenty of older uploads, so anything using it needs
+ *  a fallback.
+ */
+export function adFilmThumb(id: string, size: "tile" | "hero"): string {
+  return `https://i.ytimg.com/vi/${id}/${size === "hero" ? "maxresdefault" : "mqdefault"}.jpg`;
+}

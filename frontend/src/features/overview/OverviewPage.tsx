@@ -28,15 +28,31 @@ export function OverviewPage() {
   return (
     <div className="overview-page">
       <div className="page-header">
-        <div>
+        <div className="overview-head">
           <h1>What needs you today</h1>
-          <p className="overview-lede">
-            {data.pendingCount} campaign{data.pendingCount === 1 ? "" : "s"} waiting on a decision, {data.flaggedCount} flagged by
-            anomaly detection.{" "}
-            <span className="overview-provenance">
-              Campaign figures are seeded demo data — no ad platform is connected yet.
+          {/* The two numbers were buried in a sentence that also
+              carried the demo-data caveat, so the counts the page
+              exists to report read as prose and the caveat read as
+              part of them. Split: the counts are the figures, stated
+              as figures, and the caveat gets its own line below. */}
+          <div className="overview-counts">
+            <Link to="/approvals" className="overview-count overview-count-action">
+              <span className="overview-count-n">{data.pendingCount}</span>
+              <span className="overview-count-label">
+                waiting on
+                <br />
+                your decision
+              </span>
+            </Link>
+            <span className="overview-count">
+              <span className="overview-count-n overview-count-flag">{data.flaggedCount}</span>
+              <span className="overview-count-label">
+                flagged by
+                <br />
+                anomaly detection
+              </span>
             </span>
-          </p>
+          </div>
         </div>
         <div className="page-header-actions">
           <a className="btn" href={exportUrl({})}>
@@ -49,6 +65,14 @@ export function OverviewPage() {
           )}
         </div>
       </div>
+
+      {/* Below the header rather than inside the sentence: it qualifies
+          every number on the page, not just the two above it, and it
+          should not have to be read mid-clause to be noticed. */}
+      <p className="overview-provenance">
+        <span aria-hidden="true">●</span> Campaign figures are seeded demo data — no ad platform is
+        connected yet.
+      </p>
 
       {!hasAnything ? (
         <EmptyState title="All quiet" description="No campaigns are waiting on you or flagged right now." />

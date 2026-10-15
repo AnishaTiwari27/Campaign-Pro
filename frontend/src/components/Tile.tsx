@@ -6,6 +6,7 @@ import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
 import { useSession } from "../api/auth";
 import { useCreatorIndex } from "../api/creatorPhotos";
+import { adFilmFor, adFilmThumb } from "../data/adFilms";
 import { approvalBlockOf } from "../lib/metrics";
 import "./Tile.css";
 
@@ -30,6 +31,11 @@ export function Tile({
   // The server refuses to approve an over-budget campaign, so the inline
   // Approve is offered only where it would actually succeed.
   const approvalBlock = approvalBlockOf(campaign.spend, campaign.budget);
+  // The same film the spotlight plays, as a still. On a creator
+  // campaign this is not a departure from showing the person — the
+  // film chosen for them is one they front, so the frame is their face
+  // in the brand's actual ad rather than a portrait beside a logo.
+  const film = adFilmFor(campaign.id);
 
   return (
     <div
@@ -52,15 +58,39 @@ export function Tile({
           reads better as text under the image, where it needs no
           treatment to be readable. */}
       <div className="tile-art">
-        <SubjectImage
-          name={campaign.name}
-          imageUrl={creator?.imageUrl}
-          initials={campaign.initials}
-          kind={campaign.subjectType}
-          domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
-          seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
-          fill
-        />
+        {film ? (
+          // Two copies of the same still: one blurred and cropped to
+          // fill the box, the real one contained on top. The tile is
+          // taller than 16:9, so cropping the still to fit was cutting
+          // the ends off the ad's own copy — "Diwali gifts, lights…"
+          // arrived as "li gifts, lights". Nothing is lost this way and
+          // the box is still filled.
+          <>
+            <img
+              className="tile-film-fill"
+              src={adFilmThumb(film.id, "tile")}
+              alt=""
+              aria-hidden="true"
+              loading="lazy"
+            />
+            <img
+              className="tile-film"
+              src={adFilmThumb(film.id, "tile")}
+              alt=""
+              loading="lazy"
+            />
+          </>
+        ) : (
+          <SubjectImage
+            name={campaign.name}
+            imageUrl={creator?.imageUrl}
+            initials={campaign.initials}
+            kind={campaign.subjectType}
+            domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
+            seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
+            fill
+          />
+        )}
       </div>
 
       <div className="tile-body">

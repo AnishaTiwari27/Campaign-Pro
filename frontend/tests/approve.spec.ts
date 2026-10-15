@@ -21,11 +21,12 @@ test("approving from overview updates the queue, the rail badge and the overview
   await signIn(page, APPROVER);
   await page.goto("/overview");
 
-  const lede = page.locator(".overview-lede");
+  // The pending count moved out of the lede sentence and into its own
+  // figure, so read it as a number rather than out of prose.
+  const lede = page.locator(".overview-count-action .overview-count-n");
   await expect(lede).toBeVisible();
 
-  const ledeText = (await lede.textContent()) ?? "";
-  const pendingBefore = Number(ledeText.match(/^(\d+)\s+campaign/)?.[1] ?? "0");
+  const pendingBefore = Number((await lede.textContent()) ?? "0");
   expect(pendingBefore, "seed the database before running e2e (make seed)").toBeGreaterThan(0);
 
   const badge = page.locator(".rail-item-badge");
@@ -56,12 +57,14 @@ test("approving from overview updates the queue, the rail badge and the overview
 
   // And the overview agrees after a refetch.
   await page.goto("/overview");
-  await expect(page.locator(".overview-lede")).toContainText(`${pendingBefore - 1} campaign`);
+  await expect(page.locator(".overview-count-action .overview-count-n")).toHaveText(
+    String(pendingBefore - 1),
+  );
 });
 
 // The "Your call" ribbon decides in place, so a decision never requires
 // leaving Overview at all.
-test("approving inline from the Your call ribbon updates the ribbon, badge and lede", async ({ page }) => {
+test("approving inline from the Your call ribbon updates the ribbon, badge and the pending count", async ({ page }) => {
   await signIn(page, APPROVER);
   await page.goto("/overview");
 
@@ -86,6 +89,8 @@ test("approving inline from the Your call ribbon updates the ribbon, badge and l
     await expect(tiles.first().locator(".tile-name")).not.toHaveText(firstName ?? "");
     await expect(ribbon.locator(".ribbon-count")).toHaveText(String(before - 1));
   }
-  await expect(page.locator(".overview-lede")).toContainText(`${before - 1} campaign`);
+  await expect(page.locator(".overview-count-action .overview-count-n")).toHaveText(
+    String(before - 1),
+  );
   await expect(page.locator(".rail-item-badge")).toHaveText(String(before - 1));
 });

@@ -142,3 +142,28 @@
 .tile-profile:focus-visible {
   text-decoration: underline;
 }
+
+/* The still, whole. Contained rather than cropped, because an ad's
+   wording is part of the ad — and the tile is taller than 16:9, so
+   cover was taking a third of the width off the sides. */
+.tile-film {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* What fills the rest: the same frame, blurred and cropped, so the
+   band above and below the picture carries its colours instead of
+   sitting there as a grey letterbox. */
+.tile-film-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(16px) saturate(1.25) brightness(0.62);
+  transform: scale(1.18);
+}
