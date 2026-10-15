@@ -4,6 +4,11 @@ SHELL := /bin/bash
 # verified on a machine without Docker. `make dev-docker` runs the same
 # stack through docker-compose where Docker is available.
 DATABASE_URL ?= postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro?sslmode=disable
+# The DB-backed Go tests get their own database. They used to share the
+# one above with the Playwright suite, which truncates and reseeds on
+# startup: running both together wiped fixtures mid-test and produced
+# failures that looked like regressions until someone went and checked.
+TEST_DATABASE_URL ?= postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro_test?sslmode=disable
 PORT ?= 8090
 MIGRATIONS := backend/db/migrations
 
@@ -38,12 +43,16 @@ dev-docker:
 
 db-create:
 	createdb campaign_tracker_pro || true
+	createdb campaign_tracker_pro_test || true
 	psql -d campaign_tracker_pro -c "DO \$$\$$ BEGIN CREATE ROLE campaign_tracker_pro LOGIN PASSWORD 'campaign_tracker_pro_dev_pw'; EXCEPTION WHEN duplicate_object THEN NULL; END \$$\$$;"
 	psql -d campaign_tracker_pro -c "GRANT ALL ON SCHEMA public TO campaign_tracker_pro;"
 	psql -d campaign_tracker_pro -c "ALTER DATABASE campaign_tracker_pro OWNER TO campaign_tracker_pro;"
+	psql -d campaign_tracker_pro_test -c "GRANT ALL ON SCHEMA public TO campaign_tracker_pro;"
+	psql -d campaign_tracker_pro_test -c "ALTER DATABASE campaign_tracker_pro_test OWNER TO campaign_tracker_pro;"
 
 migrate:
 	migrate -path $(MIGRATIONS) -database "$(DATABASE_URL)" up
+	migrate -path $(MIGRATIONS) -database "$(TEST_DATABASE_URL)" up
 
 migrate-down:
 	migrate -path $(MIGRATIONS) -database "$(DATABASE_URL)" down 1
@@ -76,7 +85,7 @@ generate:
 test: test-go test-web test-e2e
 
 test-go:
-	cd backend && DATABASE_URL="$(DATABASE_URL)" go test ./...
+	cd backend && TEST_DATABASE_URL="$(TEST_DATABASE_URL)" go test ./...
 
 test-web:
 	cd frontend && npm run test

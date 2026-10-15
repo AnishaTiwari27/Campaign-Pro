@@ -1,0 +1,144 @@
+# Deployment
+
+Running this somewhere other than a laptop: what the image does, what
+has to be configured, and the free hosting path it was built against.
+
+## Deployment
+
+One container serves both halves. `npm run build` output is embedded into the
+Go binary (`backend/web`), which serves the API on `/api`, the health probe on
+`/health`, and the React app on everything else.
+
+This is not just tidy packaging. The session cookie is `SameSite=Lax` and the
+fetch client sends no cross-origin credentials, so hosting the frontend on a
+separate origin would break sign-in. Making that work would mean
+`SameSite=None` (weaker — that is what CSRF protection is), `AllowCredentials:
+true`, an origin allowlist and `credentials: "include"`. Same origin needs none
+of it, and because `client.ts` calls `/api` as a relative path, the frontend
+needs no build-time configuration at all.
+
+```
+make build          # frontend -> backend/web/dist -> ./bin/server
+./bin/server        # the whole app on one port
+```
+
+The same shape runs on any container host, so moving from a free tier to AWS
+(App Runner, ECS/Fargate, Elastic Beanstalk) is a hosting change, not a
+rewrite.
+
+### What the image does on boot
+
+1. **Checks configuration it cannot run without.** If `DATABASE_URL` is unset
+   on a managed host, the process logs that one sentence and exits 1 rather
+   than falling back to the development database and dialling a `localhost`
+   Postgres that is not there. A platform marker (`RENDER`, `FLY_APP_NAME`,
+   `DYNO`, `K_SERVICE`, and friends) is what distinguishes a deployment from
+   a laptop, where the fallback is a convenience and stays.
+2. **Applies migrations** from the embedded SQL, then serves. A deploy to a
+   blank database comes up with a schema and no separate tooling in the image.
+   It uses golang-migrate, the same tool as `make migrate`, so both share its
+   `schema_migrations` bookkeeping and cannot disagree. It takes a Postgres
+   advisory lock, so two instances starting together cannot both migrate.
+   This suits single-instance deployment; a multi-instance rollout should move
+   migration to a release-phase command so schema changes land before new code
+   serves traffic.
+3. **Logs the database it reached** — host, port, database and user, never the
+   password. A deploy quietly pointing at the wrong database is expensive to
+   notice any later than this.
+4. **Logs whether a frontend is embedded** (`"frontend":true`). An image built
+   without one serves a notice page on every route, which is far easier to
+   diagnose from one log line than from a blank tab.
+
+### Required configuration
+
+| Env var | Production value |
+|---|---|
+| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require`. Either of Neon's strings works: migrations are routed around a pooled host automatically (see below), while the app's pool uses the URL as given. Enter it bare — surrounding quotes and stray whitespace are stripped on load, so a value pasted out of a shell command still works |
+| `SECURE_COOKIES` | **`true`** — without it the session cookie ships without `Secure` |
+| `TZ` | `Asia/Kolkata` — every report cadence is computed in IST |
+| `PORT` | Whatever the platform injects; defaults to `8090` |
+| `ALLOW_SIGNUP` | `true` (the default) exposes the public signup page and `POST /api/auth/signup`. Set it to `false` to close registration once the accounts that should exist do — the route is then not registered at all, rather than registered and refusing |
+
+### Creating the first account
+
+**Never run `make seed` against a deployment.** It begins with
+`TRUNCATE audit_events, creatives, report_runs, reports, campaigns, creators,
+users` — it is a fixture loader, and it would erase production.
+
+There is no user-management endpoint yet, so accounts are made with
+`cmd/createuser`, which creates exactly one and touches nothing else. Run it
+from your machine against the deployment's database:
+
+```bash
+DATABASE_URL='postgres://...' go run ./cmd/createuser \
+  -email you@example.com -name 'Your Name' -role admin
+```
+
+It prints a generated password once. Re-running it for an existing email
+re-passwords that account, which is also the only way back in if a password is
+lost, since there is no reset flow. The binary is in the image as
+`createuser` too, for hosts that give you a shell.
+
+### Render + Neon (the free path)
+
+[`render.yaml`](render.yaml) declares the web service. The database is
+deliberately **not** on Render: its free Postgres expires 30 days after
+creation and is then deleted. Neon's free plan is permanent, so
+`DATABASE_URL` points there.
+
+**Setting `DATABASE_URL`, the one manual step.** The key is declared
+`sync: false`, which means Render never reads its value from `render.yaml` —
+a secret in the repository is worse than a step in a runbook. Render prompts
+for it once, when the Blueprint first creates the service. It is *not* filled
+in by a later Blueprint sync, so a service that predates the file, or one
+where the prompt was skipped, runs with it empty:
+
+```
+ERROR  invalid configuration  err="DATABASE_URL is not set, and this process
+       is running on a managed host where the local development fallback
+       cannot work. ..."
+==> Exited with status 1
+```
+
+The fix is the service's **Environment** tab → add `DATABASE_URL` → paste the
+Neon string (no quotes) → save, which redeploys. A healthy boot says so:
+
+```
+INFO  schema up to date      version=5
+INFO  database connected     host=ep-….aws.neon.tech port=5432 database=neondb user=…
+INFO  server listening       port=10000 frontend=true
+```
+
+If `host` there is `localhost`, the variable did not take effect; nothing else
+in the log is worth reading first.
+
+**On connection pooling.** golang-migrate serialises migrations with a
+session-scoped `pg_advisory_lock`, and Neon's pooled endpoint is PgBouncer in
+transaction-pooling mode, which does not keep a session pinned to one backend
+connection — the lock and its unlock can land on different ones, leaving it
+held by an idle connection while migrations hang. Pooling is still right for
+ordinary traffic, so `migrateURL` rewrites only the migration connection onto
+Neon's direct host and leaves the app's pool using `DATABASE_URL` as given.
+That means either Neon string can be pasted in without it being a trap.
+
+Known trade-off: Render's free tier sleeps after about 15 minutes idle and
+takes roughly a minute to wake. While it sleeps the in-process worker is not
+running, so scheduled reports do not fire on time and anomaly detection only
+runs while someone is using the app.
+
+[`.github/workflows/keep-awake.yml`](.github/workflows/keep-awake.yml) pings
+`/health` every 10 minutes to hold it open, which also serves as a crude
+uptime check. Treat it as a workaround rather than a fix: GitHub's scheduled
+runs are frequently 5-15 minutes late, so the service still naps sometimes;
+GitHub disables the schedule after 60 days without a commit; and holding one
+service awake uses about 730 of the free plan's 750 instance-hours a month,
+which fits for exactly one service. The actual fix is a paid instance.
+
+### Before scaling past one instance
+
+The anomaly detector and report scheduler run in-process on a 30-second
+ticker in `cmd/server/main.go`. Two instances means every scheduled report
+sends twice. Keep this at one instance until that work moves behind a lock or
+into a separate scheduler.
+
+---

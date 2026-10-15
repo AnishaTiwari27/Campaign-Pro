@@ -2,589 +2,116 @@
 
 An internal console for monitoring ad campaigns in the Indian market. It shows
 what's live, what's waiting on a decision, what anomaly detection has flagged,
-how campaigns compare against category benchmarks, and it emails scheduled
-CSV reports.
+how campaigns compare against category benchmarks, and it emails scheduled CSV
+reports.
 
 Go + chi + Postgres on the back, React + TypeScript + Vite on the front.
 
----
-
 ## Running it
 
-The verified path is native Postgres — the machine this was built on has no
-Docker, so `docker-compose.yml` and `backend/Dockerfile` (reachable via
-`make dev-docker`) are written to spec but have never been executed. Use them
-as a starting point, not a tested artifact.
-
 **Prerequisites:** Go 1.25+, Node 20+, PostgreSQL 16, and
-[`golang-migrate`](https://github.com/golang-migrate/migrate) (`brew install golang-migrate`).
-`sqlc` is only needed if you change the SQL (`brew install sqlc`).
+[`golang-migrate`](https://github.com/golang-migrate/migrate). `sqlc` is only
+needed if you change the SQL.
 
 ```bash
-make db-create   # creates the campaign_tracker_pro database + role
+make db-create   # creates the database + role
 make migrate     # applies backend/db/migrations
 make seed        # 35 campaigns, 7 creators, 3 reports, 3 users
 make dev         # api on :8090, web on :5173
 ```
 
-Then open the web dev server (Vite prints the port — 5173 unless taken) and
-sign in. `make seed` writes three accounts, all sharing one password that is a
-deliberately loud placeholder and should never reach a real deployment:
+`make seed` writes three accounts sharing one password,
+`demo-password-change-me` — a deliberately loud placeholder that must never
+reach a real deployment.
 
 | Email | Role | Can approve? |
 |---|---|---|
-| `$ADMIN_EMAIL` (default `anishatiwari695@gmail.com`) | admin | yes |
+| `$ADMIN_EMAIL` | admin | yes |
 | `approver@campaigntracker.test` | approver | yes |
-| `analyst@campaigntracker.test` | analyst | no — every decision control is hidden, and the API returns `403` |
+| `analyst@campaigntracker.test` | analyst | no — controls hidden, API returns `403` |
 
-Password for all three: `demo-password-change-me`.
+The verified path is native Postgres. `docker-compose.yml` and
+`backend/Dockerfile` are written to spec but have never been executed on this
+machine; treat them as a starting point rather than a tested artifact.
+
+## Make targets
 
 | Target | What it does |
 |---|---|
-| `make dev` | API and web together (`dev-api` / `dev-web` run one at a time) |
+| `make dev` | API and web together |
 | `make migrate` · `make migrate-down` | Apply migrations · roll back one |
 | `make seed` | Truncate and reseed demo data |
-| `make logos` | Re-fetch brand logos into `frontend/public/logos`. They are committed, so this is only needed when adding a brand — a build must not depend on fetching them |
-| `make test` | Go tests, Vitest, Playwright — **note this reseeds**, since `test-e2e` depends on `seed` |
-| `make lint` · `make fmt` | `go vet` + `gofmt` check + ESLint · rewrite with `gofmt` |
+| `make test` | Go, Vitest and Playwright — **reseeds on the way through** |
+| `make lint` · `make fmt` | `go vet` + `gofmt` + ESLint · rewrite with `gofmt` |
 | `make generate` | Regenerate sqlc code from `backend/db/queries` |
-| `make dev-docker` | The whole stack via docker-compose (untested — see above) |
+| `make verify-ingest SOURCE=…` | One real read-only call to an ad platform |
+| `make logos` | Re-fetch brand logos (committed, so rarely needed) |
 
-### Configuration
+## Configuration
 
-| Env var | Default |
-|---|---|
-| `DATABASE_URL` | `postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro?sslmode=disable` |
-| `PORT` | `8090` |
-| `TZ` | `Asia/Kolkata` |
-| `MAIL_MODE` | `log` (the only implementation; writes the send to the log) |
-| `SECURE_COOKIES` | `false` — must be `true` anywhere served over HTTPS, so the session cookie is not sent in clear |
-| `ADMIN_EMAIL` | `anishatiwari695@gmail.com` — the email `make seed` gives the admin account. Read by the seeder only; the running server does not treat it as privileged |
+Everything is environment variables with working defaults for local use. The
+only one with no sensible default is `DATABASE_URL` in a deployment.
 
----
-
-## Architecture
-
-```
-                ┌────────────────────────────────────┐
-  browser ────▶ │  frontend (Vite dev server :5173)  │
-                │  React 18 · TS · Router v6         │
-                │  TanStack Query · Zustand          │
-                └─────────────────┬──────────────────┘
-                                  │ /api proxied to :8090
-                                  ▼
-  ╔══ backend (:8090) ═══════════════════════════════════════════╗
-  ║  cmd/server   composition root — the only file that knows     ║
-  ║               all five services exist                         ║
-  ╟───────┬──────────┬──────────┬───────────┬────────────────────╢
-  ║   identity   campaigns   creators   analytics   reports       ║
-  ║   sessions,  the core    tier       overview,   cadence,      ║
-  ║   roles,     data +      metrics    benchmarks, scheduler,    ║
-  ║   login      formulas               regions,    run history   ║
-  ║                                     search                    ║
-  ║      each: contract · module/ (factory) · internal/{api,      ║
-  ║            service, store}                                    ║
-  ╟───────────────────────────────────────────────────────────────╢
-  ║  platform   config · database · httpx · mail · units · arch    ║
-  ║             shared by every service, aware of none of them     ║
-  ║  reports' worker ticks every 30s: anomaly detection, then      ║
-  ║  any report whose next occurrence has passed                   ║
-  ╚═══════════════════════════┬═══════════════════════════════════╝
-                              ▼
-                     ┌──────────────────┐
-                     │   Postgres 16    │
-                     └──────────────────┘
-```
-
-**The layering rule, per service:** the contract at the service root holds
-what crosses a boundary — the types siblings receive and every metric formula,
-importing nothing but the standard library so the formulas are unit-testable
-with no database. `internal/store` maps sqlc's generated structs onto contract
-types at the boundary, so no `pgtype` escapes it. `internal/service` composes
-the two and owns the sentinel errors. `internal/api` only parses requests and
-writes DTOs. Everything under `internal/` is unreachable from any other
-service, enforced by the Go toolchain rather than by convention.
-
-Full detail, including why this is one process rather than eight, is in
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-
-`frontend/src/lib/metrics.ts` mirrors `backend/services/campaigns/metrics.go` so the
-frontend can rebuild a campaign's reach curve for its chart without the API
-precomputing chart-shaped data. Both sides are tested against the same
-fixtures.
-
----
-
-## API
-
-Everything is under `/api` and returns JSON. Validation errors are
-`400 {error, field}`; a non-approver hitting a decision endpoint gets `403`;
-an approver trying to approve a campaign whose budget state forbids it gets
-`409` with the reason to show them (see **Approval guard**).
-
-| Method | Path | Purpose |
+| Variable | Default | Notes |
 |---|---|---|
-| POST | `/auth/login` | `{email, password}` → sets the session cookie. **The only route outside the session guard** — requiring a session to sign in would be circular |
-| POST | `/auth/logout` | Revokes the session server-side, then clears the cookie |
-| GET | `/campaigns` | List. Params: `q, type, category, region, adType, status, approval, range(7\|30), sort, dir, page, per`. Returns `{items, total, page, pages}` with pace, cpm, index and categoryIndex derived per row. |
-| GET | `/campaigns/:id` | Full record + creatives + audit + 5 similar + `position`/`total`/`prevId`/`nextId` within the caller's current filter+sort |
-| POST | `/campaigns/:id/decision` | `{action: approve\|reject\|reopen}` |
-| POST | `/campaigns/bulk-decision` | `{ids: [], action: approve\|reject}` |
-| POST | `/campaigns/:id/pause` | Toggles live ↔ paused |
-| POST | `/campaigns/:id/notes` | `{text}` → writes a user audit event |
-| GET | `/campaigns/anomalies` | Currently flagged campaigns |
-| GET | `/campaigns/export.csv` | Same filters as the list, as a CSV download |
-| GET | `/overview` | KPIs, sparkline series, spotlight, and the four ribbons |
-| GET | `/benchmark` | Category benchmarks + MED_ALL |
-| GET | `/creators` · `/creators/:id` | The roster with tier-normalised performance; detail adds that person's campaigns. Shown in the UI as **Influencers** — the route, package and table keep the `creators` name |
-| GET | `/regions` · `/regions/:id` | Rollups; detail adds campaigns by reach, category breakdown, pending count, budget share |
-| GET/POST | `/reports` | List (with each report's last run) · create from a filter snapshot |
-| GET/PATCH | `/reports/:id` | Read · edit name, enabled, cadence, recipients, columns |
-| GET | `/reports/:id/runs` | Run history |
-| POST | `/reports/:id/run` | Run now — emails real recipients, writes a run row |
-| POST | `/reports/:id/test` | Send a copy to the caller only; no run row |
-| GET | `/search?q=` | Command palette: sections, campaigns, regions, actions |
-| GET | `/me` | The signed-in account: role, `isAgency`, `canApprove`, `isClient` |
-| GET | `/health` | Data-source health. Mounted twice: at `/health` **outside** the guard, so a readiness probe needs no credentials, and at `/api/health` behind it |
-
-### Auth and roles
-
-Sessions are real and server-side. `POST /auth/login` verifies the password,
-stores a session row and sets an HTTP-only cookie; `POST /auth/logout` deletes
-the row before clearing the cookie, so logout genuinely revokes access where a
-JWT would stay valid until expiry no matter what the user clicked. Only the
-token's hash is stored, so a dump of the table hands nobody a working session.
-Login failures return one message for both a wrong password and an unknown
-email, so the response cannot be used to enumerate accounts. Sessions last
-seven days (`identity.SessionTTL`).
-
-`httpx.RequireSession` resolves the cookie to a principal and puts it on the
-request context; handlers read it with `UserFromContext`. Platform takes the
-lookup as a `SessionAuthenticator` interface, so it never learns which service
-owns users.
-
-The role model lives in `backend/services/identity/identity.go`, and every
-permission is a method on `User` rather than a check scattered through
-handlers:
-
-| Role | Reads | Decides | Manages users |
-|---|---|---|---|
-| `admin` | everything | yes | intended, **not implemented** |
-| `approver` | everything | yes | no |
-| `analyst` | everything | no | no |
-| `client` | own account only — **not implemented** | never, by design | no |
-| `viewer` | legacy, behaves as `analyst`; kept so pre-migration rows stay meaningful | no | no |
-
-- `CanApprove()` is `isAgency && (admin || approver)`, enforced in the service
-  layer, not just hidden in the UI. A client never approves whatever else is
-  granted: sign-off is the agency's control over spend, and a client approving
-  their own campaign defeats it.
-- Two honest gaps. `CanManageUsers()` is defined and never called: there is no
-  user-management endpoint or screen, so accounts come from `make seed` only.
-  And `IsClient()` is called once, to populate `/me`, but nothing acts on what
-  it returns. Client scoping is designed and not built: restricting an external
-  user to their own accounts, suppressing benchmarks and stripping competitor
-  names all remain to do, and there is no `client` user in the seed. Today this
-  is an internal agency console with two effective permission levels — decide,
-  or read-only.
-- There is also no `created_by` on a campaign, so nothing can tell who
-  submitted one. Four-eyes approval — stopping someone signing off their own
-  submission — needs that column before it can be enforced.
-
----
-
-## Metrics
-
-Units: **reach is stored in lakh** (1L = 100,000 people); **money is whole
-rupees**. Defined once in `backend/services/campaigns/metrics.go`, mirrored in
-`frontend/src/lib/metrics.ts`.
-
-| Metric | Definition |
-|---|---|
-| **Reach curve** | 8 cumulative points = `reach × weights[shape]`. fast `.10 .34 .55 .70 .81 .89 .95 1`; steady `.08 .20 .33 .46 .59 .72 .86 1`; slow `.04 .09 .17 .28 .42 .60 .79 1` |
-| **Budget pace** | `round(spend / budget × 100)`. ≥100 over (red), ≥85 warn (amber), else good (green) |
-| **CPM** | `spend / (reach × 100000 × frequency / 1000)`; renders `—` at zero |
-| **Running set** | Every campaign whose status is not `scheduled` (so `ended` still counts) |
-| **MED_ALL** | Median reach of the running set — the baseline behind every index in the app |
-| **Index** | `reach / MED_ALL`, shown as `1.4x` |
-| **Category benchmark** | Per category over the running set: `n`, median reach, top campaign, total spend. Sorted by median desc |
-| **Category index** | `reach / category median` |
-| **Movers** | Running campaigns with index ≥ 1.3, sorted by index desc |
-| **Spotlight** | The flagged campaign with the highest index; falls back to the first campaign |
-| **Region rollup** | Per region: campaign count, live count, total reach, total spend, ad-type split sorted desc |
-| **Sparklines** | Sampled at days-ago offsets `[21,18,15,12,9,6,3,0]`; a campaign's value at an age is interpolated along its own curve. Growth = % change first→last |
-| **Anomalies** | pace ≥ 100 → "Over budget pace"; ≥ 95 → "Budget nearly exhausted"; category index ≥ 1.8 → "Reach outlier"; index ≤ 0.3 after ≥ 2 days → "Under-delivering". Checked in that priority order |
-| **Approval guard** | `ApprovalBlock` refuses an approval at pace ≥ 95 — the same two thresholds as the budget anomalies, from shared constants so the flag and the refusal cannot drift. The reach flags stay advisory |
-
-Two deliberate modelling notes:
-
-- There's no stored time series, so sparklines reconstruct history by walking
-  each campaign's own reach curve backwards, and **spend is assumed to accrue
-  on the same curve shape as reach** — the only timing model a campaign has.
-- Anomaly flags are never seeded by hand. `make seed` writes campaigns and
-  then runs the real detector, so the 6 flagged campaigns are whatever the
-  formulas actually produce from the seeded numbers — change a seeded budget
-  and that number changes with it.
-
-### The audit trail
-
-Every approve, reject, reopen, pause, resume and note writes an `audit_events`
-row through one store method, so the Activity tab and the trail are the same
-source of truth. Each row carries both `user_id` — the account, which is what
-answers "who approved this?" — and `actor`, the display label it was recorded
-under. Both, because a name can change and a trail that rewrites history is not
-a trail, while a label alone cannot be joined back to an account. The HTTP
-layer builds that pair once, in `actorOf`, and the store takes the user id as a
-required parameter so a caller cannot write an unattributed decision by
-omission. Rows the system wrote (anomaly flags) have no `user_id`.
-
-Sign-ins, failed sign-ins and sign-outs land in the same table, written by
-identity through a one-method `Auditor` capability that the composition root
-satisfies with a bridge — so identity records security events without importing
-the service that owns the table. Those rows hang off no campaign, which is why
-`campaign_id` is nullable and `entity_type` / `entity_id` exist.
-
-### Approval guard
-
-`can_approve` says whether the caller may decide; `campaigns.ApprovalBlock`
-says whether this campaign may be approved. Both are enforced server-side in
-`Decision` and `BulkDecision`.
-
-Only the budget conditions block. Approving a campaign that has already spent
-its budget ratifies an overspend, and approving one at 95% authorises a flight
-that stalls within days — in both cases the budget has to move before a
-sign-off means anything. The reach flags ("Reach outlier", "Under-delivering")
-are judgement calls an approver is entitled to make, so they stay advisory.
-**Reject**, **reopen** and **pause** are never blocked: they are how an
-approver responds to an over-budget campaign. A scheduled campaign has spent
-nothing, so its pre-flight sign-off — the case the queue exists for — is never
-blocked.
-
-A blocked single decision is `409` carrying the reason. A blocked bulk approve
-is all-or-nothing: nothing is approved and the response names the offenders, so
-the caller is never left guessing which of their selection went through. The
-UI disables Approve and says why on all four surfaces that offer it, from the
-same rule mirrored in `frontend/src/lib/metrics.ts`.
-
-### Reports and scheduling
-
-Cadence is one of four presets, not a cron expression:
-`weekly_mon_9`, `weekday_830`, `monthly_1_9`, `on_flag`. The worker computes
-each report's next occurrence in IST from its last run (or creation), and runs
-it when that moment passes — `weekday_830` skips weekends, `monthly_1_9` wraps
-across years. `on_flag` has no calendar schedule; the worker fires those
-reports immediately after anomaly detection newly flags something, well inside
-the "within 15 min" bound. An `on_flag` report's rows come from the flagged
-set rather than its saved filter snapshot.
-
----
-
-## Deployment
-
-One container serves both halves. `npm run build` output is embedded into the
-Go binary (`backend/web`), which serves the API on `/api`, the health probe on
-`/health`, and the React app on everything else.
-
-This is not just tidy packaging. The session cookie is `SameSite=Lax` and the
-fetch client sends no cross-origin credentials, so hosting the frontend on a
-separate origin would break sign-in. Making that work would mean
-`SameSite=None` (weaker — that is what CSRF protection is), `AllowCredentials:
-true`, an origin allowlist and `credentials: "include"`. Same origin needs none
-of it, and because `client.ts` calls `/api` as a relative path, the frontend
-needs no build-time configuration at all.
-
-```
-make build          # frontend -> backend/web/dist -> ./bin/server
-./bin/server        # the whole app on one port
-```
-
-The same shape runs on any container host, so moving from a free tier to AWS
-(App Runner, ECS/Fargate, Elastic Beanstalk) is a hosting change, not a
-rewrite.
-
-### What the image does on boot
-
-1. **Checks configuration it cannot run without.** If `DATABASE_URL` is unset
-   on a managed host, the process logs that one sentence and exits 1 rather
-   than falling back to the development database and dialling a `localhost`
-   Postgres that is not there. A platform marker (`RENDER`, `FLY_APP_NAME`,
-   `DYNO`, `K_SERVICE`, and friends) is what distinguishes a deployment from
-   a laptop, where the fallback is a convenience and stays.
-2. **Applies migrations** from the embedded SQL, then serves. A deploy to a
-   blank database comes up with a schema and no separate tooling in the image.
-   It uses golang-migrate, the same tool as `make migrate`, so both share its
-   `schema_migrations` bookkeeping and cannot disagree. It takes a Postgres
-   advisory lock, so two instances starting together cannot both migrate.
-   This suits single-instance deployment; a multi-instance rollout should move
-   migration to a release-phase command so schema changes land before new code
-   serves traffic.
-3. **Logs the database it reached** — host, port, database and user, never the
-   password. A deploy quietly pointing at the wrong database is expensive to
-   notice any later than this.
-4. **Logs whether a frontend is embedded** (`"frontend":true`). An image built
-   without one serves a notice page on every route, which is far easier to
-   diagnose from one log line than from a blank tab.
-
-### Required configuration
-
-| Env var | Production value |
-|---|---|
-| `DATABASE_URL` | Your managed Postgres URL, including `sslmode=require`. Either of Neon's strings works: migrations are routed around a pooled host automatically (see below), while the app's pool uses the URL as given. Enter it bare — surrounding quotes and stray whitespace are stripped on load, so a value pasted out of a shell command still works |
-| `SECURE_COOKIES` | **`true`** — without it the session cookie ships without `Secure` |
-| `TZ` | `Asia/Kolkata` — every report cadence is computed in IST |
-| `PORT` | Whatever the platform injects; defaults to `8090` |
-| `ALLOW_SIGNUP` | `true` (the default) exposes the public signup page and `POST /api/auth/signup`. Set it to `false` to close registration once the accounts that should exist do — the route is then not registered at all, rather than registered and refusing |
-
-### Photographs of people
-
-`creators.image_url` holds a person's own photograph, and `SubjectImage`
-prefers it over the generated avatar wherever that person appears — the
-roster, their detail page, and every campaign tile they front. A failed
-load falls back to the avatar, so a dead URL degrades rather than breaks.
-
-```sql
-UPDATE creators SET image_url = 'https://…/aanya.jpg' WHERE id = 'aanya-verma';
-```
-
-An empty column is the normal state, not a gap to be filled. The generated
-avatar is the correct likeness for someone whose photo the agency has no
-right to publish, which is most people most of the time.
-
-Two things not to put in that column. A real celebrity's photograph beside
-these names attaches invented spend, reach and sign-off to someone who
-never ran the campaign — the creators in the demo data are fictional, and
-the pairing would be a fabricated endorsement. Stock portraits carry the
-same problem in licence form: most stock licences forbid using a model's
-likeness to imply they endorse a product. Synthetic portraits of people
-who do not exist, or a real creator's own photo used with their
-permission, are the two that work.
-
-### A word on "creators" vs "Influencers"
-
-Half the campaigns here are fronted by a person rather than a brand — in the
-demo data that is cricketers, singers, actors and creators, 18 of 35. The UI
-calls that section **Influencers**, because that is the market it belongs to
-and because an abstract label made people guess.
-
-The route (`/creators`), the API path, the Go package and the `creators`
-table all keep the original name. Renaming them would break every link
-already shared and change nothing a reader can see. The divergence is
-deliberate and noted at the nav item itself.
-
-### Self-registration
-
-`ALLOW_SIGNUP` (on by default) puts a **Create an account** link on the sign-in
-screen, and serves `POST /api/auth/signup`. `/#signup` opens the form directly,
-so an invite mail can link straight to it.
-
-A self-registered account is always an **analyst**: agency-side, reads
-campaigns, analytics and reports, and decides nothing. No approvals, no user
-management, no settings. The role is a constant in
-[`signup.go`](backend/services/identity/internal/service/signup.go) rather than
-anything the request can influence, so the page cannot be used to mint an
-admin. Promotion is a deliberate act, and today that means `createuser`.
-
-Signup deliberately does **not** issue a session. The new account is sent to
-the sign-in form to use the password it just chose, which proves the password
-works before anything depends on it, and keeps the endpoint from being a way to
-mint sessions.
-
-Campaigns owns the `users` table, so identity does not write it: signup asks
-for the capability through a `Directory` interface that campaigns supplies.
-Neither service imports the other — the same shape as the existing `Auditor`.
-
-Note what the duplicate-email case gives away. A signup form that rejects a
-taken address tells the caller that address is registered; the alternative is
-accepting a duplicate silently and leaving someone with no account and no
-explanation. Sign-in, which has no such excuse, stays deliberately vague about
-whether an email exists.
-
-### Creating the first account
-
-**Never run `make seed` against a deployment.** It begins with
-`TRUNCATE audit_events, creatives, report_runs, reports, campaigns, creators,
-users` — it is a fixture loader, and it would erase production.
-
-There is no user-management endpoint yet, so accounts are made with
-`cmd/createuser`, which creates exactly one and touches nothing else. Run it
-from your machine against the deployment's database:
-
-```bash
-DATABASE_URL='postgres://...' go run ./cmd/createuser \
-  -email you@example.com -name 'Your Name' -role admin
-```
-
-It prints a generated password once. Re-running it for an existing email
-re-passwords that account, which is also the only way back in if a password is
-lost, since there is no reset flow. The binary is in the image as
-`createuser` too, for hosts that give you a shell.
-
-### Render + Neon (the free path)
-
-[`render.yaml`](render.yaml) declares the web service. The database is
-deliberately **not** on Render: its free Postgres expires 30 days after
-creation and is then deleted. Neon's free plan is permanent, so
-`DATABASE_URL` points there.
-
-**Setting `DATABASE_URL`, the one manual step.** The key is declared
-`sync: false`, which means Render never reads its value from `render.yaml` —
-a secret in the repository is worse than a step in a runbook. Render prompts
-for it once, when the Blueprint first creates the service. It is *not* filled
-in by a later Blueprint sync, so a service that predates the file, or one
-where the prompt was skipped, runs with it empty:
-
-```
-ERROR  invalid configuration  err="DATABASE_URL is not set, and this process
-       is running on a managed host where the local development fallback
-       cannot work. ..."
-==> Exited with status 1
-```
-
-The fix is the service's **Environment** tab → add `DATABASE_URL` → paste the
-Neon string (no quotes) → save, which redeploys. A healthy boot says so:
-
-```
-INFO  schema up to date      version=5
-INFO  database connected     host=ep-….aws.neon.tech port=5432 database=neondb user=…
-INFO  server listening       port=10000 frontend=true
-```
-
-If `host` there is `localhost`, the variable did not take effect; nothing else
-in the log is worth reading first.
-
-**On connection pooling.** golang-migrate serialises migrations with a
-session-scoped `pg_advisory_lock`, and Neon's pooled endpoint is PgBouncer in
-transaction-pooling mode, which does not keep a session pinned to one backend
-connection — the lock and its unlock can land on different ones, leaving it
-held by an idle connection while migrations hang. Pooling is still right for
-ordinary traffic, so `migrateURL` rewrites only the migration connection onto
-Neon's direct host and leaves the app's pool using `DATABASE_URL` as given.
-That means either Neon string can be pasted in without it being a trap.
-
-Known trade-off: Render's free tier sleeps after about 15 minutes idle and
-takes roughly a minute to wake. While it sleeps the in-process worker is not
-running, so scheduled reports do not fire on time and anomaly detection only
-runs while someone is using the app.
-
-[`.github/workflows/keep-awake.yml`](.github/workflows/keep-awake.yml) pings
-`/health` every 10 minutes to hold it open, which also serves as a crude
-uptime check. Treat it as a workaround rather than a fix: GitHub's scheduled
-runs are frequently 5-15 minutes late, so the service still naps sometimes;
-GitHub disables the schedule after 60 days without a commit; and holding one
-service awake uses about 730 of the free plan's 750 instance-hours a month,
-which fits for exactly one service. The actual fix is a paid instance.
-
-### Before scaling past one instance
-
-The anomaly detector and report scheduler run in-process on a 30-second
-ticker in `cmd/server/main.go`. Two instances means every scheduled report
-sends twice. Keep this at one instance until that work moves behind a lock or
-into a separate scheduler.
-
----
-
-## Keyboard shortcuts
-
-| Key | Action |
-|---|---|
-| `⌘K` / `Ctrl+K` | Toggle the command palette |
-| `/` | Focus the page's search, or open the palette if there isn't one |
-| `←` / `→` | Previous / next campaign on a detail page, following the current filter+sort |
-| `Backspace` | Go back |
-| `↑` `↓` `Enter` `Esc` | Move, open, and dismiss within the palette |
-
-All of these are ignored while you're typing in a field (except `⌘K`).
-
----
+| `DATABASE_URL` | local dev DSN | Fatal on a managed host if unset |
+| `TEST_DATABASE_URL` | `…_test` DSN | Where the DB-backed Go tests run |
+| `PORT` | `8090` | |
+| `ADMIN_EMAIL` | maintainer address | The first admin the seeder writes |
+| `ALLOW_SIGNUP` | `true` | Set `false` once the right accounts exist |
+| `SECURE_COOKIES` | `false` | Must be `true` behind HTTPS |
+| `RATE_API_PER_MINUTE` · `RATE_AUTH_PER_MINUTE` | `600` · `120` | Per IP |
+| `MAIL_MODE` + `SMTP_*` | `log` | `smtp` to actually send digests |
+| `OIDC_*` | — | Single sign-on; absent means the button isn't shown |
+| `ANTHROPIC_API_KEY` | — | Signal explanations; absent means they're assembled from the figures |
+| `GOOGLE_ADS_*` · `META_*` | — | Ad platform ingestion |
+
+Optional integrations are inert without their keys rather than broken: SSO
+hides its button, explanations fall back to assembled text, ingestion lists
+the platform as not-configured.
 
 ## Testing
 
 ```bash
-make test
+make test-go     # Go, including DB-backed service tests
+make test-web    # Vitest
+make test-e2e    # Playwright — seeds itself first
 ```
 
-`make test` runs all three suites, and reseeds on the way through — `test-e2e`
-depends on `seed`, so don't run it against anything you want to keep.
-
-- **Go** — `backend/services/campaigns` and `backend/services/reports` cover
-  every formula and the IST cadence maths with no database.
-  `backend/services/campaigns/internal/service` runs against a real Postgres
-  (there's no Docker here, so `DATABASE_URL` stands in for testcontainers);
-  each test uses `svctest-`prefixed rows and its own user, and cleans both up
-  after itself, so it's safe to run alongside seeded data.
-  `backend/platform/arch` enforces the two dependency rules, and those tests
-  have been verified to fail when violated rather than merely to pass.
-- **Vitest** — `frontend/src/lib/*.test.ts` checks the TypeScript mirrors of the
-  formulas and the Indian-unit formatting, against the same boundary cases as
-  their Go counterparts.
-- **Playwright** — three specs in `frontend/tests`, run serially against a
-  freshly seeded database because they share one pending queue and would
-  otherwise race each other's counts. `auth.spec.ts` covers a signed-out
-  visitor getting the sign-in screen, a wrong password rejected without
-  revealing whether the account exists, logout revoking the session so Back
-  cannot restore it, and an analyst reading everything while shown no approval
-  controls. `approve.spec.ts` approves a campaign from Overview and from the
-  "Your call" ribbon, asserting the decision reaches the approvals queue, the
-  rail badge and the overview counts. `tabswitch.spec.ts` is the regression
-  test for focus-triggered refetches discarding what you had typed, on both the
-  sign-in form and the campaigns filters. They drive
-  the Chrome for Testing build in the local Playwright cache; override with
-  `PLAYWRIGHT_CHROMIUM_PATH`, and point at a different origin with
-  `E2E_BASE_URL`.
-
----
+The DB-backed Go tests use their own database (`campaign_tracker_pro_test`,
+created by `make db-create`) so they can run alongside the e2e suite, which
+truncates and reseeds the dev database on startup. Override with
+`TEST_DATABASE_URL`.
 
 ## Repository layout
 
-T-shaped: one shared platform, five deep services, a composition root that
-is the only thing aware of all of them. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+T-shaped: one shared platform, deep services, and a composition root that is
+the only thing aware of all of them.
 
 ```
-campaign-tracker-pro/
-  backend/               everything Go; its own module
-    Dockerfile           written to spec, never executed (no Docker here)
-    cmd/
-      server/            composition root: builds and mounts the modules
-      seed/              the campaign, creator and account fixtures
-    platform/            shared by every service, aware of none of them
-      config/            env loading
-      database/          pool, generated query set, pgtype conversions
-      httpx/             JSON envelope, error→status, session middleware
-      mail/              Mailer interface + log implementation
-      units/             Indian unit formatting (lakh / crore)
-      arch/              tests that enforce the dependency rules
-    services/
-      identity/          sessions, password auth, roles and permissions
-      campaigns/         Campaign type, every metric formula, anomalies, CSV
-      creators/          tier bucketing and tier-normalised performance
-                         (surfaced in the UI as "Influencers")
-      analytics/         overview, benchmarks, regions, search (owns no tables)
-      reports/           cadence maths, scheduler, run history
-
-      ...and inside each one:
-        *.go             public contract — the only thing siblings may import
-        module/          factory: the only way to construct the service
-        internal/        unreachable from any sibling, per the Go toolchain
-          api/           parse request → call service → write DTO
-          service/       use cases; owns the sentinel errors
-          store/         sqlc rows → contract types
-    db/
-      migrations/        golang-migrate SQL
-      queries/           sqlc sources
-      gen/               sqlc output (do not edit)
-  frontend/              everything React; its own package
-    src/
-      app/               router, layout shell, providers, Zustand stores
-      api/               typed client + TanStack Query hooks
-      components/        Rail, CommandBar, Palette, DataTable, charts, …
-      features/          one folder per screen
-      lib/               format, metrics, keyboard, URL params
-      styles/            tokens.css, base.css
-    tests/               Playwright
-  docs/                  ARCHITECTURE.md
+backend/
+  cmd/server/      composition root — builds and mounts the modules
+  platform/        shared by every service, aware of none of them
+  platform/arch/   tests that enforce the dependency rules
+  services/        identity, campaigns, creators, analytics, reports,
+                   endorsements, ingest, insights, radar
+  db/              migrations, queries, generated sqlc code
+frontend/
+  src/api/         typed client and TanStack Query hooks
+  src/features/    one folder per page
+  src/components/  shared UI
+  tests/           Playwright specs
 ```
 
-Two rules hold the structure up, both tested in `backend/platform/arch`:
-**platform never imports a service**, and **a service uses a sibling's
-public contract, never its internals** — the latter enforced by the Go
-toolchain via `internal/`.
+Each service exposes a public contract at its root, keeps everything else
+under `internal/`, and is built through its `module/` factory. The two
+dependency rules are enforced by tests, not convention.
+
+## Documentation
+
+| Document | What's in it |
+|---|---|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Service boundaries, the two rules, layering, why one process |
+| [docs/api.md](docs/api.md) | Endpoints, roles and permissions, what each metric means, the audit trail |
+| [docs/deployment.md](docs/deployment.md) | Boot sequence, required config, the Render + Neon path |
+| [docs/decisions.md](docs/decisions.md) | Choices that look arbitrary and aren't |

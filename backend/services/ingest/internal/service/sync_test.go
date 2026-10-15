@@ -4,12 +4,12 @@ import (
 	"context"
 	"io"
 	"log/slog"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/database/dbtest"
 	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/ingest"
 	"campaigntrackerpro/services/ingest/internal/store"
@@ -19,11 +19,7 @@ import (
 
 func testSync(t *testing.T) (*Sync, *database.DB) {
 	t.Helper()
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		dsn = "postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro?sslmode=disable"
-	}
-	pool, err := database.Connect(context.Background(), dsn)
+	pool, err := database.Connect(context.Background(), dbtest.DSN())
 	if err != nil {
 		t.Skipf("skipping: no local Postgres available (%v)", err)
 	}
