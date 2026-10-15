@@ -105,6 +105,13 @@ export function Tile({
         <div className="tile-subtitle truncate">
           {campaign.role || campaign.category} · {campaign.region}
         </div>
+        {/* A brand campaign's tile otherwise says nothing about who is
+            in the ad, which on this product is half the question. Only
+            on brand campaigns: on a creator's own campaign the name
+            above already is the person. */}
+        {campaign.subjectType === "brand" && film?.featuring?.length ? (
+          <div className="tile-featuring truncate">Ft. {film.featuring.join(", ")}</div>
+        ) : null}
       </div>
 
       {/* Status and the route to the person, on one row. The flag dot

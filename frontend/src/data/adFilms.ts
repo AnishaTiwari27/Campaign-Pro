@@ -28,6 +28,12 @@ export type AdFilm = {
   channel: string;
   /** The title as YouTube reports it, so a swapped video is noticed. */
   title: string;
+  /** Who appears in the ad, as the film itself credits them.
+   *  Taken from the upload's own title, not from reporting about the
+   *  campaign — on a brand's campaign this is the whole "who is
+   *  fronting this" question, and guessing at it would attach a real
+   *  person to work that may not be theirs. */
+  featuring?: string[];
   /** Black bars baked into the film's own frame, as a fraction of its
    *  height. A cinematic ad is shot wider than 16:9 and uploaded
    *  inside a 16:9 video, so the bars are in the picture YouTube
@@ -43,12 +49,14 @@ export const AD_FILMS: Record<string, AdFilm> = {
     channel: "Dream11",
     title: "Dream11: Aamir ne liya panga 𝚂̶𝙸̶𝙽̶𝙶̶𝙷̶ Kapoor se. | #AapkiTeamMeinKaun",
     crop: { top: 0, bottom: 0.05 },
+    featuring: ["Aamir Khan", "Ranbir Kapoor"],
   },
   lenskart: {
     id: "kPMLVO45XaU",
     channel: "Lenskart",
     title:
       "#HalkaRakhYaar I Experience Halke Phulke Frames Ft. BB Ki Vines Bhuvan Bam I Lenskart.com",
+    featuring: ["Bhuvan Bam"],
   },
   swiggy: {
     id: "c6j711sEJdA",
@@ -66,6 +74,49 @@ export const AD_FILMS: Record<string, AdFilm> = {
     id: "v29TSTqRlP8",
     channel: "Blinkit",
     title: "Ghar Bulao Khushiyan | Delivering a Happy Diwali in 10 Minutes",
+  },
+  cred: {
+    id: "iW63vNsF8ck",
+    channel: "CRED",
+    title: "Not everyone gets it | CRED | Anil Kapoor",
+    featuring: ["Anil Kapoor"],
+    crop: { top: 0, bottom: 0.1667 },
+  },
+  amul: {
+    id: "xNWWBEXXtLE",
+    channel: "Amul TV",
+    title: "Amul-The Taste of India",
+    crop: { top: 0.0181, bottom: 0.0181 },
+  },
+  tanishq: {
+    id: "5dKQgJVGIks",
+    channel: "TanishqJewellery",
+    title: "Souls in Symphony | Sushmita Sen, Ananya Panday & Radhika Apte | Tanishq Natural Diamonds",
+    featuring: ["Sushmita Sen", "Ananya Panday", "Radhika Apte"],
+    crop: { top: 0.05, bottom: 0.0125 },
+  },
+  licious: {
+    id: "qarp4QwCbss",
+    channel: "Licious",
+    title: "Anil Kapoor bhi maante hain #LiciousKeNakhre",
+    featuring: ["Anil Kapoor"],
+    crop: { top: 0.0042, bottom: 0.0042 },
+  },
+  mamaearth: {
+    id: "ciGbJ7rWQ6s",
+    channel: "Mamaearth India",
+    title: "Find out what makes you beautiful | Mamaearth",
+  },
+  "urban-company": {
+    id: "kU3y54ybZqA",
+    channel: "Urban Company",
+    title: "Chhoti Soch? | Urban Company",
+  },
+  "ethos-watches": {
+    id: "03V0FISSsyU",
+    channel: "Officially Ethos",
+    title: "Ethos Watch Boutiques - India's Largest Luxury Watch Retailer",
+    crop: { top: 0.1403, bottom: 0.1667 },
   },
   phonepe: {
     id: "gBQwlE6nNiY",
@@ -128,6 +179,7 @@ export const AD_FILMS: Record<string, AdFilm> = {
     id: "CjMboY8I8fI",
     channel: "Havmor Ice Cream",
     title: "So Tasty You Wanna Havmor | Tamannaah Bhatia x Hardik Pandya x Havmor | Flea Market",
+    featuring: ["Tamannaah Bhatia", "Hardik Pandya"],
   },
   "tamannaah-bhatia-mother-dairy": {
     id: "o--VuDypWzc",

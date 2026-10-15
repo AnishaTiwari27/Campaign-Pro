@@ -30,6 +30,36 @@ describe("ad film manifest", () => {
     }
   });
 
+  // Who appears in an ad is a claim about a real person, so it may
+  // only come from what the film itself credits — never from
+  // reporting about the campaign, and never from a guess.
+  it("names a cast only where the film's own title credits one", () => {
+    for (const [campaign, film] of Object.entries(AD_FILMS)) {
+      if (!film.featuring) continue;
+      expect(film.featuring.length, campaign).toBeGreaterThan(0);
+      for (const person of film.featuring) {
+        expect(person.trim(), campaign).not.toBe("");
+      }
+    }
+    expect(AD_FILMS.cred?.featuring).toEqual(["Anil Kapoor"]);
+    expect(AD_FILMS.tanishq?.featuring).toContain("Radhika Apte");
+    // A brand film with nobody named must not acquire one.
+    expect(AD_FILMS.swiggy?.featuring).toBeUndefined();
+  });
+
+  // Measured by scripts/measure-letterbox.mjs. A crop outside this
+  // range is a measurement that went wrong, and it would either leave
+  // bars or eat the picture.
+  it("keeps every crop within a sane range", () => {
+    for (const [campaign, film] of Object.entries(AD_FILMS)) {
+      if (!film.crop) continue;
+      const { top, bottom } = film.crop;
+      expect(top, campaign).toBeGreaterThanOrEqual(0);
+      expect(bottom, campaign).toBeGreaterThanOrEqual(0);
+      expect(top + bottom, campaign).toBeLessThan(0.45);
+    }
+  });
+
   // A creator campaign is "<creator>-<brand>". Attaching a film from a
   // different brand would caption someone else's ad with this
   // campaign's numbers.

@@ -93,6 +93,13 @@ export function AdFilm({
           {film.title}
         </span>
         <span className="ad-film-source">
+          {/* Who is fronting the ad, where the film credits them. On a
+              brand's campaign this is the thing the product is about:
+              the campaign row says "Tanishq", and this says whose face
+              is actually in it. */}
+          {film.featuring && film.featuring.length > 0 && (
+            <>Featuring {film.featuring.join(", ")} · </>
+          )}
           Published by {film.channel} on YouTube
         </span>
       </figcaption>
