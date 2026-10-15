@@ -4,7 +4,6 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { Ribbon } from "../../components/Ribbon";
-import { RealWork } from "./RealWork";
 import { Tile } from "../../components/Tile";
 import { KpiTile } from "../../components/KpiTile";
 import { exportUrl } from "../../api/client";
@@ -50,8 +49,6 @@ export function OverviewPage() {
           )}
         </div>
       </div>
-
-      <RealWork />
 
       {!hasAnything ? (
         <EmptyState title="All quiet" description="No campaigns are waiting on you or flagged right now." />

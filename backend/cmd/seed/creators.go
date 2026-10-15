@@ -44,86 +44,104 @@ type creatorSeed struct {
 	campaigns                []creatorCampaignSeed
 }
 
-// Fictional people, deliberately. Attaching invented spend and performance
-// figures to a real, named individual is a different kind of claim than
-// illustrative numbers against a brand.
+// Real people, and only brand relationships they are actually
+// documented as having. Virat Kohli fronts Puma; Alia Bhatt is Gucci's
+// first Indian global ambassador; Salman Khan has endorsed Pepsi for
+// years. Every pairing below is in the public record this product also
+// serves at /endorsements, cited there to where it was reported.
+//
+// What is NOT real, and cannot be: the reach, spend, budget and pacing.
+// Nobody publishes per-campaign performance — it is exactly what
+// agencies are paid to know — so those figures are illustrative, and
+// the dashboard says so where they appear.
+//
+// Which is why none of these campaigns carries a negative verdict. The
+// numbers are set comfortably inside budget and at or above category
+// median, so the anomaly detector has nothing to flag and no approval
+// is left pending or rejected. An invented "under-delivering" against a
+// named person's real commercial relationship is a reputational claim
+// about them, and that is a different thing from an illustrative
+// figure. The flags, rejections and over-budget cases all live on the
+// brand campaigns, where the subject is a company and the claim is
+// about a line of spend rather than somebody's professional standing.
 func creatorSeeds() []creatorSeed {
 	return []creatorSeed{
 		{
-			id: "rohan-malhotra", name: "Rohan Malhotra", role: "Actor", initials: "RM",
-			category: "Entertainment", region: "Mumbai", followers: 2_800_000,
+			id: "virat-kohli", name: "Virat Kohli", role: "Cricketer", initials: "VK",
+			category: "Sports", region: "Pan-India", followers: 270_000_000,
 			platform: "Instagram", languages: []string{"Hindi", "English"},
 			campaigns: []creatorCampaignSeed{
-				{"Lakmé", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 3, 2, 350000, 3000000, 1.2, campaigns.ApprovalPending, campaigns.CurveSlow, "Hindi", "story"},
-				{"boAt", campaigns.AdInfluencer, "Instagram", campaigns.StatusEnded, 24, 41, 2900000, 3200000, 2.1, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "unboxing"},
-				{"Myntra", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 18, 36, 2400000, 2800000, 1.9, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "demo"},
+				{"Puma", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 16, 96, 5_200_000, 9_000_000, 2.6, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "demo"},
+				{"MRF", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 28, 88, 4_600_000, 8_000_000, 2.3, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "story"},
+				{"Vivo", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 11, 74, 3_900_000, 7_500_000, 2.1, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "announcement"},
 			},
 		},
 		{
-			id: "kabir-sehgal", name: "Kabir Sehgal", role: "Cricketer", initials: "KS",
-			category: "Sports", region: "Pan-India", followers: 14_200_000,
+			id: "alia-bhatt", name: "Alia Bhatt", role: "Actor", initials: "AB",
+			category: "Entertainment", region: "Mumbai", followers: 85_000_000,
 			platform: "Instagram", languages: []string{"Hindi", "English"},
 			campaigns: []creatorCampaignSeed{
-				{"Dream11", campaigns.AdInfluencer, "Instagram", campaigns.StatusEnded, 22, 85, 6100000, 7000000, 2.4, campaigns.ApprovalRejected, campaigns.CurveFast, "Hindi", "announcement"},
-				{"boAt", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 14, 78, 5400000, 6500000, 2.2, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "demo"},
-				{"CRED", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 9, 92, 6800000, 8000000, 2.5, campaigns.ApprovalApproved, campaigns.CurveFast, "English", "testimonial"},
+				{"Gucci", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 13, 68, 4_100_000, 7_000_000, 2.2, campaigns.ApprovalApproved, campaigns.CurveFast, "English", "story"},
+				{"L'Oréal Paris", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 9, 54, 2_700_000, 5_000_000, 1.9, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "demo"},
+				{"Maybelline", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 21, 47, 2_300_000, 4_200_000, 1.8, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "demo"},
 			},
 		},
 		{
-			id: "aanya-verma", name: "Aanya Verma", role: "Singer", initials: "AV",
-			category: "Music", region: "Mumbai", followers: 6_200_000,
-			platform: "YouTube", languages: []string{"Hindi", "Punjabi", "English"},
+			id: "salman-khan", name: "Salman Khan", role: "Actor", initials: "SK",
+			category: "Entertainment", region: "Pan-India", followers: 75_000_000,
+			platform: "Instagram", languages: []string{"Hindi"},
 			campaigns: []creatorCampaignSeed{
-				{"Nykaa", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 20, 58, 4900000, 5500000, 2.6, campaigns.ApprovalRejected, campaigns.CurveSteady, "Hindi", "story"},
-				{"Tanishq", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 11, 64, 4200000, 5000000, 2.3, campaigns.ApprovalApproved, campaigns.CurveSteady, "Punjabi", "story"},
+				{"Pepsi", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 15, 82, 4_400_000, 8_200_000, 2.4, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "story"},
+				{"Suzuki", campaigns.AdInfluencer, "Instagram", campaigns.StatusEnded, 26, 61, 3_100_000, 6_000_000, 2.0, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "demo"},
+				{"Thums Up", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 19, 58, 2_800_000, 5_400_000, 1.9, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "announcement"},
 			},
 		},
 		{
-			id: "vikram-oberoi", name: "Vikram Oberoi", role: "CEO, Northgate", initials: "VO",
-			category: "Business", region: "Bengaluru", followers: 180_000,
-			platform: "LinkedIn", languages: []string{"English"},
-			campaigns: []creatorCampaignSeed{
-				{"PhonePe", campaigns.AdSocial, "LinkedIn", campaigns.StatusLive, 19, 26, 2100000, 3500000, 1.6, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "testimonial"},
-				{"Urban Company", campaigns.AdSocial, "LinkedIn", campaigns.StatusEnded, 26, 22, 1700000, 2000000, 1.4, campaigns.ApprovalApproved, campaigns.CurveSlow, "English", "announcement"},
-			},
-		},
-		{
-			id: "meher-kapoor", name: "Meher Kapoor", role: "Creator", initials: "MK",
-			category: "Influencer", region: "Delhi NCR", followers: 640_000,
+			id: "deepika-padukone", name: "Deepika Padukone", role: "Actor", initials: "DP",
+			category: "Entertainment", region: "Mumbai", followers: 80_000_000,
 			platform: "Instagram", languages: []string{"Hindi", "English"},
 			campaigns: []creatorCampaignSeed{
-				{"Mamaearth", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 7, 20, 1100000, 2500000, 1.5, campaigns.ApprovalPending, campaigns.CurveFast, "Hindi", "unboxing"},
-				{"Zepto", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 16, 31, 1900000, 2400000, 1.8, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "offer"},
-				{"Lenskart", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 21, 27, 1600000, 1900000, 1.7, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "demo"},
-				{"Nykaa", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 5, 24, 1400000, 2200000, 1.6, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "unboxing"},
+				{"Louis Vuitton", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 12, 71, 4_300_000, 8_000_000, 2.2, campaigns.ApprovalApproved, campaigns.CurveFast, "English", "story"},
+				{"Cartier", campaigns.AdSocial, "Instagram", campaigns.StatusLive, 7, 44, 2_200_000, 4_800_000, 1.7, campaigns.ApprovalApproved, campaigns.CurveSlow, "English", "story"},
+				{"Tissot", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 23, 39, 1_900_000, 3_600_000, 1.6, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "demo"},
 			},
 		},
 		{
-			id: "simran-bakshi", name: "Simran Bakshi", role: "Actor", initials: "SB",
-			category: "Entertainment", region: "Delhi NCR", followers: 3_500_000,
-			platform: "YouTube", languages: []string{"Hindi", "Punjabi"},
+			id: "ranveer-singh", name: "Ranveer Singh", role: "Actor", initials: "RS",
+			category: "Entertainment", region: "Mumbai", followers: 45_000_000,
+			platform: "Instagram", languages: []string{"Hindi", "English"},
 			campaigns: []creatorCampaignSeed{
-				{"Myntra", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 12, 50, 3400000, 5000000, 2.0, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "story"},
-				{"Tanishq", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 23, 47, 3100000, 3600000, 1.9, campaigns.ApprovalApproved, campaigns.CurveSlow, "Punjabi", "story"},
+				{"Adidas", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 14, 57, 3_000_000, 5_800_000, 2.0, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "demo"},
+				{"Jack & Jones", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 20, 41, 2_000_000, 3_900_000, 1.7, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "story"},
+				{"MakeMyTrip", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 25, 36, 1_700_000, 3_400_000, 1.6, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "offer"},
 			},
 		},
 		{
-			id: "dev-ahuja", name: "Dev Ahuja", role: "Founder, Finlytics", initials: "DA",
-			category: "Business", region: "Pan-India", followers: 95_000,
-			platform: "LinkedIn", languages: []string{"English"},
+			id: "ms-dhoni", name: "MS Dhoni", role: "Cricketer", initials: "MD",
+			category: "Sports", region: "Pan-India", followers: 50_000_000,
+			platform: "Instagram", languages: []string{"Hindi", "English"},
 			campaigns: []creatorCampaignSeed{
-				{"CRED", campaigns.AdSocial, "LinkedIn", campaigns.StatusScheduled, 0, 0, 0, 3000000, 0, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "announcement"},
-				{"PhonePe", campaigns.AdSocial, "LinkedIn", campaigns.StatusLive, 13, 17, 1200000, 1800000, 1.3, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "demo"},
+				{"CARS24", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 10, 52, 2_600_000, 5_200_000, 1.9, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "testimonial"},
+				{"SEVEN", campaigns.AdInfluencer, "Instagram", campaigns.StatusEnded, 22, 43, 2_100_000, 4_000_000, 1.7, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "demo"},
+				{"Shaka Harry", campaigns.AdSocial, "Instagram", campaigns.StatusLive, 8, 31, 1_500_000, 3_200_000, 1.5, campaigns.ApprovalApproved, campaigns.CurveSlow, "English", "story"},
 			},
 		},
 	}
 }
 
 var brandDomains = map[string]string{
+	// Brand campaigns.
 	"Lakmé": "lakmeindia.com", "boAt": "boat-lifestyle.com", "Myntra": "myntra.com",
 	"Dream11": "dream11.com", "CRED": "cred.club", "Nykaa": "nykaa.com",
 	"Tanishq": "tanishq.co.in", "PhonePe": "phonepe.com", "Urban Company": "urbancompany.com",
 	"Mamaearth": "mamaearth.in", "Zepto": "zeptonow.com", "Lenskart": "lenskart.com",
+	// Brands the people in the roster are documented as fronting.
+	"Puma": "puma.com", "MRF": "mrftyres.com", "Vivo": "vivo.com",
+	"Gucci": "gucci.com", "L'Oréal Paris": "lorealparis.co.in", "Maybelline": "maybelline.co.in",
+	"Pepsi": "pepsi.com", "Suzuki": "marutisuzuki.com", "Thums Up": "coca-colaindia.com",
+	"Louis Vuitton": "louisvuitton.com", "Cartier": "cartier.com", "Tissot": "tissotwatches.com",
+	"Adidas": "adidas.co.in", "Jack & Jones": "jackjones.in", "MakeMyTrip": "makemytrip.com",
+	"CARS24": "cars24.com", "SEVEN": "seven.co.in", "Shaka Harry": "shakaharry.com",
 }
 
 var seedSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
