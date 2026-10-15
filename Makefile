@@ -81,13 +81,18 @@ test-go:
 test-web:
 	cd frontend && npm run test
 
-# Playwright drives the running dev servers, so seed first for a known state.
-# The e2e suite signs in as fixture users, so it needs a password it knows.
-# This is the only place that value exists; an ordinary `make seed` gets a
-# generated one, so seeding a deployment never installs a published
-# credential.
+# Playwright seeds itself now (frontend/tests/global-setup.ts), so this
+# target is just the runner. The suite used to depend on being started
+# through here: run `npx playwright test` directly and it would drain the
+# pending queue it asserts on, then fail on the next run with counts that
+# were correct the first time — which is easy to mistake for a
+# regression, and makes the next real one easy to wave away.
+#
+# The fixture password lives in the setup script for the same reason it
+# lived here: the suite signs in as fixture users and needs a value it
+# knows, while an ordinary `make seed` gets a generated one so seeding a
+# deployment never installs a published credential.
 test-e2e:
-	cd backend && SEED_PASSWORD=demo-password-change-me DATABASE_URL="$(DATABASE_URL)" go run ./cmd/seed
 	cd frontend && npx playwright test
 
 lint:

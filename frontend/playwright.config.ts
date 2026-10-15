@@ -12,10 +12,12 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 
 export default defineConfig({
   testDir: "./tests",
-  // These tests share one database and several of them approve campaigns,
-  // draining the same pending queue. Running them in parallel makes the
-  // counts race, so they run serially against a freshly seeded state
-  // (`make test-e2e` seeds first).
+  // These tests share one database and several of them approve
+  // campaigns, draining the same pending queue. Running them in
+  // parallel makes the counts race, so they run serially — and
+  // globalSetup reseeds first, so the suite is self-sufficient however
+  // it is started rather than only via `make test-e2e`.
+  globalSetup: "./tests/global-setup.ts",
   fullyParallel: false,
   workers: 1,
   testMatch: "**/*.spec.ts",
