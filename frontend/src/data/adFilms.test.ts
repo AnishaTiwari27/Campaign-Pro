@@ -6,8 +6,12 @@ describe("ad film manifest", () => {
     // The important half of the contract: no film is a valid answer.
     // Anything that stood in for one would be inventing creative for a
     // campaign, which is the thing this whole design refuses to do.
-    expect(adFilmFor("blinkit")).toBeUndefined();
+    // Not a campaign that merely lacks one today — Blinkit used to sit
+    // here and then a film was verified for it, which is the normal
+    // direction of travel. An id that cannot ever gain one keeps this
+    // testing the contract rather than the current coverage.
     expect(adFilmFor("no-such-campaign")).toBeUndefined();
+    expect(adFilmFor("")).toBeUndefined();
   });
 
   it("returns the film for a campaign that has one", () => {

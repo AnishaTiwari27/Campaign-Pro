@@ -270,3 +270,68 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* The video-first card: the film fills it edge to edge. No padding and
+   no column gap, because any of either reads as a border around the
+   picture. */
+.in-focus-card-film {
+  display: block;
+  grid-template-columns: none;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Who this is and why it is in focus, riding over the top of the
+   picture rather than taking a band above it. The numbers are a click
+   away on the campaign page, and the strip below repeats the signal
+   for all six. */
+.in-focus-filmhead {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 18px 30px;
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.68), transparent);
+}
+
+.in-focus-card-film .in-focus-stripe {
+  z-index: 3;
+  border-radius: 0;
+}
+
+.in-focus-filmhead-text {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+/* Fixed light over the picture, not themed ink: what is behind it is
+   the film, which is the same in either mode. */
+.in-focus-filmhead-name {
+  font-size: 17px;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.65);
+}
+
+.in-focus-filmhead-meta {
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #ff9ba8;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.65);
+}
+
+.in-focus-filmhead .pill {
+  margin-left: auto;
+}

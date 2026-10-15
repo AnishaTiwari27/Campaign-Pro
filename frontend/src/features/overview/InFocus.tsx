@@ -41,11 +41,14 @@ export function InFocus({
 
   const count = candidates.length;
 
-  const goTo = useCallback((i: number) => {
-    setActive(((i % count) + count) % count);
-    startedAt.current = Date.now();
-    setElapsed(0);
-  }, [count]);
+  const goTo = useCallback(
+    (i: number) => {
+      setActive(((i % count) + count) % count);
+      startedAt.current = Date.now();
+      setElapsed(0);
+    },
+    [count],
+  );
 
   useEffect(() => {
     if (paused || filmPlaying || count <= 1) return;
@@ -74,7 +77,9 @@ export function InFocus({
     label: `Day ${Math.round((i / 7) * campaign.daysRunning)}`,
     value: v,
   }));
-  const categoryMedian = benchmarks?.find((b) => b.category === campaign.category)?.medianReach;
+  const categoryMedian = benchmarks?.find(
+    (b) => b.category === campaign.category,
+  )?.medianReach;
   const eyebrow = campaign.flagReason
     ? `Flagged ${campaign.adType} · ${campaign.region}`
     : `${campaign.adType} · ${campaign.region}`;
@@ -98,12 +103,18 @@ export function InFocus({
             </span>
           </h3>
           <p className="in-focus-subtitle">
-            What most deserves a look right now, worst signal first. Rotates every 30s — hover to hold.
+            What most deserves a look right now, worst signal first. Rotates
+            every 30s — hover to hold.
           </p>
         </div>
 
         <div className="in-focus-controls">
-          <button type="button" className="in-focus-nav" aria-label="Previous" onClick={() => goTo(active - 1)}>
+          <button
+            type="button"
+            className="in-focus-nav"
+            aria-label="Previous"
+            onClick={() => goTo(active - 1)}
+          >
             ‹
           </button>
           <button
@@ -115,7 +126,12 @@ export function InFocus({
           >
             {paused ? "▶" : "❚❚"}
           </button>
-          <button type="button" className="in-focus-nav" aria-label="Next" onClick={() => goTo(active + 1)}>
+          <button
+            type="button"
+            className="in-focus-nav"
+            aria-label="Next"
+            onClick={() => goTo(active + 1)}
+          >
             ›
           </button>
         </div>
@@ -127,73 +143,143 @@ export function InFocus({
           the link now covers the half you read and the film owns its
           own half. */}
       <div
-        className="in-focus-card card"
+        className={`in-focus-card card${film ? " in-focus-card-film" : ""}`}
         style={adTypeStripeStyle(campaign.adType)}
         key={campaign.id}
       >
         <span className="in-focus-stripe" />
-        <Link to={`/campaigns/${campaign.id}`} className="in-focus-main">
-          <div className="in-focus-eyebrow-row">
-            <SubjectImage
-              name={campaign.name}
-              initials={campaign.initials}
-              kind={campaign.subjectType}
-              imageUrl={campaign.creatorId ? creatorPhotos[campaign.creatorId] : undefined}
-              domain={campaign.subjectType === "brand" ? campaign.brandDomain : undefined}
-              seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
-              size={40}
+        {film ? (
+          // Video-first: the film is the spotlight, not an illustration
+          // beside it. The chart and the stat grid are deliberately not
+          // here — the strip below names every campaign and its signal,
+          // and the whole card links through to the detail page where
+          // the numbers live in full.
+          <>
+            <Link
+              to={`/campaigns/${campaign.id}`}
+              className="in-focus-filmhead"
+            >
+              <SubjectImage
+                name={campaign.name}
+                initials={campaign.initials}
+                kind={campaign.subjectType}
+                imageUrl={
+                  campaign.creatorId
+                    ? creatorPhotos[campaign.creatorId]
+                    : undefined
+                }
+                domain={
+                  campaign.subjectType === "brand"
+                    ? campaign.brandDomain
+                    : undefined
+                }
+                seed={
+                  campaign.creatorId ?? campaign.brandDomain ?? campaign.name
+                }
+                size={34}
+              />
+              <span className="in-focus-filmhead-text">
+                <span className="in-focus-filmhead-name">{campaign.name}</span>
+                <span className="in-focus-filmhead-meta">
+                  {campaign.flagReason ?? eyebrow}
+                </span>
+              </span>
+              <Pill status={campaign.status} />
+            </Link>
+            <AdFilm
+              film={film}
+              campaignName={campaign.name}
+              onPlayingChange={setFilmPlaying}
+              hero
             />
-            <span className="in-focus-eyebrow">{eyebrow}</span>
-          </div>
+          </>
+        ) : (
+          <>
+            <Link to={`/campaigns/${campaign.id}`} className="in-focus-main">
+              <div className="in-focus-eyebrow-row">
+                <SubjectImage
+                  name={campaign.name}
+                  initials={campaign.initials}
+                  kind={campaign.subjectType}
+                  imageUrl={
+                    campaign.creatorId
+                      ? creatorPhotos[campaign.creatorId]
+                      : undefined
+                  }
+                  domain={
+                    campaign.subjectType === "brand"
+                      ? campaign.brandDomain
+                      : undefined
+                  }
+                  seed={
+                    campaign.creatorId ?? campaign.brandDomain ?? campaign.name
+                  }
+                  size={40}
+                />
+                <span className="in-focus-eyebrow">{eyebrow}</span>
+              </div>
 
-          <div className="in-focus-title-row">
-            <h2>{campaign.name}</h2>
-            <Pill status={campaign.status} />
-            <ApprovalTag approval={campaign.approval} />
-          </div>
-          <div className="in-focus-sub">
-            {campaign.role || campaign.category} · {campaign.platform} · Day {campaign.daysRunning}
-          </div>
-          {campaign.flagReason && <div className="in-focus-flag">{campaign.flagReason}</div>}
+              <div className="in-focus-title-row">
+                <h2>{campaign.name}</h2>
+                <Pill status={campaign.status} />
+                <ApprovalTag approval={campaign.approval} />
+              </div>
+              <div className="in-focus-sub">
+                {campaign.role || campaign.category} · {campaign.platform} · Day{" "}
+                {campaign.daysRunning}
+              </div>
+              {campaign.flagReason && (
+                <div className="in-focus-flag">{campaign.flagReason}</div>
+              )}
 
-          <div className="in-focus-stats">
-            <div>
-              <div className="in-focus-stat-label">Reach</div>
-              <div className="in-focus-stat-value mono">{formatReach(campaign.reach)}</div>
-            </div>
-            <div>
-              <div className="in-focus-stat-label">Spend</div>
-              <div className="in-focus-stat-value mono">{formatMoney(campaign.spend)}</div>
-            </div>
-            <div>
-              <div className="in-focus-stat-label">All-campaign median</div>
-              <div className="in-focus-stat-value mono">{formatReach(medAll)}</div>
-            </div>
-            <div>
-              <div className="in-focus-stat-label">Index</div>
-              <div className="in-focus-stat-value in-focus-index mono">{formatIndex(campaign.index)}</div>
-            </div>
-          </div>
+              <div className="in-focus-stats">
+                <div>
+                  <div className="in-focus-stat-label">Reach</div>
+                  <div className="in-focus-stat-value mono">
+                    {formatReach(campaign.reach)}
+                  </div>
+                </div>
+                <div>
+                  <div className="in-focus-stat-label">Spend</div>
+                  <div className="in-focus-stat-value mono">
+                    {formatMoney(campaign.spend)}
+                  </div>
+                </div>
+                <div>
+                  <div className="in-focus-stat-label">All-campaign median</div>
+                  <div className="in-focus-stat-value mono">
+                    {formatReach(medAll)}
+                  </div>
+                </div>
+                <div>
+                  <div className="in-focus-stat-label">Index</div>
+                  <div className="in-focus-stat-value in-focus-index mono">
+                    {formatIndex(campaign.index)}
+                  </div>
+                </div>
+              </div>
+            </Link>
 
-        </Link>
-
-        <div className="in-focus-side">
-          {film && (
-            <AdFilm film={film} campaignName={campaign.name} onPlayingChange={setFilmPlaying} />
-          )}
-          <div className="in-focus-chart">
-            <AreaChart
-              points={points}
-              medianValue={categoryMedian}
-              formatValue={formatReach}
-              interactive={false}
-              height={film ? 96 : 150}
-            />
-          </div>
-        </div>
+            <div className="in-focus-side">
+              <div className="in-focus-chart">
+                <AreaChart
+                  points={points}
+                  medianValue={categoryMedian}
+                  formatValue={formatReach}
+                  interactive={false}
+                  height={150}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      <div className="in-focus-strip" role="tablist" aria-label="In focus campaigns">
+      <div
+        className="in-focus-strip"
+        role="tablist"
+        aria-label="In focus campaigns"
+      >
         {candidates.map((c, i) => (
           <button
             key={c.id}
@@ -216,7 +302,9 @@ export function InFocus({
             />
             <span className="in-focus-thumb-text">
               <span className="in-focus-thumb-name truncate">{c.name}</span>
-              <span className="in-focus-thumb-meta truncate">{c.flagReason ?? `${formatIndex(c.index)} vs median`}</span>
+              <span className="in-focus-thumb-meta truncate">
+                {c.flagReason ?? `${formatIndex(c.index)} vs median`}
+              </span>
             </span>
             {i === active && count > 1 && (
               <span

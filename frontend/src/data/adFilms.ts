@@ -53,6 +53,11 @@ export const AD_FILMS: Record<string, AdFilm> = {
     title: "Ready For India's Biggest Fashion Sale? | Myntra End of Reason Sale",
   },
 
+  blinkit: {
+    id: "v29TSTqRlP8",
+    channel: "Blinkit",
+    title: "Ghar Bulao Khushiyan | Delivering a Happy Diwali in 10 Minutes",
+  },
   phonepe: {
     id: "gBQwlE6nNiY",
     channel: "PhonePe App",

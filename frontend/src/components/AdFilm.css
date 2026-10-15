@@ -104,3 +104,69 @@
   color: var(--muted);
   font-size: 10px;
 }
+
+/* The spotlight treatment: the film is the card's whole point, so it
+   gets the room. Capped by height rather than width — a 16:9 box given
+   the full width of a wide dashboard would be around 800px tall and
+   push everything else off the screen. */
+/* Hero: the film IS the card. Full width, no inset, no letterboxing
+   either side — the frame takes its height from the width so the
+   picture reaches both edges. */
+.ad-film-hero {
+  display: block;
+  position: relative;
+}
+
+.ad-film-hero .ad-film-frame {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 0;
+}
+
+/* Over the foot of the picture rather than below it, so nothing is
+   taken from the film's own space. */
+.ad-film-hero .ad-film-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 26px 18px 10px;
+  text-align: center;
+  justify-items: center;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.72), transparent);
+  pointer-events: none;
+}
+
+.ad-film-hero .ad-film-caption > span:first-child,
+.ad-film-hero .ad-film-source {
+  color: rgb(255 255 255 / 0.92);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+}
+
+.ad-film-hero .ad-film-source {
+  color: rgb(255 255 255 / 0.68);
+}
+
+.ad-film-hero .ad-film-play {
+  width: 68px;
+  height: 68px;
+}
+
+.ad-film-hero .ad-film-play svg {
+  width: 30px;
+  height: 30px;
+}
+
+.ad-film-hero .ad-film-caption {
+  text-align: center;
+  justify-items: center;
+}
+
+/* The spotlight puts the campaign's own header in this corner, and the
+   caption already says what the film is and who published it. The
+   badge would only collide with the logo. */
+.ad-film-hero .ad-film-badge {
+  display: none;
+}

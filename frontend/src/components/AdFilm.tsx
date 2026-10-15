@@ -18,11 +18,14 @@ export function AdFilm({
   film,
   campaignName,
   onPlayingChange,
+  hero = false,
 }: {
   film: AdFilmData;
   campaignName: string;
   /** Lets a rotating container hold still while something is playing. */
   onPlayingChange?: (playing: boolean) => void;
+  /** The spotlight's treatment: the film is the card, not an inset. */
+  hero?: boolean;
 }) {
   const [playing, setPlaying] = useState(false);
   // maxres does not exist for every upload — plenty of ad films predate
@@ -41,7 +44,7 @@ export function AdFilm({
   }, [playing, onPlayingChange]);
 
   return (
-    <figure className="ad-film">
+    <figure className={hero ? "ad-film ad-film-hero" : "ad-film"}>
       <div className="ad-film-frame">
         {playing ? (
           <iframe
@@ -80,7 +83,9 @@ export function AdFilm({
       </div>
       {/* Attribution is not decoration here: it is the claim that this
           is the advertiser's own upload, which is what makes embedding
-          it legitimate. It stays visible whether or not it is playing. */}
+          it legitimate. It stays visible whether or not it is playing —
+          in hero mode it rides over the foot of the picture rather than
+          taking a strip of its own. */}
       <figcaption className="ad-film-caption">
         <span className="truncate" title={film.title}>
           {film.title}
