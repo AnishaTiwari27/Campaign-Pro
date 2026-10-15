@@ -462,3 +462,14 @@ export interface Launch {
   firstCampaignAt?: string;
   daysToMarket?: number;
 }
+
+/** A published figure about the market, with where it was published. */
+export interface MarketFact {
+  label: string;
+  value: string;
+  period?: string;
+  /** The qualification the figure does not survive without. */
+  note?: string;
+  source: string;
+  sourceUrl: string;
+}

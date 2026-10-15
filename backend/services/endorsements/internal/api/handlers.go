@@ -22,6 +22,7 @@ func New(logger *slog.Logger) *Handlers { return &Handlers{logger: logger} }
 func (h *Handlers) Routes(r chi.Router) {
 	r.Route("/endorsements", func(r chi.Router) {
 		r.Get("/", h.List)
+		r.Get("/market", h.Market)
 		r.Get("/{id}", h.Get)
 	})
 }
@@ -32,6 +33,14 @@ func (h *Handlers) Routes(r chi.Router) {
 // another may not.
 func (h *Handlers) List(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": endorsements.All()})
+}
+
+// Market is the published figures for the market itself — the outside
+// anchor the agency's own medians have nothing to be judged against.
+// Public for the same reason as the rest of this package: it is
+// published information, not anyone's book.
+func (h *Handlers) Market(w http.ResponseWriter, r *http.Request) {
+	httpx.WriteJSON(w, http.StatusOK, map[string]any{"items": endorsements.Market()})
 }
 
 func (h *Handlers) Get(w http.ResponseWriter, r *http.Request) {

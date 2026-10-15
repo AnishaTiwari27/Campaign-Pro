@@ -5,6 +5,7 @@ import { SkeletonBlock } from "../../components/Skeleton";
 import { BarChart } from "../../components/BarChart";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
 import { BenchmarkTrend } from "./BenchmarkTrend";
+import { MarketBaseline } from "./MarketBaseline";
 import "./BenchmarksPage.css";
 
 export function BenchmarksPage() {
@@ -110,6 +111,8 @@ export function BenchmarksPage() {
       )}
 
       <BenchmarkTrend categories={data.categories.map((c) => c.category)} />
+
+      <MarketBaseline />
     </div>
   );
 }
