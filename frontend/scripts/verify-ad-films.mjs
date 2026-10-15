@@ -24,6 +24,16 @@ if (entries.length === 0) {
   process.exit(1);
 }
 
+// The manifest is a TypeScript source file read as text, so a string
+// written with \u escapes arrives here still escaped while YouTube sends
+// the real character. Decoding here keeps that from reading as "the
+// video was replaced".
+function unescapeLiteral(s) {
+  return s
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\"/g, '"');
+}
+
 async function check({ campaign, id, channel, title }) {
   const url =
     "https://www.youtube.com/oembed?url=" +
@@ -41,14 +51,14 @@ async function check({ campaign, id, channel, title }) {
     };
   }
   const data = await res.json();
-  if (data.author_name.trim() !== channel) {
+  if (data.author_name.trim() !== unescapeLiteral(channel)) {
     return {
       campaign,
       ok: false,
       why: `published by "${data.author_name.trim()}", not "${channel}" — this is not the advertiser's own upload`,
     };
   }
-  if (data.title.trim() !== title.replace(/\\"/g, '"').trim()) {
+  if (data.title.trim() !== unescapeLiteral(title).trim()) {
     return { campaign, ok: false, why: `title is now "${data.title}" — the video was replaced` };
   }
   return { campaign, ok: true, why: `${data.author_name.trim()} — ${data.title}` };

@@ -33,6 +33,10 @@ describe("ad film manifest", () => {
     const expected: Record<string, string> = {
       "bhuvan-bam-lenskart": "Lenskart",
       "ms-dhoni-cars24": "Cars24",
+      "virat-kohli-puma": "PUMA",
+      "salman-khan-thums-up": "ThumsUpOfficial",
+      "salman-khan-pepsi": "pepsiindia",
+      "alia-bhatt-l-or-al-paris": "L’Oréal Paris India",
     };
     for (const [campaign, channel] of Object.entries(expected)) {
       expect(AD_FILMS[campaign]?.channel, campaign).toBe(channel);

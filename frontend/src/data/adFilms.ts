@@ -53,6 +53,28 @@ export const AD_FILMS: Record<string, AdFilm> = {
     title: "Ready For India's Biggest Fashion Sale? | Myntra End of Reason Sale",
   },
 
+  phonepe: {
+    id: "gBQwlE6nNiY",
+    channel: "PhonePe App",
+    title: "PhonePe - Utilities Advertisement (Hindi)",
+  },
+  zepto: {
+    id: "Lmk9nmVXUFw",
+    channel: "Zepto",
+    title: "Zepto - 10 Minute Grocery Delivery | Fresh Fruits & Vegetables",
+  },
+  boat: {
+    id: "WIhpzOJFm0w",
+    channel: "boAt",
+    title:
+      "boAt X Netflix | Presenting The Stream Edition, Made For India To Keep Watching",
+  },
+  rapido: {
+    id: "bgGQYrlpRHA",
+    channel: "Rapido",
+    title: "#GoRapido- Don’t be late, Save your date",
+  },
+
   // Creator campaigns get the film that features that person for that
   // brand — not merely a film by the brand. A Lenskart ad without Bhuvan
   // Bam in it would be the wrong evidence on a campaign that is about
@@ -67,6 +89,27 @@ export const AD_FILMS: Record<string, AdFilm> = {
     channel: "Cars24",
     title:
       "Buying A Car? CARS24 MRL Check Wali Hi Lena Yaar | Dhoni Visits Best Used Car Platform",
+  },
+  "virat-kohli-puma": {
+    id: "j078Y9Au8-M",
+    channel: "PUMA",
+    title: "PUMA INDIA | One8 by PUMAxVirat Kohli #ComeOutAndPlay | Wanna skip this ad? That's cool!",
+  },
+  "salman-khan-thums-up": {
+    id: "KPj0DZWyrPY",
+    channel: "ThumsUpOfficial",
+    title: "Thums Up #AbAayegaToofan with Salman Khan",
+  },
+  "salman-khan-pepsi": {
+    id: "MN2VM6DXeTQ",
+    channel: "pepsiindia",
+    title: "Salman Khan ke #HarGhoontMeinSwag hai",
+  },
+  "alia-bhatt-l-or-al-paris": {
+    id: "xfrr3fk1_T0",
+    channel: "L’Oréal Paris India",
+    title:
+      "L'Oréal Paris Mujh Mein Hai Diwali ft. Alia Bhatt, Akansha Ranjan Kapoor & Anushka Ranjan",
   },
 };
 
