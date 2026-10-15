@@ -40,6 +40,7 @@ export function AuthPage() {
   // link is a smaller harm than offering one that leads to a 404.
   const { data: options } = useAuthOptions();
   const signupEnabled = options?.signupEnabled ?? false;
+  const ssoEnabled = options?.ssoEnabled ?? false;
   const minPasswordLength = options?.minPasswordLength ?? 10;
 
   // Defensive: if signup is switched off server-side while this tab is
@@ -110,6 +111,7 @@ export function AuthPage() {
               />
             ) : (
               <SignInForm
+                ssoEnabled={ssoEnabled}
                 initialEmail={justCreated ?? ""}
                 notice={
                   justCreated

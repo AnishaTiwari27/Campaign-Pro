@@ -21,23 +21,34 @@ type Options struct {
 	SecureCookies bool
 	// AllowSignup decides whether self-registration exists at all.
 	AllowSignup bool
+	// SSO is the discovered identity provider, or nil when none is
+	// configured. Nil means the endpoints are not mounted at all.
+	SSO identity.SSOProvider
+	// SSOOrgID is the organisation an SSO user joins.
+	SSOOrgID string
 }
 
 type Handlers struct {
-	auth   *service.Auth
-	secure bool
-	signup bool
-	logger *slog.Logger
+	auth     *service.Auth
+	secure   bool
+	signup   bool
+	sso      identity.SSOProvider
+	ssoOrgID string
+	logger   *slog.Logger
 }
 
 func New(auth *service.Auth, opts Options, logger *slog.Logger) *Handlers {
-	return &Handlers{auth: auth, secure: opts.SecureCookies, signup: opts.AllowSignup, logger: logger}
+	return &Handlers{
+		auth: auth, secure: opts.SecureCookies, signup: opts.AllowSignup,
+		sso: opts.SSO, ssoOrgID: opts.SSOOrgID, logger: logger,
+	}
 }
 
 // PublicRoutes mount outside the session guard — you cannot require a
 // session on the endpoint that creates one.
 func (h *Handlers) PublicRoutes(r chi.Router) {
 	r.Post("/auth/login", h.Login)
+	h.ssoRoutes(r)
 	// Always present, so the sign-in screen can ask whether to offer a
 	// "create an account" link rather than guessing and showing one that
 	// leads nowhere.
@@ -51,6 +62,11 @@ func (h *Handlers) PublicRoutes(r chi.Router) {
 
 type authOptionsDTO struct {
 	SignupEnabled bool `json:"signupEnabled"`
+	// SSOEnabled tells the sign-in screen whether to offer the button.
+	// Read from whether a provider was discovered at boot, not from
+	// config, so a provider that failed discovery does not get a button
+	// that leads nowhere.
+	SSOEnabled bool `json:"ssoEnabled"`
 	// Echoed so the form can enforce the same rule the server will, and
 	// the two cannot drift.
 	MinPasswordLength int `json:"minPasswordLength"`
@@ -61,6 +77,7 @@ type authOptionsDTO struct {
 func (h *Handlers) AuthOptions(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, authOptionsDTO{
 		SignupEnabled:     h.signup,
+		SSOEnabled:        h.sso != nil,
 		MinPasswordLength: service.MinPasswordLength,
 	})
 }

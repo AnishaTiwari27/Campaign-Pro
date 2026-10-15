@@ -7,6 +7,8 @@ package identity
 import (
 	"context"
 	"time"
+
+	"campaigntrackerpro/platform/oidc"
 )
 
 // Role is what a user may do. The four the product actually has, as
@@ -99,3 +101,14 @@ type CampaignChoice struct {
 // A method rather than a bare field so the composition root can state
 // what it needs as an interface without importing this package.
 func (u User) Organisation() string { return u.OrgID }
+
+// SSOProvider is the identity provider, as this service needs it.
+//
+// Declared in the public package rather than beside the handlers
+// because the composition root does the discovery — it is a boot-time
+// concern — and Go's internal rule means main cannot name a type that
+// lives under internal/.
+type SSOProvider interface {
+	Start() (oidc.AuthRequest, error)
+	Exchange(ctx context.Context, code, verifier, nonce string) (oidc.Identity, error)
+}

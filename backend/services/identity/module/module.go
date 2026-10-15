@@ -28,7 +28,12 @@ type Options struct {
 	// SecureCookies must be true anywhere served over HTTPS.
 	SecureCookies bool
 	// AllowSignup decides whether self-registration exists.
-	AllowSignup bool
+	AllowSignup bool // SSO is a discovered identity provider, or nil. Discovery happens
+	// in the composition root at boot, so a provider that is
+	// unreachable fails the start rather than somebody's first sign-in.
+	SSO identity.SSOProvider
+	// SSOOrgID is the organisation SSO users join.
+	SSOOrgID string
 }
 
 // New wires the service. directory is how signup writes an account:
@@ -41,6 +46,8 @@ func New(db *database.DB, auditor service.Auditor, directory service.Directory,
 	handler := api.New(auth, api.Options{
 		SecureCookies: opts.SecureCookies,
 		AllowSignup:   opts.AllowSignup,
+		SSO:           opts.SSO,
+		SSOOrgID:      opts.SSOOrgID,
 	}, logger)
 	return &Module{auth: auth, handler: handler, store: st}
 }

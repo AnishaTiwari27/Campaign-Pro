@@ -365,3 +365,32 @@
     transform: none;
   }
 }
+
+/* The divider between password sign-in and SSO. */
+.auth-or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.auth-or::before,
+.auth-or::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* An anchor styled as a button: the provider replies with a top-level
+   redirect, so this has to be a real navigation and not a fetch. */
+.auth-sso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}

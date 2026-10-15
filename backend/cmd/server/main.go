@@ -16,11 +16,13 @@ import (
 	"campaigntrackerpro/platform/config"
 	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/platform/mail"
+	"campaigntrackerpro/platform/oidc"
 	"campaigntrackerpro/platform/scope"
 	analytics "campaigntrackerpro/services/analytics/module"
 	campaigns "campaigntrackerpro/services/campaigns/module"
 	creators "campaigntrackerpro/services/creators/module"
 	endorsements "campaigntrackerpro/services/endorsements/module"
+	identitysvc "campaigntrackerpro/services/identity"
 	identity "campaigntrackerpro/services/identity/module"
 	ingestsvc "campaigntrackerpro/services/ingest"
 	ingest "campaigntrackerpro/services/ingest/module"
@@ -86,7 +88,12 @@ func main() {
 	// campaigns owns the users table, so it supplies the capability signup
 	// needs to write one. Neither service imports the other.
 	identityMod := identity.New(db, auditBridge{campaignsMod}, campaignsMod.UserDirectory(),
-		identity.Options{SecureCookies: cfg.SecureCookies, AllowSignup: cfg.AllowSignup}, logger)
+		identity.Options{
+			SecureCookies: cfg.SecureCookies,
+			AllowSignup:   cfg.AllowSignup,
+			SSO:           discoverSSO(ctx, cfg, logger),
+			SSOOrgID:      cfg.OIDCOrgID,
+		}, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
 	// No database: the public record is reference data, not the agency's.
 	endorsementsMod := endorsements.New(logger)
@@ -178,4 +185,32 @@ func captureBenchmarks(ctx context.Context, a *analytics.Module, logger *slog.Lo
 			a.CaptureBenchmarks(ctx)
 		}
 	}
+}
+
+// discoverSSO reads the identity provider's configuration at boot, or
+// returns nil if none is configured.
+//
+// Discovery is the slowest part of the flow and the part most likely to
+// be misconfigured, so it happens once here rather than on somebody's
+// first sign-in. A provider that is configured but unreachable logs and
+// disables SSO rather than killing the process: the password form still
+// works, and taking the whole deployment down because an external
+// service is having a bad morning is the wrong trade.
+func discoverSSO(ctx context.Context, cfg config.Config, logger *slog.Logger) identitysvc.SSOProvider {
+	if !cfg.SSOEnabled() {
+		return nil
+	}
+	p, err := oidc.Discover(ctx, oidc.Config{
+		Issuer:       cfg.OIDCIssuer,
+		ClientID:     cfg.OIDCClientID,
+		ClientSecret: cfg.OIDCClientSecret,
+		RedirectURL:  cfg.OIDCRedirectURL,
+	})
+	if err != nil {
+		logger.Error("sso: discovery failed, continuing with password sign-in only",
+			"issuer", cfg.OIDCIssuer, "err", err)
+		return nil
+	}
+	logger.Info("sso enabled", "issuer", cfg.OIDCIssuer, "org", cfg.OIDCOrgID)
+	return p
 }

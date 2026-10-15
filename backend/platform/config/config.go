@@ -75,6 +75,15 @@ type Config struct {
 	// address shares a bucket, and so does a CI suite. If real users
 	// start seeing 429s, this is the knob — not a redeploy of the
 	// limiter.
+	//
+	// The auth default started at 30/min and was too tight: the e2e
+	// suite makes about thirty-four sign-in attempts a minute from one
+	// address and began failing on 429s, which is a fair proxy for a
+	// team behind one NAT address. 120/min is still two per second,
+	// which is nowhere near fast enough to be useful for guessing, and
+	// a per-IP limit was never the real defence against a targeted
+	// attacker anyway — they rotate addresses. It stops one noisy
+	// source, which is what it is for.
 	RateAPIPerMinute  int
 	RateAuthPerMinute int
 	// SMTP settings for scheduled report digests. MailMode picks the
@@ -96,6 +105,25 @@ type Config struct {
 	GoogleAdsClientSecret   string
 	GoogleAdsRefreshToken   string
 	GoogleAdsCustomerID     string
+
+	// Single sign-on, OIDC. Off unless an issuer is set: a deployment
+	// with no identity provider should keep the password form rather
+	// than show an SSO button that leads nowhere.
+	OIDCIssuer       string
+	OIDCClientID     string
+	OIDCClientSecret string
+	// OIDCRedirectURL must match what is registered with the provider
+	// exactly, including scheme and trailing path, or the provider
+	// refuses the exchange.
+	OIDCRedirectURL string
+	// OIDCOrgID is the organisation an SSO user joins.
+	//
+	// One issuer to one organisation, which is enough for a deployment
+	// with a single identity provider and is where this stops. Real
+	// multi-tenant SSO needs an issuer-to-org registry so each agency
+	// can bring its own provider; that is a table and a admin screen,
+	// not a config line, and is deliberately not half-built here.
+	OIDCOrgID string
 }
 
 func Load() Config {
@@ -111,7 +139,7 @@ func Load() Config {
 		SecureCookies:        getenv("SECURE_COOKIES", "false") == "true",
 		AllowSignup:          getenv("ALLOW_SIGNUP", "true") == "true",
 		RateAPIPerMinute:     getint("RATE_API_PER_MINUTE", 600),
-		RateAuthPerMinute:    getint("RATE_AUTH_PER_MINUTE", 30),
+		RateAuthPerMinute:    getint("RATE_AUTH_PER_MINUTE", 120),
 		SMTPHost:             os.Getenv("SMTP_HOST"),
 		SMTPPort:             getenv("SMTP_PORT", "587"),
 		SMTPUser:             os.Getenv("SMTP_USERNAME"),
@@ -123,7 +151,22 @@ func Load() Config {
 		GoogleAdsClientSecret:   os.Getenv("GOOGLE_ADS_CLIENT_SECRET"),
 		GoogleAdsRefreshToken:   os.Getenv("GOOGLE_ADS_REFRESH_TOKEN"),
 		GoogleAdsCustomerID:     os.Getenv("GOOGLE_ADS_CUSTOMER_ID"),
+
+		OIDCIssuer:       os.Getenv("OIDC_ISSUER"),
+		OIDCClientID:     os.Getenv("OIDC_CLIENT_ID"),
+		OIDCClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
+		OIDCRedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
+		OIDCOrgID:        getenv("OIDC_ORG_ID", "default"),
 	}
+}
+
+// SSOEnabled reports whether single sign-on is configured. All four
+// values are needed: a partial configuration is a misconfiguration, and
+// offering the button anyway would send people to a provider that
+// rejects the request.
+func (c Config) SSOEnabled() bool {
+	return c.OIDCIssuer != "" && c.OIDCClientID != "" &&
+		c.OIDCClientSecret != "" && c.OIDCRedirectURL != ""
 }
 
 // Validate reports configuration that cannot work, as distinct from
