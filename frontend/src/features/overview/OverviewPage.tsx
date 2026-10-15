@@ -4,6 +4,7 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { SkeletonBlock } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { Ribbon } from "../../components/Ribbon";
+import { RealWork } from "./RealWork";
 import { Tile } from "../../components/Tile";
 import { KpiTile } from "../../components/KpiTile";
 import { exportUrl } from "../../api/client";
@@ -32,7 +33,10 @@ export function OverviewPage() {
           <h1>What needs you today</h1>
           <p className="overview-lede">
             {data.pendingCount} campaign{data.pendingCount === 1 ? "" : "s"} waiting on a decision, {data.flaggedCount} flagged by
-            anomaly detection.
+            anomaly detection.{" "}
+            <span className="overview-provenance">
+              Campaign figures are seeded demo data — no ad platform is connected yet.
+            </span>
           </p>
         </div>
         <div className="page-header-actions">
@@ -46,6 +50,8 @@ export function OverviewPage() {
           )}
         </div>
       </div>
+
+      <RealWork />
 
       {!hasAnything ? (
         <EmptyState title="All quiet" description="No campaigns are waiting on you or flagged right now." />

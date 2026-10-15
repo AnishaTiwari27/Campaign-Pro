@@ -24,3 +24,11 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Says plainly where the campaign numbers come from. A dashboard full
+   of plausible figures with no provenance is the thing people
+   reasonably mistrust. */
+.overview-provenance {
+  display: inline-block;
+  color: var(--warn);
+}
