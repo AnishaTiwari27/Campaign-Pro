@@ -114,10 +114,21 @@ func truncate(s string, n int) string {
 func envHelp(source string) string {
 	switch source {
 	case "google-ads":
-		return "  GOOGLE_ADS_DEVELOPER_TOKEN  (applied for, issued per manager account)\n" +
-			"  GOOGLE_ADS_CLIENT_ID\n  GOOGLE_ADS_CLIENT_SECRET\n" +
+		// The required four, and only those. This list used to lead
+		// with GOOGLE_ADS_DEVELOPER_TOKEN "applied for, issued per
+		// manager account", which since 9 September 2026 sends people
+		// to apply for something that no longer exists — and this is
+		// the exact message someone reads when setting the provider
+		// up, so a stale line here costs more than a stale comment.
+		return "  GOOGLE_ADS_CLIENT_ID\n  GOOGLE_ADS_CLIENT_SECRET\n" +
 			"  GOOGLE_ADS_REFRESH_TOKEN\n  GOOGLE_ADS_CUSTOMER_ID\n" +
-			"  GOOGLE_ADS_LOGIN_CUSTOMER_ID  (only when the account sits under an MCC)"
+			"  GOOGLE_ADS_LOGIN_CUSTOMER_ID  (only when the account sits under an MCC)\n" +
+			"\nAccess is granted to the Google Cloud project behind these OAuth\n" +
+			"credentials, not to a token. A new project starts at Test access,\n" +
+			"which reaches test accounts only — raise it to Basic on the\n" +
+			"project's Google Ads API page before pointing this at a real one.\n" +
+			"Developer tokens were sunset on 9 September 2026; set\n" +
+			"GOOGLE_ADS_DEVELOPER_TOKEN only if you already hold one."
 	case "meta":
 		return "  META_ACCESS_TOKEN   (system user or page token with ads_read)\n" +
 			"  META_AD_ACCOUNT_ID  (with or without the act_ prefix)"
