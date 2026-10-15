@@ -1,44 +1,112 @@
 /* Design tokens. Auto theme follows prefers-color-scheme; an explicit
    choice is applied via [data-theme] on :root and persisted in
-   localStorage (see app/useTheme.ts). */
+   localStorage (see app/useTheme.ts).
+
+   Every colour below was computed rather than chosen, and the working
+   is worth recording because the old palette looked fine and was not:
+
+   - The six ad-type colours sat 6.5 apart in OKLab (light) and 4.8
+     apart (dark) at their closest, against a floor of 15. Influencer
+     and Performance were both teal — two of six categories that a
+     sighted reader could not tell apart, in a product about
+     influencers. Under colour blindness the closest pair was 3.7.
+     They are now 15.1 and 19.2 apart, and 11.7 and 11.5 under the
+     three dichromacies.
+
+   - Six hues that separate well will not also dodge the reserved
+     status colours — nine distinct colours is more than one wheel of
+     readable lightness holds. So the ramp was solved first and the
+     statuses fitted around it afterwards; each one now sits at least
+     10.7 clear of every category colour, so a campaign's type can
+     never wear the same colour as "over budget".
+
+   - Warn and crit were solved as a pair rather than one at a time.
+     Separately each lands somewhere sensible and the two end up twelve
+     apart, because amber and coral are neighbours; together, warn can
+     move yellow to leave room for a crit saturated enough to read as
+     an alarm. An earlier pass had dark-mode crit at a pale pink, which
+     made "Under-delivering" look decorative.
+
+   - The statuses still sit 5.4 to 6.4 apart under colour blindness,
+     below the target of 8. Green, amber and red cannot be separated
+     for a dichromat while still meaning green, amber and red — this
+     is why every status here is a pill with its own word in it, and
+     why no ad-type colour is allowed near one. The old palette managed
+     1.6, so this is better, but the labels are doing the real work.
+
+   Dark values are declared once as --d-* and aliased twice below. They
+   used to be written out in full in both the media query and the
+   [data-theme="dark"] block: fifty-odd hex values kept in step by
+   hand, which is a drift waiting to happen. */
 
 :root {
-  /* base palette (light) */
-  --base: #f2f4f9;
+  /* ---- light surfaces: a cooler, deeper ink than the old blue-grey,
+     which washed out against white ---- */
+  --base: #f5f4f8;
   --surface: #ffffff;
-  --surface-2: #e9ecf4;
-  --surface-3: #dfe4f0;
-  --ink: #0e1326;
-  --ink-2: #303852;
-  --muted: #596180;
-  --line: #dde2ee;
-  --line-strong: #c6cddf;
+  --surface-2: #eceaf2;
+  --surface-3: #e2dfea;
+  --ink: #15121c;
+  --ink-2: #3a3548;
+  --muted: #655f74;
+  --line: #e4e1ec;
+  --line-strong: #cbc6d6;
 
-  --accent: #4a3ad8;
-  --accent-soft: #e6e3fb;
-  --good: #0f7a1c;
-  --good-soft: rgba(15, 122, 28, 0.1);
-  --warn: #8a5c00;
-  --warn-soft: rgba(138, 92, 0, 0.1);
-  --crit: #b0301c;
-  --crit-soft: rgba(176, 48, 28, 0.1);
+  --accent: #6025d9;
+  --accent-soft: #ece5fc;
+  --good: #016807;
+  --good-soft: rgba(1, 104, 7, 0.1);
+  --warn: #ae6408;
+  --warn-soft: rgba(174, 100, 8, 0.12);
+  --crit: #9c022b;
+  --crit-soft: rgba(156, 2, 43, 0.1);
 
-  /* ad-type colors */
-  --ad-social: #a8451c;
-  --ad-influencer: #0f8a6c;
-  --ad-google-ads: #4c5fc7;
-  --ad-display: #ad8300;
-  --ad-video: #a13868;
-  --ad-performance: #049c90;
+  /* ---- ad types. Hue is stable across themes so a category keeps its
+     identity; only lightness and chroma adapt to the background.
+     Google Ads is blue deliberately — it is the one category with a
+     colour people already associate with it. ---- */
+  --ad-social: #7415bf;
+  --ad-influencer: #df0d66;
+  --ad-google-ads: #1864f6;
+  --ad-display: #804d06;
+  --ad-video: #079b98;
+  --ad-performance: #769306;
+
+  /* ---- dark values, declared once ---- */
+  --d-base: #0d0b12;
+  --d-surface: #15131c;
+  --d-surface-2: #1c1926;
+  --d-surface-3: #251f32;
+  --d-ink: #efecf5;
+  --d-ink-2: #bdb7c9;
+  --d-muted: #8e879f;
+  --d-line: #272232;
+  --d-line-strong: #3a3348;
+
+  --d-accent: #b79cff;
+  --d-accent-soft: rgba(183, 156, 255, 0.18);
+  --d-good: #87eb60;
+  --d-good-soft: rgba(135, 235, 96, 0.16);
+  --d-warn: #ce8703;
+  --d-warn-soft: rgba(206, 135, 3, 0.2);
+  --d-crit: #fe868c;
+  --d-crit-soft: rgba(254, 134, 140, 0.18);
+
+  --d-ad-social: #d3b5ff;
+  --d-ad-influencer: #f34d95;
+  --d-ad-google-ads: #6e7cfd;
+  --d-ad-display: #fdbd0a;
+  --d-ad-video: #1cdbb3;
+  --d-ad-performance: #8c9f02;
 
   --radius-sm: 6px;
   --radius-md: 9px;
   --radius-lg: 13px;
   --radius-xl: 18px;
 
-  --elevation-1: 0 1px 2px rgba(14, 19, 38, 0.06), 0 1px 1px rgba(14, 19, 38, 0.04);
-  --elevation-2: 0 4px 10px rgba(14, 19, 38, 0.08), 0 2px 4px rgba(14, 19, 38, 0.05);
-  --elevation-3: 0 12px 28px rgba(14, 19, 38, 0.14), 0 4px 10px rgba(14, 19, 38, 0.08);
+  --elevation-1: 0 1px 2px rgba(21, 18, 28, 0.06), 0 1px 1px rgba(21, 18, 28, 0.04);
+  --elevation-2: 0 4px 10px rgba(21, 18, 28, 0.08), 0 2px 4px rgba(21, 18, 28, 0.05);
+  --elevation-3: 0 12px 28px rgba(21, 18, 28, 0.14), 0 4px 10px rgba(21, 18, 28, 0.08);
 
   --focus-ring: 0 0 0 3px var(--accent-soft), 0 0 0 1px var(--accent);
 
@@ -49,72 +117,75 @@
   color-scheme: light;
 }
 
+/* The two dark selectors alias the same values. Shadows are opaque
+   black rather than tinted: on a near-black surface a tinted shadow
+   reads as a smudge. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --base: #0a0d18;
-    --surface: #111527;
-    --surface-2: #161b30;
-    --surface-3: #1c2238;
-    --ink: #e9ecf8;
-    --ink-2: #b7bcd6;
-    --muted: #878fb0;
-    --line: #242a45;
-    --line-strong: #33395c;
+    --base: var(--d-base);
+    --surface: var(--d-surface);
+    --surface-2: var(--d-surface-2);
+    --surface-3: var(--d-surface-3);
+    --ink: var(--d-ink);
+    --ink-2: var(--d-ink-2);
+    --muted: var(--d-muted);
+    --line: var(--d-line);
+    --line-strong: var(--d-line-strong);
 
-    --accent: #9a8cff;
-    --accent-soft: rgba(154, 140, 255, 0.16);
-    --good: #45d06f;
-    --good-soft: rgba(69, 208, 111, 0.16);
-    --warn: #e0a825;
-    --warn-soft: rgba(224, 168, 37, 0.16);
-    --crit: #ff8a74;
-    --crit-soft: rgba(255, 138, 116, 0.16);
+    --accent: var(--d-accent);
+    --accent-soft: var(--d-accent-soft);
+    --good: var(--d-good);
+    --good-soft: var(--d-good-soft);
+    --warn: var(--d-warn);
+    --warn-soft: var(--d-warn-soft);
+    --crit: var(--d-crit);
+    --crit-soft: var(--d-crit-soft);
 
-    --ad-social: #bb5e09;
-    --ad-influencer: #09a178;
-    --ad-google-ads: #5455fb;
-    --ad-display: #b78d00;
-    --ad-video: #cd0877;
-    --ad-performance: #03a89a;
+    --ad-social: var(--d-ad-social);
+    --ad-influencer: var(--d-ad-influencer);
+    --ad-google-ads: var(--d-ad-google-ads);
+    --ad-display: var(--d-ad-display);
+    --ad-video: var(--d-ad-video);
+    --ad-performance: var(--d-ad-performance);
 
-    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
-    --elevation-2: 0 4px 10px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.22);
-    --elevation-3: 0 12px 28px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.3);
+    --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.26);
+    --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.46), 0 2px 4px rgba(0, 0, 0, 0.3);
+    --elevation-3: 0 14px 32px rgba(0, 0, 0, 0.58), 0 4px 10px rgba(0, 0, 0, 0.38);
 
     color-scheme: dark;
   }
 }
 
 :root[data-theme="dark"] {
-  --base: #0a0d18;
-  --surface: #111527;
-  --surface-2: #161b30;
-  --surface-3: #1c2238;
-  --ink: #e9ecf8;
-  --ink-2: #b7bcd6;
-  --muted: #878fb0;
-  --line: #242a45;
-  --line-strong: #33395c;
+  --base: var(--d-base);
+  --surface: var(--d-surface);
+  --surface-2: var(--d-surface-2);
+  --surface-3: var(--d-surface-3);
+  --ink: var(--d-ink);
+  --ink-2: var(--d-ink-2);
+  --muted: var(--d-muted);
+  --line: var(--d-line);
+  --line-strong: var(--d-line-strong);
 
-  --accent: #9a8cff;
-  --accent-soft: rgba(154, 140, 255, 0.16);
-  --good: #45d06f;
-  --good-soft: rgba(69, 208, 111, 0.16);
-  --warn: #e0a825;
-  --warn-soft: rgba(224, 168, 37, 0.16);
-  --crit: #ff8a74;
-  --crit-soft: rgba(255, 138, 116, 0.16);
+  --accent: var(--d-accent);
+  --accent-soft: var(--d-accent-soft);
+  --good: var(--d-good);
+  --good-soft: var(--d-good-soft);
+  --warn: var(--d-warn);
+  --warn-soft: var(--d-warn-soft);
+  --crit: var(--d-crit);
+  --crit-soft: var(--d-crit-soft);
 
-  --ad-social: #bb5e09;
-  --ad-influencer: #09a178;
-  --ad-google-ads: #5455fb;
-  --ad-display: #b78d00;
-  --ad-video: #cd0877;
-  --ad-performance: #03a89a;
+  --ad-social: var(--d-ad-social);
+  --ad-influencer: var(--d-ad-influencer);
+  --ad-google-ads: var(--d-ad-google-ads);
+  --ad-display: var(--d-ad-display);
+  --ad-video: var(--d-ad-video);
+  --ad-performance: var(--d-ad-performance);
 
-  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 1px rgba(0, 0, 0, 0.2);
-  --elevation-2: 0 4px 10px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.22);
-  --elevation-3: 0 12px 28px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.3);
+  --elevation-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 1px rgba(0, 0, 0, 0.26);
+  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.46), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --elevation-3: 0 14px 32px rgba(0, 0, 0, 0.58), 0 4px 10px rgba(0, 0, 0, 0.38);
 
   color-scheme: dark;
 }
