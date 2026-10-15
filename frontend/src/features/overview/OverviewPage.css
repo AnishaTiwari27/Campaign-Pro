@@ -2,58 +2,18 @@
   min-width: 0;
 }
 
-/* The two counts, as counts. Scanned in a glance rather than read out
-   of a sentence, which is what a number in a lede always costs. */
-.overview-counts {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
-  margin-top: 10px;
-  flex-wrap: wrap;
-}
-
-.overview-count {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 7px 13px 7px 11px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: inherit;
-  text-decoration: none;
-}
-
-/* Only the pending one is a link — there is an approvals queue to send
-   someone to. There is no flagged view, so that one is not dressed as
-   something to click. */
-.overview-count-action {
-  transition: border-color 140ms ease, transform 140ms ease;
-}
-
-.overview-count-action:hover {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
-  transform: translateY(-1px);
-}
-
-.overview-count-n {
-  font-size: 23px;
-  font-weight: 700;
-  line-height: 1;
-  font-variant-numeric: tabular-nums;
-  color: var(--accent);
-}
-
-.overview-count-flag {
-  color: var(--crit);
-}
-
-.overview-count-label {
-  font-size: 11px;
-  line-height: 1.25;
-  font-weight: 560;
+.overview-lede {
+  font-size: 13.5px;
   color: var(--muted);
+  margin-top: 4px;
 }
+
+/* In focus runs above this now, so the header needs air over it rather
+   than sitting flush against the foot of the film. */
+.overview-header {
+  margin-top: 26px;
+}
+
 
 .overview-ribbons {
   display: flex;

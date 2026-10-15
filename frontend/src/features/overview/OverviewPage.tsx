@@ -27,32 +27,24 @@ export function OverviewPage() {
 
   return (
     <div className="overview-page">
-      <div className="page-header">
+      {/* In focus leads the page. It is the thing the page is for —
+          what most deserves a look right now — so it sits above the
+          title and the counts rather than after them. */}
+      {hasAnything && (
+        <InFocus
+          candidates={data.spotlightCandidates}
+          medAll={data.medAll}
+          benchmarks={benchmark?.categories}
+        />
+      )}
+
+      <div className="page-header overview-header">
         <div className="overview-head">
           <h1>What needs you today</h1>
-          {/* The two numbers were buried in a sentence that also
-              carried the demo-data caveat, so the counts the page
-              exists to report read as prose and the caveat read as
-              part of them. Split: the counts are the figures, stated
-              as figures, and the caveat gets its own line below. */}
-          <div className="overview-counts">
-            <Link to="/approvals" className="overview-count overview-count-action">
-              <span className="overview-count-n">{data.pendingCount}</span>
-              <span className="overview-count-label">
-                waiting on
-                <br />
-                your decision
-              </span>
-            </Link>
-            <span className="overview-count">
-              <span className="overview-count-n overview-count-flag">{data.flaggedCount}</span>
-              <span className="overview-count-label">
-                flagged by
-                <br />
-                anomaly detection
-              </span>
-            </span>
-          </div>
+          <p className="overview-lede">
+            {data.pendingCount} campaign{data.pendingCount === 1 ? "" : "s"} waiting on a decision,{" "}
+            {data.flaggedCount} flagged by anomaly detection.
+          </p>
         </div>
         <div className="page-header-actions">
           <a className="btn" href={exportUrl({})}>
@@ -78,8 +70,6 @@ export function OverviewPage() {
         <EmptyState title="All quiet" description="No campaigns are waiting on you or flagged right now." />
       ) : (
         <>
-          <InFocus candidates={data.spotlightCandidates} medAll={data.medAll} benchmarks={benchmark?.categories} />
-
           <div className="overview-ribbons">
             <Ribbon
               title="Your call"
