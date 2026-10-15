@@ -117,10 +117,12 @@ function GeneratedAvatar({ seed, name, initials, kind, size, fill }: { seed: str
       </g>
 
       {!drawFace && (
-        // Lifted in fill mode: the headline's scrim owns the lower third.
+        // Centred in both modes. These were lifted in fill mode to clear
+        // the headline's scrim; with the copy gone they just sat high
+        // with empty space beneath them.
         <text
           x="32"
-          y={fill ? 26 : 33}
+          y="33"
           textAnchor="middle"
           dominantBaseline="central"
           fill="#fff"

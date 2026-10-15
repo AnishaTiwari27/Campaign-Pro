@@ -45,9 +45,12 @@ export function Tile({
         }
       }}
     >
-      {/* The art is the advertisement, and the whole panel is the picture:
-          one image edge to edge, with the headline — the campaign's
-          highest-reaching asset — set over a scrim at its foot. */}
+      {/* The picture is the whole panel and nothing is written across
+          it. The ad's headline used to sit over the lower half, which
+          put two lines of white text across the face of the person the
+          tile is about — the one thing the image is there to show. The
+          copy still lives on the campaign and on the creator's page,
+          where it has room to be read rather than squinted past. */}
       <div className="tile-art">
         <SubjectImage
           name={campaign.name}
@@ -73,18 +76,6 @@ export function Tile({
             <span className="tile-byline-name truncate">{creator.name}</span>
             <span className="tile-byline-go" aria-hidden="true">›</span>
           </Link>
-        )}
-        {campaign.lead && (
-          <span className="tile-creative">
-            <span className="tile-creative-copy">{campaign.lead.headline}</span>
-            <span className="tile-creative-meta">
-              {campaign.lead.kind}
-              {campaign.lead.duration && campaign.lead.duration !== "static" && campaign.lead.duration !== "article"
-                ? ` · ${campaign.lead.duration}`
-                : ""}
-              {campaign.lead.festival ? ` · ${campaign.lead.festival}` : ""}
-            </span>
-          </span>
         )}
         <span className="tile-status">
           <Pill status={campaign.status} />
