@@ -23,11 +23,19 @@ import (
 var ErrNotConfigured = errors.New("provider is not configured")
 
 // GoogleAdsConfig is what the Google Ads API needs before it will
-// answer. All five are required and none can be defaulted: the
-// developer token is issued per manager account after an application,
-// and the OAuth client and refresh token belong to a specific Google
-// Cloud project.
+// answer. The OAuth client and refresh token belong to a specific
+// Google Cloud project, and it is that project — not a token — which
+// now carries the API access level.
 type GoogleAdsConfig struct {
+	// DeveloperToken is optional and kept only for continuity.
+	//
+	// Google sunset developer tokens on 9 September 2026: access
+	// levels (Test, Explorer, Basic, Standard) attach to the Google
+	// Cloud project that issued the OAuth credentials, and a token
+	// sent in a request is ignored. It is not required here, and must
+	// not be, because a setup starting today cannot obtain one —
+	// requiring it would leave this provider permanently
+	// unconfigurable.
 	DeveloperToken string
 	ClientID       string
 	ClientSecret   string
@@ -39,13 +47,22 @@ type GoogleAdsConfig struct {
 	// APIVersion is pinned rather than defaulted to "latest": Google
 	// sunsets versions on a schedule, and a sync that silently moves
 	// version is one that silently changes field semantics.
+	//
+	// The flip side is that a pin goes stale on its own. This one did:
+	// it was v18, which Google no longer lists as supported, so the
+	// first live call would have failed on the version in the path.
+	// Check it against Google's deprecation and sunset page before a
+	// first run.
 	APIVersion string
 	BaseURL    string
 	HTTP       *http.Client
 }
 
+// complete reports whether there is enough to attempt a call. The
+// developer token is deliberately absent from this list — see the
+// field's comment.
 func (c GoogleAdsConfig) complete() bool {
-	return c.DeveloperToken != "" && c.ClientID != "" && c.ClientSecret != "" &&
+	return c.ClientID != "" && c.ClientSecret != "" &&
 		c.RefreshToken != "" && c.CustomerID != ""
 }
 
@@ -55,10 +72,10 @@ func (c GoogleAdsConfig) complete() bool {
 // and the response mapping are written from Google's published
 // reference, and the parsing is covered by tests against recorded
 // response shapes — but nobody has pointed this at a real account,
-// because doing so needs a developer token Google issues per manager
-// account on application. `make verify-ingest SOURCE=google-ads` does
-// exactly that check once credentials exist, and until it has been run
-// this should be treated as unproven rather than working.
+// because doing so needs an authorised Google Ads account.
+// `make verify-ingest SOURCE=google-ads` does exactly that check once
+// credentials exist, and until it has been run this should be treated
+// as unproven rather than working.
 type GoogleAdsProvider struct {
 	Config GoogleAdsConfig
 	tokens *oauth.RefreshTokenSource
@@ -71,7 +88,8 @@ func (p GoogleAdsProvider) apiVersion() string {
 	if p.Config.APIVersion != "" {
 		return p.Config.APIVersion
 	}
-	return "v18"
+	// Supported versions as of October 2026 are v24, v25 and v26.
+	return "v26"
 }
 
 func (p GoogleAdsProvider) baseURL() string {
@@ -172,7 +190,12 @@ func (p GoogleAdsProvider) Fetch(ctx context.Context, since time.Time) ([]Extern
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("developer-token", p.Config.DeveloperToken)
+	// Sent only when one was configured. Google ignores it either way,
+	// but an empty header is a claim to carry a credential that is not
+	// there, and it muddies anything reading the wire.
+	if p.Config.DeveloperToken != "" {
+		req.Header.Set("developer-token", p.Config.DeveloperToken)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	if p.Config.LoginCustomerID != "" {
 		req.Header.Set("login-customer-id", strings.ReplaceAll(p.Config.LoginCustomerID, "-", ""))

@@ -38,7 +38,7 @@ func TestGoogleSendsTheHeadersAndQueryTheAPIRequires(t *testing.T) {
 	p := GoogleAdsProvider{Config: GoogleAdsConfig{
 		DeveloperToken: "dev-token", ClientID: "cid", ClientSecret: "secret",
 		RefreshToken: "refresh", CustomerID: "123-456-7890", LoginCustomerID: "999-888-7777",
-		BaseURL: srv.URL, APIVersion: "v18", HTTP: srv.Client(),
+		BaseURL: srv.URL, APIVersion: "v26", HTTP: srv.Client(),
 	}}
 	p.tokens = testTokenSource(srv)
 
@@ -59,7 +59,7 @@ func TestGoogleSendsTheHeadersAndQueryTheAPIRequires(t *testing.T) {
 	if gotLoginCustomer != "9998887777" {
 		t.Errorf("login-customer-id %q, want the hyphens stripped", gotLoginCustomer)
 	}
-	if !strings.Contains(gotPath, "/v18/customers/1234567890/googleAds:searchStream") {
+	if !strings.Contains(gotPath, "/v26/customers/1234567890/googleAds:searchStream") {
 		t.Errorf("path %q", gotPath)
 	}
 	if !strings.Contains(gotQuery, "segments.date >= '2026-01-01'") {

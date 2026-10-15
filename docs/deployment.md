@@ -100,6 +100,76 @@ What the flow checks, because each is a real attack if skipped: `state`
 signature against the provider's JWKS, and `iss`/`aud`/`exp`/`iat`. An
 unverified email is refused outright. See `platform/oidc`.
 
+### Connecting a real ad account
+
+Optional, and the only way the per-campaign figures become real. Until
+one of these is connected the numbers in the app are fixtures; no
+amount of public data substitutes for them, because a campaign's reach
+and spend are not published by anyone.
+
+Neither API costs money. What they need is authorisation on the account
+whose data you are reading — which is the client's to give.
+
+**Google Ads.** Create a Google Cloud project, enable the Google Ads
+API on it, and generate an OAuth client plus a refresh token for a user
+with access to the Ads account.
+
+| Env var | Value |
+|---|---|
+| `GOOGLE_ADS_CLIENT_ID` / `GOOGLE_ADS_CLIENT_SECRET` | From the Cloud project's OAuth client |
+| `GOOGLE_ADS_REFRESH_TOKEN` | For a user authorised on the Ads account |
+| `GOOGLE_ADS_CUSTOMER_ID` | The account to read, hyphens optional |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | The manager (MCC) account, when the customer sits under one |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Optional, and only if you already hold one — see below |
+
+**Developer tokens were sunset on 9 September 2026.** Access levels
+(Test, Explorer, Basic, Standard) now attach to the Google Cloud
+project that issued the OAuth credentials, and you request a level on
+that project's Google Ads API page in the Cloud console; Basic is
+reviewed automatically once the project is brand-verified. A token sent
+in a request is accepted and ignored, so an older integration keeps
+working — but a setup starting today cannot obtain one, which is why
+this app does not require it.
+
+New projects start at Test access, which reaches **test accounts only**.
+A call against a production account will fail until the project is
+raised to at least Basic.
+
+The API version is pinned in `services/ingest/googleads.go` rather than
+tracking "latest", because a version change can move field semantics
+underneath a sync. The flip side is that a pin goes stale: check it
+against Google's deprecation and sunset page before a first run.
+
+**Meta.** A system user access token on the ad account, plus the
+account id:
+
+| Env var | Value |
+|---|---|
+| `META_ACCESS_TOKEN` | A system user token with `ads_read` |
+| `META_AD_ACCOUNT_ID` | `act_<id>` |
+
+The token is the credential itself — there is no refresh exchange — so
+it expires on Meta's schedule and has to be reissued rather than
+renewed.
+
+**Then prove it before trusting it:**
+
+```bash
+make verify-ingest SOURCE=google-ads
+make verify-ingest SOURCE=meta
+```
+
+Both clients are written from the published references and covered by
+tests against recorded response shapes, but neither has been run
+against a live account. Treat them as unproven until that command
+passes.
+
+A note on what these do *not* unlock: your own accounts, not anyone
+else's. Competitors' real spend and reach are not purchasable — Meta's
+Ad Library archive API covers only political and issue ads in India,
+and what the competitive-intelligence vendors sell is modelled
+estimates, not actuals.
+
 ### Creating the first account
 
 **Never run `make seed` against a deployment.** It begins with
