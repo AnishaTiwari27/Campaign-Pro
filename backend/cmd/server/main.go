@@ -101,11 +101,15 @@ func main() {
 	// No database: the public record is reference data, not the agency's.
 	endorsementsMod := endorsements.New(logger)
 	ingestMod := ingest.New(db, ingestsvc.GoogleAdsConfig{
-		DeveloperToken: cfg.GoogleAdsDeveloperToken,
-		ClientID:       cfg.GoogleAdsClientID,
-		ClientSecret:   cfg.GoogleAdsClientSecret,
-		RefreshToken:   cfg.GoogleAdsRefreshToken,
-		CustomerID:     cfg.GoogleAdsCustomerID,
+		DeveloperToken:  cfg.GoogleAdsDeveloperToken,
+		ClientID:        cfg.GoogleAdsClientID,
+		ClientSecret:    cfg.GoogleAdsClientSecret,
+		RefreshToken:    cfg.GoogleAdsRefreshToken,
+		CustomerID:      cfg.GoogleAdsCustomerID,
+		LoginCustomerID: cfg.GoogleAdsLoginCustomerID,
+	}, ingestsvc.MetaConfig{
+		AccessToken: cfg.MetaAccessToken,
+		AdAccountID: cfg.MetaAdAccountID,
 	}, logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),

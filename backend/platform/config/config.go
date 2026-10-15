@@ -105,6 +105,14 @@ type Config struct {
 	GoogleAdsClientSecret   string
 	GoogleAdsRefreshToken   string
 	GoogleAdsCustomerID     string
+	// Only needed when the customer sits under a manager account.
+	GoogleAdsLoginCustomerID string
+
+	// Meta Marketing API. The access token is the credential itself —
+	// there is no refresh exchange — so it expires on Meta's schedule
+	// and has to be reissued rather than renewed.
+	MetaAccessToken string
+	MetaAdAccountID string
 
 	// Single sign-on, OIDC. Off unless an issuer is set: a deployment
 	// with no identity provider should keep the password form rather
@@ -152,11 +160,15 @@ func Load() Config {
 		SMTPPass:             os.Getenv("SMTP_PASSWORD"),
 		MailFrom:             getenv("MAIL_FROM", "reports@campaigntracker.local"),
 
-		GoogleAdsDeveloperToken: os.Getenv("GOOGLE_ADS_DEVELOPER_TOKEN"),
-		GoogleAdsClientID:       os.Getenv("GOOGLE_ADS_CLIENT_ID"),
-		GoogleAdsClientSecret:   os.Getenv("GOOGLE_ADS_CLIENT_SECRET"),
-		GoogleAdsRefreshToken:   os.Getenv("GOOGLE_ADS_REFRESH_TOKEN"),
-		GoogleAdsCustomerID:     os.Getenv("GOOGLE_ADS_CUSTOMER_ID"),
+		GoogleAdsDeveloperToken:  os.Getenv("GOOGLE_ADS_DEVELOPER_TOKEN"),
+		GoogleAdsClientID:        os.Getenv("GOOGLE_ADS_CLIENT_ID"),
+		GoogleAdsClientSecret:    os.Getenv("GOOGLE_ADS_CLIENT_SECRET"),
+		GoogleAdsRefreshToken:    os.Getenv("GOOGLE_ADS_REFRESH_TOKEN"),
+		GoogleAdsCustomerID:      os.Getenv("GOOGLE_ADS_CUSTOMER_ID"),
+		GoogleAdsLoginCustomerID: os.Getenv("GOOGLE_ADS_LOGIN_CUSTOMER_ID"),
+
+		MetaAccessToken: os.Getenv("META_ACCESS_TOKEN"),
+		MetaAdAccountID: os.Getenv("META_AD_ACCOUNT_ID"),
 
 		OIDCIssuer:       os.Getenv("OIDC_ISSUER"),
 		OIDCClientID:     os.Getenv("OIDC_CLIENT_ID"),

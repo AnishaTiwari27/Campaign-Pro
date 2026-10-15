@@ -18,10 +18,14 @@ type Module struct{ handler *api.Handlers }
 // New builds the service with the providers it should offer. Google Ads
 // is always listed even when unconfigured, so the UI can show it as
 // available-but-not-set-up rather than pretending it does not exist.
-func New(db *database.DB, google ingest.GoogleAdsConfig, logger *slog.Logger) *Module {
+func New(db *database.DB, google ingest.GoogleAdsConfig, meta ingest.MetaConfig, logger *slog.Logger) *Module {
 	svc := service.New(store.New(db), logger)
+	// Every platform is listed whether or not it is configured, so the
+	// UI can show it as available-but-not-set-up rather than pretending
+	// it does not exist. Adding a third is adding a line here.
 	providers := map[string]ingest.Provider{
 		"google-ads": ingest.GoogleAdsProvider{Config: google},
+		"meta":       ingest.MetaProvider{Config: meta},
 	}
 	return &Module{handler: api.New(svc, providers, logger)}
 }

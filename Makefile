@@ -102,3 +102,15 @@ lint:
 
 fmt:
 	cd backend && gofmt -w .
+
+# Make one real call to an ad platform and print what came back.
+# The platform clients are written from published references and their
+# mapping is unit-tested, but nothing has been run against a live
+# account — a Google developer token and Meta ads_read both need an
+# application. This closes that gap once credentials exist. It reads
+# only, so it cannot damage an account.
+#
+#   make verify-ingest SOURCE=google-ads
+#   make verify-ingest SOURCE=meta
+verify-ingest:
+	cd backend && go run ./cmd/verifyingest -source=$(SOURCE)
