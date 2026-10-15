@@ -397,7 +397,22 @@ func DetectAnomaly(c Campaign, categoryIndex, indexVsAll float64) AnomalyResult 
 		return AnomalyResult{true, "Budget nearly exhausted"}
 	case categoryIndex >= 1.8:
 		return AnomalyResult{true, "Reach outlier"}
-	case indexVsAll <= 0.3 && c.DaysRunning >= 2:
+	// Under-delivering is judged against the all-campaign median, which
+	// is only meaningful when the campaigns being compared are
+	// comparable. For creator-fronted work they are not: the median
+	// mixes a four-million-follower creator with a two-hundred-million
+	// one, and the smaller account fails it by arithmetic rather than
+	// by performing badly. This product already says so elsewhere —
+	// the Influencers page ranks "for their own tier, not by follower
+	// count" — so the detector deferring here is the two agreeing
+	// rather than a special case.
+	//
+	// The tier-normalised index on the roster is the instrument for
+	// that judgement, and it lives in the creators service, which this
+	// one cannot reach. Not flagging is the right answer in the
+	// meantime: a wrong "under-delivering" against a named person is a
+	// claim about their professional standing.
+	case indexVsAll <= 0.3 && c.DaysRunning >= 2 && c.CreatorID == "":
 		return AnomalyResult{true, "Under-delivering"}
 	default:
 		return AnomalyResult{false, ""}

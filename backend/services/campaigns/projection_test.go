@@ -120,3 +120,32 @@ func TestCurveShapeChangesTheProjection(t *testing.T) {
 			front.ProjectedReach, slow.ProjectedReach)
 	}
 }
+
+// A creator-fronted campaign is not judged "under-delivering" against
+// the all-campaign median, because that median mixes creator tiers
+// that are not comparable: a four-million-follower creator fails it by
+// arithmetic rather than by performing badly. Kusha Kapila at 9 lakh
+// was flagged against a median pulled up by Virat Kohli, which is the
+// comparison the Influencers page explicitly refuses to make.
+func TestCreatorCampaignsAreNotFlaggedUnderDeliveringOnRawMedian(t *testing.T) {
+	low := Campaign{Reach: 9, Spend: 100, Budget: 1000, DaysRunning: 10, CreatorID: "kusha-kapila"}
+	if got := DetectAnomaly(low, 0.2, 0.22); got.Flagged {
+		t.Errorf("flagged a creator campaign as %q on a raw-median comparison", got.Reason)
+	}
+	// A brand campaign with the same numbers still flags: brands are
+	// comparable with each other, and that judgement is about a line of
+	// spend rather than somebody's standing.
+	brand := Campaign{Reach: 9, Spend: 100, Budget: 1000, DaysRunning: 10}
+	if got := DetectAnomaly(brand, 0.2, 0.22); !got.Flagged || got.Reason != "Under-delivering" {
+		t.Errorf("brand campaign should still flag, got %+v", got)
+	}
+}
+
+// Budget rules are about money, not comparability, so they apply to
+// everyone. A creator campaign that is over budget must still say so.
+func TestBudgetRulesStillApplyToCreatorCampaigns(t *testing.T) {
+	over := Campaign{Reach: 50, Spend: 1200, Budget: 1000, DaysRunning: 10, CreatorID: "someone"}
+	if got := DetectAnomaly(over, 1.0, 1.0); !got.Flagged || got.Reason != "Over budget pace" {
+		t.Errorf("got %+v, want an over-budget flag", got)
+	}
+}

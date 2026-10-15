@@ -45,7 +45,12 @@ type creatorSeed struct {
 }
 
 // Real people, and only brand relationships they are actually
-// documented as having. Virat Kohli fronts Puma; Alia Bhatt is Gucci's
+// documented as having. Film and cricket names alongside working
+// content creators — Bhuvan Bam fronts Lenskart and Ola Electric,
+// Kusha Kapila fronts Orient Electric — because an influencer agency
+// pitches both, and because a roster of nothing but mega-celebrities
+// leaves the tier comparison with a single bucket and nothing to
+// compare within. Virat Kohli fronts Puma; Alia Bhatt is Gucci's
 // first Indian global ambassador; Salman Khan has endorsed Pepsi for
 // years. Every pairing below is in the public record this product also
 // serves at /endorsements, cited there to where it was reported.
@@ -126,6 +131,34 @@ func creatorSeeds() []creatorSeed {
 				{"Shaka Harry", campaigns.AdSocial, "Instagram", campaigns.StatusLive, 8, 31, 1_500_000, 3_200_000, 1.5, campaigns.ApprovalApproved, campaigns.CurveSlow, "English", "story"},
 			},
 		},
+		{
+			id: "bhuvan-bam", name: "Bhuvan Bam", role: "Content creator", initials: "BB",
+			category: "Entertainment", region: "Delhi NCR", followers: 17_000_000,
+			platform: "YouTube", languages: []string{"Hindi", "English"},
+			campaigns: []creatorCampaignSeed{
+				{"Lenskart", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 12, 34, 1_400_000, 3_000_000, 1.8, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "demo"},
+				{"Ola Electric", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 9, 29, 1_200_000, 2_600_000, 1.7, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "story"},
+				{"Beyoung", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 20, 22, 900_000, 1_900_000, 1.5, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "announcement"},
+			},
+		},
+		{
+			id: "prajakta-koli", name: "Prajakta Koli", role: "Content creator", initials: "PK",
+			category: "Entertainment", region: "Mumbai", followers: 7_000_000,
+			platform: "YouTube", languages: []string{"Hindi", "English", "Marathi"},
+			campaigns: []creatorCampaignSeed{
+				{"WhatsApp", campaigns.AdVideo, "YouTube", campaigns.StatusEnded, 18, 19, 780_000, 1_700_000, 1.6, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "story"},
+				{"Netflix", campaigns.AdSocial, "Instagram", campaigns.StatusLive, 11, 16, 640_000, 1_500_000, 1.5, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "announcement"},
+			},
+		},
+		{
+			id: "kusha-kapila", name: "Kusha Kapila", role: "Content creator", initials: "KK",
+			category: "Entertainment", region: "Delhi NCR", followers: 4_200_000,
+			platform: "Instagram", languages: []string{"Hindi", "English"},
+			campaigns: []creatorCampaignSeed{
+				{"Orient Electric", campaigns.AdInfluencer, "Instagram", campaigns.StatusLive, 10, 12, 480_000, 1_100_000, 1.4, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "demo"},
+				{"Myntra", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 16, 9, 360_000, 820_000, 1.3, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "story"},
+			},
+		},
 	}
 }
 
@@ -142,6 +175,10 @@ var brandDomains = map[string]string{
 	"Louis Vuitton": "louisvuitton.com", "Cartier": "cartier.com", "Tissot": "tissotwatches.com",
 	"Adidas": "adidas.co.in", "Jack & Jones": "jackjones.in", "MakeMyTrip": "makemytrip.com",
 	"CARS24": "cars24.com", "SEVEN": "seven.co.in", "Shaka Harry": "shakaharry.com",
+	// Content-creator campaigns.
+	"Ola Electric": "olaelectric.com", "Beyoung": "beyoung.in",
+	"WhatsApp": "whatsapp.com", "Netflix": "netflix.com",
+	"Orient Electric": "orientelectric.com",
 }
 
 var seedSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)

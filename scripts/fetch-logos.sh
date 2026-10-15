@@ -15,17 +15,23 @@ MIN_BYTES=${MIN_BYTES:-1200}
 mkdir -p "$OUT"
 
 DOMAINS=(
+  # Brand campaigns.
   dream11.com phonepe.com cred.club amul.com zeptonow.com myntra.com
   boat-lifestyle.com swiggy.com tanishq.co.in licious.in blinkit.com
   lenskart.com mamaearth.in nykaa.com rapido.bike urbancompany.com
   ethoswatches.com lakmeindia.com
+  # Brands the roster is documented as fronting.
+  puma.com mrftyres.com vivo.com gucci.com lorealparis.co.in
+  maybelline.co.in pepsi.com marutisuzuki.com coca-colaindia.com
+  louisvuitton.com cartier.com tissotwatches.com adidas.co.in
+  jackjones.in makemytrip.com cars24.com seven.co.in shakaharry.com
 )
 
 ok=0; skipped=0
 for d in "${DOMAINS[@]}"; do
   tmp="$(mktemp)"
   code=$(curl -s -L --max-time 10 -o "$tmp" -w "%{http_code}" \
-    "https://www.google.com/s2/favicons?domain=${d}&sz=128")
+    "https://www.google.com/s2/favicons?domain=${d}&sz=256")
   size=$(wc -c < "$tmp" | tr -d ' ')
   mime=$(file -b --mime-type "$tmp")
 

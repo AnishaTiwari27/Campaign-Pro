@@ -27,6 +27,9 @@ var creatorFaces = map[string]string{
 	"deepika-padukone": "/celebs/deepika-padukone.jpg",
 	"ranveer-singh":    "/celebs/ranveer-singh.jpg",
 	"ms-dhoni":         "/celebs/ms-dhoni.jpg",
+	"bhuvan-bam":       "/celebs/bhuvan-bam.jpg",
+	"prajakta-koli":    "/celebs/prajakta-koli.jpg",
+	"kusha-kapila":     "/celebs/kusha-kapila.jpg",
 }
 
 // applyCreatorFaces sets each creator's photograph after the roster is

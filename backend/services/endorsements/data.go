@@ -111,6 +111,51 @@ var people = []Person{
 		},
 	},
 	{
+		ID: "bhuvan-bam", Name: "Bhuvan Bam", Role: "Content creator", Initials: "BB",
+		Field:  "Digital",
+		Source: "https://en.wikipedia.org/wiki/Bhuvan_Bam",
+		Photo: Photo{
+			URL: "/celebs/bhuvan-bam.jpg", Artist: "Bollywood Hungama",
+			License: "CC BY 3.0", LicenseURL: "https://creativecommons.org/licenses/by/3.0",
+			Source: "https://commons.wikimedia.org/wiki/File:Bhuvan_Bam_at_Myntra's_Creator_Fest_2023_event_(cropped).jpg",
+		},
+		Deals: []Deal{
+			{Brand: "Lenskart", Note: "Their first male brand ambassador", Kind: KindAmbassador},
+			{Brand: "Ola Electric", Note: "One of its celebrity brand ambassadors", Kind: KindAmbassador},
+			{Brand: "Beyoung", Period: "2024–", Note: "Their first brand ambassador", Kind: KindAmbassador},
+			{Brand: "Faboom", Note: "Brand ambassador", Kind: KindAmbassador},
+			{Brand: "Puma", Period: "2020", Note: "Grazia India cover collaboration", Kind: KindEndorsement},
+		},
+	},
+	{
+		ID: "prajakta-koli", Name: "Prajakta Koli", Role: "Content creator", Initials: "PK",
+		Field:  "Digital",
+		Source: "https://en.wikipedia.org/wiki/Prajakta_Koli",
+		Photo: Photo{
+			URL: "/celebs/prajakta-koli.jpg", Artist: "Bollywood Hungama",
+			License: "CC BY 3.0", LicenseURL: "https://creativecommons.org/licenses/by/3.0",
+			Source: "https://commons.wikimedia.org/wiki/File:Prajakta_koli_in_2023.jpj.png",
+		},
+		Deals: []Deal{
+			{Brand: "WhatsApp", Period: "2018", Note: "One of three national television commercials", Kind: KindEndorsement},
+			{Brand: "Netflix", Period: "2020–", Note: "Mismatched, and Single Papa in 2025", Kind: KindEndorsement},
+			{Brand: "YouTube", Period: "2018–", Note: "Creators for Change, and the Original Pretty Fit", Kind: KindEndorsement},
+		},
+	},
+	{
+		ID: "kusha-kapila", Name: "Kusha Kapila", Role: "Content creator", Initials: "KK",
+		Field:  "Digital",
+		Source: "https://en.wikipedia.org/wiki/Kusha_Kapila",
+		Photo: Photo{
+			URL: "/celebs/kusha-kapila.jpg", Artist: "Bollywood Hungama",
+			License: "CC BY 3.0", LicenseURL: "https://creativecommons.org/licenses/by/3.0",
+			Source: "https://commons.wikimedia.org/wiki/File:Kusha_Kapila_snapped_at_the_red_carpet_of_ET_Inspiring_Women_Leaders_Conclave.jpg",
+		},
+		Deals: []Deal{
+			{Brand: "Orient Electric", Period: "2025", Note: "Premium lighting campaign, alongside MS Dhoni", Kind: KindEndorsement},
+		},
+	},
+	{
 		ID: "ms-dhoni", Name: "MS Dhoni", Role: "Cricketer", Initials: "MD",
 		Field:  "Cricket",
 		Source: "https://en.wikipedia.org/wiki/MS_Dhoni",
