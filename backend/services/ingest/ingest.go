@@ -70,3 +70,18 @@ type Result struct {
 	Failed  int
 	Err     error
 }
+
+// FixedProvider carries rows that have already been read and mapped —
+// the output of a confirmed column mapping. It exists so a reviewed
+// import runs the identical matching, upsert and run-recording path as
+// every other source, rather than a second one written beside it.
+type FixedProvider struct {
+	SourceName string
+	Rows       []ExternalCampaign
+}
+
+func (p FixedProvider) Source() string { return p.SourceName }
+
+func (p FixedProvider) Fetch(context.Context, time.Time) ([]ExternalCampaign, error) {
+	return p.Rows, nil
+}

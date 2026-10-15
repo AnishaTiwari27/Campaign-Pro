@@ -2,6 +2,7 @@
 package api
 
 import (
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"time"
@@ -28,6 +29,7 @@ func (h *Handlers) Routes(r chi.Router) {
 		r.Get("/sources", h.ListSources)
 		r.Get("/runs", h.ListRuns)
 		r.Post("/{source}/sync", h.Sync)
+		r.Post("/csv/inspect", h.InspectCSV)
 		r.Post("/csv", h.UploadCSV)
 	})
 }
@@ -94,8 +96,45 @@ func (h *Handlers) Sync(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, resultDTO(res))
 }
 
+// InspectCSV reads an export and proposes how its columns line up with
+// the schema, without writing anything.
+//
+// This is the half of the import that a human has to see. A model
+// reading column headers is guessing — usually well — and a confident
+// wrong guess puts the wrong number in a spend column that someone
+// then makes decisions against. So the proposal comes back with a
+// preview of the rows as they would be read, and the import runs
+// against the mapping that comes back confirmed, not against this.
+func (h *Handlers) InspectCSV(w http.ResponseWriter, r *http.Request) {
+	if isClient(r) {
+		httpx.WriteForbidden(w, "ingestion writes to the agency's campaigns and isn't available to client accounts")
+		return
+	}
+	if err := r.ParseMultipartForm(maxUpload); err != nil {
+		httpx.WriteValidationError(w, "could not read the upload", "file")
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		httpx.WriteValidationError(w, "attach the export as 'file'", "file")
+		return
+	}
+	defer file.Close()
+
+	headers, rows, err := ingest.ReadTable(file)
+	if err != nil {
+		httpx.WriteValidationError(w, err.Error(), "file")
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, h.svc.ProposeMapping(r.Context(), headers, rows))
+}
+
 // UploadCSV is the path that works without any platform credentials at
 // all, and runs the same matching and upsert as every other source.
+//
+// A confirmed mapping may be supplied as a "mapping" form field, which
+// is what the inspect step above produces. Without one the export has
+// to use the schema's own column names.
 func (h *Handlers) UploadCSV(w http.ResponseWriter, r *http.Request) {
 	if isClient(r) {
 		httpx.WriteForbidden(w, "ingestion writes to the agency's campaigns and isn't available to client accounts")
@@ -116,7 +155,34 @@ func (h *Handlers) UploadCSV(w http.ResponseWriter, r *http.Request) {
 	if source == "" {
 		source = "csv"
 	}
-	res, err := h.svc.Run(r.Context(), ingest.CSVProvider{SourceName: source, Reader: file}, time.Time{})
+
+	var provider ingest.Provider = ingest.CSVProvider{SourceName: source, Reader: file}
+	if raw := r.FormValue("mapping"); raw != "" {
+		var mapping ingest.ColumnMapping
+		if err := json.Unmarshal([]byte(raw), &mapping); err != nil {
+			httpx.WriteValidationError(w, "the confirmed mapping was not valid JSON", "mapping")
+			return
+		}
+		headers, rows, err := ingest.ReadTable(file)
+		if err != nil {
+			httpx.WriteValidationError(w, err.Error(), "file")
+			return
+		}
+		// The unit is confirmed alongside the columns, not guessed: raw
+		// and lakh differ by a factor of a hundred thousand.
+		unit := ingest.ReachUnit(r.FormValue("reach_unit"))
+		if unit != ingest.ReachLakh {
+			unit = ingest.ReachRaw
+		}
+		campaigns, err := ingest.RowsToCampaigns(headers, rows, mapping, unit)
+		if err != nil {
+			httpx.WriteValidationError(w, err.Error(), "mapping")
+			return
+		}
+		provider = ingest.FixedProvider{SourceName: source, Rows: campaigns}
+	}
+
+	res, err := h.svc.Run(r.Context(), provider, time.Time{})
 	if err != nil {
 		// A malformed CSV is the user's to fix, so the message says what
 		// is wrong with it rather than being swallowed as a 500.

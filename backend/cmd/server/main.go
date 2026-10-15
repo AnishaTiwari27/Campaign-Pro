@@ -110,7 +110,7 @@ func main() {
 	}, ingestsvc.MetaConfig{
 		AccessToken: cfg.MetaAccessToken,
 		AdAccountID: cfg.MetaAdAccountID,
-	}, logger)
+	}, explainer(cfg, logger), logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
 		mailerFor(cfg, logger), logger, workerTick)

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	"campaigntrackerpro/platform/llm"
 	"campaigntrackerpro/services/ingest"
 	"campaigntrackerpro/services/ingest/internal/store"
 )
@@ -15,10 +16,20 @@ import (
 type Sync struct {
 	store  *store.Store
 	logger *slog.Logger
+	// model proposes a column mapping for an export whose headers do
+	// not already match the schema. Optional: without it an unfamiliar
+	// export still imports, it just needs the mapping supplied by hand.
+	model llm.Client
 }
 
 func New(st *store.Store, logger *slog.Logger) *Sync {
 	return &Sync{store: st, logger: logger}
+}
+
+// WithMapper attaches the model used to propose column mappings.
+func (s *Sync) WithMapper(m llm.Client) *Sync {
+	s.model = m
+	return s
 }
 
 // Run pulls from one provider and writes what it finds.

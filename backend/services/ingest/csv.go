@@ -30,6 +30,10 @@ func (p CSVProvider) Source() string {
 // that has been through a human has had its columns reordered.
 var csvRequired = []string{"external_id", "name", "category", "region", "platform", "status", "ad_type", "reach_lakh", "spend", "budget"}
 
+// This path reads reach_lakh, which names its own unit. The mapped
+// path in mapping.go asks for the unit instead, because a platform
+// export's column name does not reliably say.
+
 func (p CSVProvider) Fetch(_ context.Context, _ time.Time) ([]ExternalCampaign, error) {
 	r := csv.NewReader(p.Reader)
 	r.TrimLeadingSpace = true

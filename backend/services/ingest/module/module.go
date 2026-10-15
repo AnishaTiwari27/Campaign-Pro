@@ -5,6 +5,7 @@ import (
 	"log/slog"
 
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/llm"
 	"campaigntrackerpro/services/ingest"
 	"campaigntrackerpro/services/ingest/internal/api"
 	"campaigntrackerpro/services/ingest/internal/service"
@@ -18,8 +19,8 @@ type Module struct{ handler *api.Handlers }
 // New builds the service with the providers it should offer. Google Ads
 // is always listed even when unconfigured, so the UI can show it as
 // available-but-not-set-up rather than pretending it does not exist.
-func New(db *database.DB, google ingest.GoogleAdsConfig, meta ingest.MetaConfig, logger *slog.Logger) *Module {
-	svc := service.New(store.New(db), logger)
+func New(db *database.DB, google ingest.GoogleAdsConfig, meta ingest.MetaConfig, mapper llm.Client, logger *slog.Logger) *Module {
+	svc := service.New(store.New(db), logger).WithMapper(mapper)
 	// Every platform is listed whether or not it is configured, so the
 	// UI can show it as available-but-not-set-up rather than pretending
 	// it does not exist. Adding a third is adding a line here.
