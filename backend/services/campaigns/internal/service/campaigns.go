@@ -50,6 +50,7 @@ func (c *Campaigns) enrich(ctx context.Context, all []campaigns.Campaign) (map[s
 			PaceClass:     campaigns.PaceClassOf(pace),
 			Lead:          leads[camp.ID],
 			ExpectedPace:  expected,
+			Projection:    campaigns.Project(camp),
 			PaceVsPlan:    campaigns.PaceVsPlan(pace, expected),
 			CPM:           campaigns.CPM(camp.Spend, camp.Reach, camp.Frequency),
 			Index:         campaigns.Index(camp.Reach, medAll),

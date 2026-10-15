@@ -432,3 +432,102 @@ func ApprovalBlock(c Campaign) string {
 		return ""
 	}
 }
+
+// --- Projection ------------------------------------------------------
+//
+// Where a running campaign lands if it keeps following its own curve.
+//
+// This is arithmetic, not a model. ReachCurve is linear in its total —
+// every checkpoint is `total * weight` — so the curve can be inverted:
+// the share of the eventual total that should be delivered by a given
+// age is ValueAtAge(1, …), and the projected total is simply what has
+// actually been delivered divided by that share. No fitting, no
+// training data, nothing learned. The same curve already powers
+// ExpectedPace, which answers "am I ahead of plan"; this answers
+// "where does the plan end".
+
+// minElapsedForProjection is the share of the flight that must have
+// run before a projection is offered.
+//
+// Dividing by the delivered share is what makes this work, and it is
+// also what makes it dangerous early: at day 1 of 30 the share is a
+// few percent, so the division multiplies a single day's noise by
+// thirty or more. A campaign that happened to start fast would be
+// projected to triple its budget. Refusing to answer is the honest
+// output here, and a fifth of the flight is where the arithmetic stops
+// amplifying more than it informs.
+const minElapsedForProjection = 0.2
+
+// Projection is where a campaign is heading.
+type Projection struct {
+	// Available is false when it is too early to say. Everything else
+	// is zero in that case — callers must not render a projection that
+	// was refused.
+	Available bool
+	// ElapsedShare is how much of the flight has run, 0–1. This is the
+	// confidence signal, and an honest one: it is the only thing that
+	// actually governs how much the projection is extrapolating.
+	ElapsedShare float64
+
+	ProjectedReach float64
+	ProjectedSpend int64
+
+	// ExhaustsOnDay is the flight day the budget runs out, or 0 if the
+	// projection does not have it running out at all.
+	ExhaustsOnDay int
+	// OverspendBy is projected spend beyond budget, 0 when within it.
+	OverspendBy int64
+}
+
+// Project computes where a campaign lands at the end of its flight.
+func Project(c Campaign) Projection {
+	flight := c.FlightDays
+	if flight <= 0 || c.DaysRunning <= 0 {
+		return Projection{}
+	}
+	// A finished campaign needs no projecting — the actuals are the
+	// answer, and pretending otherwise would put a guess next to a fact.
+	if c.DaysRunning >= flight {
+		return Projection{}
+	}
+	elapsed := float64(c.DaysRunning) / float64(flight)
+	if elapsed < minElapsedForProjection {
+		return Projection{ElapsedShare: elapsed}
+	}
+
+	// The share of the eventual total this curve says should be in by
+	// now. Linear in total, so dividing by it inverts the curve.
+	share := ValueAtAge(1, c.CurveShape, flight, c.DaysRunning)
+	if share <= 0 {
+		return Projection{ElapsedShare: elapsed}
+	}
+
+	p := Projection{
+		Available:      true,
+		ElapsedShare:   elapsed,
+		ProjectedReach: c.Reach / share,
+		ProjectedSpend: int64(math.Round(float64(c.Spend) / share)),
+	}
+	if c.Budget > 0 && p.ProjectedSpend > c.Budget {
+		p.OverspendBy = p.ProjectedSpend - c.Budget
+		p.ExhaustsOnDay = exhaustionDay(float64(p.ProjectedSpend), c.CurveShape, flight, c.Budget)
+	}
+	return p
+}
+
+// exhaustionDay walks the flight to find the first day on which the
+// projected spend curve crosses the budget.
+//
+// A walk rather than an inversion because the curve is a piecewise
+// interpolation between eight checkpoints: solving it analytically
+// would mean picking the right segment first, and a flight is at most
+// a few hundred days, so stepping is both simpler and exact to the
+// granularity anyone cares about.
+func exhaustionDay(projectedTotal float64, shape CurveShape, flightDays int, budget int64) int {
+	for day := 1; day <= flightDays; day++ {
+		if ValueAtAge(projectedTotal, shape, flightDays, day) >= float64(budget) {
+			return day
+		}
+	}
+	return 0
+}

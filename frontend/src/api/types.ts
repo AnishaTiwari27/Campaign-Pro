@@ -7,6 +7,28 @@ export type Approval = "pending" | "approved" | "rejected";
 export type CurveShape = "fast" | "steady" | "slow";
 export type PaceClass = "over" | "warn" | "good";
 
+/** Where a campaign lands if it keeps following its own curve. */
+export interface Projection {
+  /** How much of the flight has run, 0–1 — the confidence signal. */
+  elapsedShare: number;
+  projectedReach: number;
+  projectedSpend: number;
+  /** Flight day the budget runs out; absent when it stays within. */
+  exhaustsOnDay?: number;
+  overspendBy?: number;
+}
+
+/** Where a campaign lands if it keeps following its own curve. */
+export interface Projection {
+  /** How much of the flight has run, 0-1 — the confidence signal. */
+  elapsedShare: number;
+  projectedReach: number;
+  projectedSpend: number;
+  /** Flight day the budget runs out; absent when it stays within. */
+  exhaustsOnDay?: number;
+  overspendBy?: number;
+}
+
 export interface Campaign {
   id: string;
   name: string;
@@ -44,6 +66,8 @@ export interface Campaign {
   /** pace / expectedPace. 1.0 is exactly on plan, 1.4 is 40% ahead of the
    *  flight. 0 when the campaign has no recorded plan. */
   paceVsPlan: number;
+  /** Absent when too early in the flight, or already finished. */
+  projection?: Projection;
   /** The campaign's headline creative, so a card can show the
    *  advertisement rather than an avatar on a gradient. Absent until a
    *  campaign has an asset. */

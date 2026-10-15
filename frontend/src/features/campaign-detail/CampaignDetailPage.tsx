@@ -16,6 +16,7 @@ import { ApiError } from "../../api/client";
 import { approvalBlockOf } from "../../lib/metrics";
 import { StatRail } from "./StatRail";
 import { SignalExplainer } from "./SignalExplainer";
+import { ProjectionPanel } from "./Projection";
 import { PerformanceTab } from "./PerformanceTab";
 import { CreativesTab } from "./CreativesTab";
 import { ActivityTab } from "./ActivityTab";
@@ -178,6 +179,8 @@ export function CampaignDetailPage() {
       <StatRail campaign={campaign} />
 
       <SignalExplainer campaignId={campaign.id} flagReason={campaign.flagReason} />
+
+      <ProjectionPanel campaign={campaign} />
 
       <div className="campaign-detail-body">
         <div className="campaign-detail-main">

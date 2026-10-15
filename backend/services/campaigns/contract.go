@@ -20,6 +20,10 @@ type CampaignRow struct {
 	// cannot distinguish mid-flight from underspending on its own.
 	ExpectedPace float64
 	PaceVsPlan   float64
+	// Projection is where this campaign lands if it keeps following
+	// its own curve. Not available early in a flight or after it has
+	// finished — see campaigns.Project.
+	Projection Projection
 	// Lead is the campaign's headline creative — what a tile shows, so a
 	// card reads as the advertisement it represents rather than as a row
 	// with an avatar on it.

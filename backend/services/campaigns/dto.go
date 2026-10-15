@@ -39,6 +39,10 @@ type CampaignDTO struct {
 	FlightDays    int     `json:"flightDays"`
 	ExpectedPace  float64 `json:"expectedPace"`
 	PaceVsPlan    float64 `json:"paceVsPlan"`
+	// Projection is omitted entirely when it was refused — too early
+	// in the flight, or already finished — so the client cannot render
+	// a figure that was deliberately withheld.
+	Projection *ProjectionDTO `json:"projection,omitempty"`
 	// Lead is the campaign's headline asset, so a card can show the
 	// advertisement rather than an avatar on a gradient.
 	Lead *LeadCreativeDTO `json:"lead,omitempty"`
@@ -64,7 +68,8 @@ func NewCampaignDTO(r CampaignRow) CampaignDTO {
 		Pace: r.Pace, PaceClass: string(r.PaceClass), CPM: r.CPM, Index: r.Index,
 		CategoryIndex: r.CategoryIndex,
 		FlightDays:    r.FlightDays, ExpectedPace: r.ExpectedPace, PaceVsPlan: r.PaceVsPlan,
-		Lead: leadDTO(r.Lead),
+		Projection: projectionDTO(r.Projection),
+		Lead:       leadDTO(r.Lead),
 	}
 }
 
@@ -147,4 +152,30 @@ func leadDTO(l LeadCreative) *LeadCreativeDTO {
 		return nil
 	}
 	return &LeadCreativeDTO{Headline: l.Headline, Kind: l.Kind, Duration: l.Duration, Festival: l.Festival}
+}
+
+// ProjectionDTO is where a campaign lands if it keeps to its curve.
+type ProjectionDTO struct {
+	// ElapsedShare is how much of the flight has run, 0–1. The honest
+	// confidence signal: it is what governs how far this extrapolates.
+	ElapsedShare   float64 `json:"elapsedShare"`
+	ProjectedReach float64 `json:"projectedReach"`
+	ProjectedSpend int64   `json:"projectedSpend"`
+	// ExhaustsOnDay is the flight day the budget runs out, absent when
+	// the projection keeps it within budget.
+	ExhaustsOnDay int   `json:"exhaustsOnDay,omitempty"`
+	OverspendBy   int64 `json:"overspendBy,omitempty"`
+}
+
+func projectionDTO(p Projection) *ProjectionDTO {
+	if !p.Available {
+		return nil
+	}
+	return &ProjectionDTO{
+		ElapsedShare:   p.ElapsedShare,
+		ProjectedReach: p.ProjectedReach,
+		ProjectedSpend: p.ProjectedSpend,
+		ExhaustsOnDay:  p.ExhaustsOnDay,
+		OverspendBy:    p.OverspendBy,
+	}
 }
