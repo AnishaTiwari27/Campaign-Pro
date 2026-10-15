@@ -1,0 +1,106 @@
+.ad-film {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ad-film-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #000;
+  border: 1px solid var(--line);
+}
+
+.ad-film-player,
+.ad-film-poster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.ad-film-poster {
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  display: block;
+}
+
+.ad-film-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Only behind the play button and the badge, so the creative itself is
+   not dimmed — the point is to show the ad, not a darkened version. */
+.ad-film-scrim {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgb(0 0 0 / 0.38), rgb(0 0 0 / 0.08) 60%);
+  opacity: 0.85;
+  transition: opacity 0.18s ease;
+}
+
+.ad-film-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgb(255 255 255 / 0.94);
+  color: #111;
+  box-shadow: 0 2px 12px rgb(0 0 0 / 0.35);
+  transition: transform 0.18s ease;
+}
+
+.ad-film-poster:hover .ad-film-play,
+.ad-film-poster:focus-visible .ad-film-play {
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.ad-film-poster:hover .ad-film-scrim {
+  opacity: 0.6;
+}
+
+.ad-film-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgb(0 0 0 / 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.ad-film-caption {
+  display: grid;
+  gap: 1px;
+  font-size: 11px;
+  line-height: 1.35;
+  min-width: 0;
+}
+
+.ad-film-caption > span:first-child {
+  color: var(--ink-2);
+  font-weight: 550;
+}
+
+.ad-film-source {
+  color: var(--muted);
+  font-size: 10px;
+}

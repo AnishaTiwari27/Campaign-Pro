@@ -10,7 +10,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --ext .ts,.tsx",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "verify:ad-films": "node scripts/verify-ad-films.mjs",
+    "validate:palette": "node scripts/validate-palette.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",

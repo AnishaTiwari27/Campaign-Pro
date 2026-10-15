@@ -66,3 +66,38 @@ taken address tells the caller that address is registered; the alternative is
 accepting a duplicate silently and leaving someone with no account and no
 explanation. Sign-in, which has no such excuse, stays deliberately vague about
 whether an email exists.
+
+## Ad films are embedded from the advertiser's own YouTube channel
+
+The spotlight plays the real ad film a campaign is running, where one
+can be verified. Every entry in `frontend/src/data/adFilms.ts` is a
+video the brand published on its own channel and left embeddable.
+
+That is the whole licensing argument: the player is YouTube's, the
+upload is the advertiser's, attribution travels with it, and nothing is
+copied or re-hosted. It is what any publisher does when it embeds a
+brand's ad.
+
+Three things are refused, and the refusals are the point:
+
+- creative pulled out of an ad server, which is not ours to serve;
+- a "banner" composited from a celebrity photograph and a brand logo,
+  which fabricates an advertisement that does not exist and attaches it
+  to a real person;
+- a film from a fan channel that re-uploaded it, which looks fine while
+  attributing a stranger's upload to the advertiser.
+
+So `channel` is stored beside every video, and
+`scripts/verify-ad-films.mjs` re-checks it against YouTube's oEmbed
+endpoint rather than trusting the file. oEmbed answers all three failure
+modes at once: 404 for a deleted video, 401/403 for one that may not be
+embedded, and the publishing channel's name. It caught a wrong title on
+its first run.
+
+A campaign with no verified film shows what it showed before. A gap is
+not a thing to fill with something approximate.
+
+The player is a facade — a still and a play button until clicked, then
+`youtube-nocookie.com`. On a dashboard most visitors never press play,
+and an embed that mounts on load would phone home and set cookies for
+all of them.

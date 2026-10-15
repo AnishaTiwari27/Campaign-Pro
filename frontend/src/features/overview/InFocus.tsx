@@ -7,6 +7,8 @@ import { adTypeStripeStyle } from "../../components/AdTypeTag";
 import { SubjectImage } from "../../components/SubjectImage";
 import { useCreatorPhotos } from "../../api/creatorPhotos";
 import { AreaChart } from "../../components/AreaChart";
+import { AdFilm } from "../../components/AdFilm";
+import { adFilmFor } from "../../data/adFilms";
 import { reachCurve } from "../../lib/metrics";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
 import "./InFocus.css";
@@ -27,6 +29,11 @@ export function InFocus({
   const creatorPhotos = useCreatorPhotos();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  // A film playing holds the carousel still on its own account. Kept
+  // apart from `paused`, which is the pointer being over the card: if
+  // they shared one flag, moving the mouse away would rotate the card
+  // out from under a video that is still playing.
+  const [filmPlaying, setFilmPlaying] = useState(false);
   // Drives the progress ring. Kept separate from `active` so restarting the
   // cycle doesn't require re-rendering the whole card.
   const [elapsed, setElapsed] = useState(0);
@@ -41,7 +48,7 @@ export function InFocus({
   }, [count]);
 
   useEffect(() => {
-    if (paused || count <= 1) return;
+    if (paused || filmPlaying || count <= 1) return;
     const id = setInterval(() => {
       const since = Date.now() - startedAt.current;
       if (since >= ROTATE_MS) {
@@ -53,11 +60,15 @@ export function InFocus({
       }
     }, 250);
     return () => clearInterval(id);
-  }, [paused, count]);
+  }, [paused, filmPlaying, count]);
 
   if (count === 0) return null;
 
   const campaign = candidates[Math.min(active, count - 1)];
+  // Only where the brand's own upload has been verified. Everything
+  // else keeps the card it has — an approximate stand-in for a real
+  // campaign's creative would be worse than none.
+  const film = adFilmFor(campaign.id);
   const curve = reachCurve(campaign.reach, campaign.curveShape);
   const points = curve.map((v, i) => ({
     label: `Day ${Math.round((i / 7) * campaign.daysRunning)}`,
@@ -110,14 +121,18 @@ export function InFocus({
         </div>
       </div>
 
-      <Link
-        to={`/campaigns/${campaign.id}`}
+      {/* Was a single <Link> around the whole card. A play control
+          cannot sit inside an anchor — nested interactive content is
+          invalid, and the click would navigate instead of playing — so
+          the link now covers the half you read and the film owns its
+          own half. */}
+      <div
         className="in-focus-card card"
         style={adTypeStripeStyle(campaign.adType)}
         key={campaign.id}
       >
         <span className="in-focus-stripe" />
-        <div className="in-focus-main">
+        <Link to={`/campaigns/${campaign.id}`} className="in-focus-main">
           <div className="in-focus-eyebrow-row">
             <SubjectImage
               name={campaign.name}
@@ -159,12 +174,24 @@ export function InFocus({
               <div className="in-focus-stat-value in-focus-index mono">{formatIndex(campaign.index)}</div>
             </div>
           </div>
-        </div>
 
-        <div className="in-focus-chart">
-          <AreaChart points={points} medianValue={categoryMedian} formatValue={formatReach} interactive={false} height={150} />
+        </Link>
+
+        <div className="in-focus-side">
+          {film && (
+            <AdFilm film={film} campaignName={campaign.name} onPlayingChange={setFilmPlaying} />
+          )}
+          <div className="in-focus-chart">
+            <AreaChart
+              points={points}
+              medianValue={categoryMedian}
+              formatValue={formatReach}
+              interactive={false}
+              height={film ? 96 : 150}
+            />
+          </div>
         </div>
-      </Link>
+      </div>
 
       <div className="in-focus-strip" role="tablist" aria-label="In focus campaigns">
         {candidates.map((c, i) => (
