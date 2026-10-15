@@ -96,6 +96,8 @@ func main() {
 			AllowSignup:   cfg.AllowSignup,
 			SSO:           discoverSSO(ctx, cfg, logger),
 			SSOOrgID:      cfg.OIDCOrgID,
+			SignupOrgID:   cfg.SignupOrgID,
+			SSOLabel:      cfg.SSOProviderName(),
 		}, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
 	insightsMod := insights.New(campaignsMod.Service(), explainer(cfg, logger), logger)

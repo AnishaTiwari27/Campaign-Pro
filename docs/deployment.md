@@ -58,6 +58,47 @@ rewrite.
 | `TZ` | `Asia/Kolkata` — every report cadence is computed in IST |
 | `PORT` | Whatever the platform injects; defaults to `8090` |
 | `ALLOW_SIGNUP` | `true` (the default) exposes the public signup page and `POST /api/auth/signup`. Set it to `false` to close registration once the accounts that should exist do — the route is then not registered at all, rather than registered and refusing |
+| `SIGNUP_ORG_ID` | The organisation a self-registered account joins; defaults to `default`. Signup is a public route, so there is no session to read a tenant from and one has to be named. It must be a row in `organizations` — `users.org_id` is a foreign key, so a value that is not there makes every signup fail |
+
+### Sign in with Google (OAuth / OIDC)
+
+Optional. Without it the password form is the only way in; with it the
+sign-in and signup screens both offer **Continue with Google**, and an
+address Google vouches for gets an analyst account on first use without
+choosing a password at all.
+
+Any OIDC-compliant provider works — the four variables below are all
+that differs between Google, Microsoft Entra, Okta and Auth0. The button
+names whichever one the issuer identifies, derived from the issuer so
+the label cannot name a provider other than the one it reaches.
+
+In Google Cloud Console: **APIs & Services → Credentials → Create
+credentials → OAuth client ID → Web application**. Add one authorised
+redirect URI, `https://your-host/api/auth/sso/callback`. Then:
+
+| Env var | Value |
+|---|---|
+| `OIDC_ISSUER` | `https://accounts.google.com` |
+| `OIDC_CLIENT_ID` | From the console |
+| `OIDC_CLIENT_SECRET` | From the console. A secret: set it on the service, never in the repo |
+| `OIDC_REDIRECT_URL` | `https://your-host/api/auth/sso/callback` — must match what you registered character for character, or Google refuses the exchange |
+| `OIDC_ORG_ID` | The organisation SSO users join; defaults to `default` |
+
+All four are required together. A partial set leaves SSO off, because
+offering a button that the provider will reject is worse than not
+offering one. Discovery runs once at boot: if the issuer is unreachable
+the log says so and the app continues with password sign-in rather than
+failing to start.
+
+Everyone who can sign in with the provider gets an analyst account —
+read everything in scope, decide nothing. Restrict who that is on the
+provider's side, which for a Google Workspace domain is the OAuth
+client's own publishing setting, not something this app can enforce.
+
+What the flow checks, because each is a real attack if skipped: `state`
+(CSRF), `nonce` (replay), PKCE `S256` (code interception), the RS256
+signature against the provider's JWKS, and `iss`/`aud`/`exp`/`iat`. An
+unverified email is refused outright. See `platform/oidc`.
 
 ### Creating the first account
 

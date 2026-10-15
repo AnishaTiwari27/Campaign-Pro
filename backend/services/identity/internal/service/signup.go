@@ -8,6 +8,7 @@ import (
 	"strings"
 	"unicode"
 
+	"campaigntrackerpro/platform/scope"
 	"campaigntrackerpro/services/identity"
 )
 
@@ -73,7 +74,15 @@ type SignupInput struct {
 // sent to the sign-in form to use the password they just chose, which
 // proves they can before they are relying on the session. It also keeps
 // this endpoint from being a way to mint sessions.
-func (a *Auth) Signup(ctx context.Context, in SignupInput) (identity.User, error) {
+//
+// orgID is which organisation the new account joins, and it has to be
+// passed in rather than read off the context: signup is a public
+// endpoint, so it runs before the tenant middleware has anything to
+// resolve. Without it every read and write below would carry the empty
+// organisation, which by design matches no row — the duplicate-email
+// check would never fire and the insert would be refused by the foreign
+// key on users.org_id.
+func (a *Auth) Signup(ctx context.Context, in SignupInput, orgID string) (identity.User, error) {
 	clean, err := validateSignup(in)
 	if err != nil {
 		return identity.User{}, err
@@ -81,6 +90,13 @@ func (a *Auth) Signup(ctx context.Context, in SignupInput) (identity.User, error
 	if a.directory == nil {
 		return identity.User{}, errors.New("signup is not configured on this server")
 	}
+	if orgID == "" {
+		// A misconfiguration, not a bad request. Reported as an error
+		// rather than attempted, so it reads as itself in the log
+		// instead of arriving as a foreign key violation.
+		return identity.User{}, errors.New("signup has no organisation configured on this server")
+	}
+	ctx = scope.WithOrg(ctx, scope.Org{ID: orgID})
 
 	// A check, not a guarantee: two requests can pass it at once. The
 	// unique index on users.email is the actual guard, and a violation
@@ -109,7 +125,7 @@ func (a *Auth) Signup(ctx context.Context, in SignupInput) (identity.User, error
 		return identity.User{}, fmt.Errorf("set password: %w", err)
 	}
 
-	user := signupUser(id, clean.Email, clean.Name)
+	user := signupUser(id, clean.Email, clean.Name, orgID)
 	// Self-registration is security-relevant: it is the one way an account
 	// appears without an admin doing it, so the audit trail must show it.
 	_ = a.auditor.Record(ctx, user.ID, user.Name, "Signed up", "user", user.ID)
@@ -186,6 +202,6 @@ func AsValidationError(err error) (msg, field string, ok bool) {
 
 // signupUser is the account Signup produces, in one place so a test can
 // assert what a stranger is actually granted.
-func signupUser(id, email, name string) identity.User {
-	return identity.User{ID: id, Email: email, Name: name, Role: SignupRole, IsAgency: true}
+func signupUser(id, email, name, orgID string) identity.User {
+	return identity.User{ID: id, Email: email, Name: name, Role: SignupRole, IsAgency: true, OrgID: orgID}
 }

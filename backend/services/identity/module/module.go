@@ -34,6 +34,10 @@ type Options struct {
 	SSO identity.SSOProvider
 	// SSOOrgID is the organisation SSO users join.
 	SSOOrgID string
+	// SignupOrgID is the organisation a self-registered account joins.
+	SignupOrgID string
+	// SSOLabel names the provider on the sign-in button.
+	SSOLabel string
 }
 
 // New wires the service. directory is how signup writes an account:
@@ -48,6 +52,8 @@ func New(db *database.DB, auditor service.Auditor, directory service.Directory,
 		AllowSignup:   opts.AllowSignup,
 		SSO:           opts.SSO,
 		SSOOrgID:      opts.SSOOrgID,
+		SignupOrgID:   opts.SignupOrgID,
+		SSOLabel:      opts.SSOLabel,
 	}, logger)
 	return &Module{auth: auth, handler: handler, store: st}
 }

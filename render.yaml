@@ -59,3 +59,25 @@ services:
       # analyst: it reads, and decides nothing.
       - key: ALLOW_SIGNUP
         value: "true"
+      # Google sign-in. Off until all four are set — a partial
+      # configuration would show a button that the provider rejects, so
+      # config.SSOEnabled() requires the complete set and discovery has
+      # to succeed at boot before the button is offered at all.
+      #
+      # The issuer is the only one of these that is not a secret, so it
+      # is stated here. The other three are entered under Environment on
+      # the service: a client secret does not belong in a public repo.
+      #
+      # Google's own console: APIs & Services → Credentials → Create
+      # credentials → OAuth client ID → Web application. The redirect URI
+      # registered there must match OIDC_REDIRECT_URL character for
+      # character, or the exchange is refused.
+      - key: OIDC_ISSUER
+        value: https://accounts.google.com
+      - key: OIDC_CLIENT_ID
+        sync: false
+      - key: OIDC_CLIENT_SECRET
+        sync: false
+      # https://<your-service>.onrender.com/api/auth/sso/callback
+      - key: OIDC_REDIRECT_URL
+        sync: false

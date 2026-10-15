@@ -3,6 +3,7 @@ package config
 
 import (
 	"errors"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -133,6 +134,16 @@ type Config struct {
 	// not a config line, and is deliberately not half-built here.
 	OIDCOrgID string
 
+	// SignupOrgID is the organisation a self-registered account joins.
+	//
+	// Signup is a public endpoint, so there is no session to read a
+	// tenant from and one has to be named here. It answers for the
+	// password form exactly what OIDCOrgID answers for SSO, and for the
+	// same reason: an account has to belong to an organisation, and
+	// users.org_id is a foreign key, so "none" is not an option the
+	// database will accept.
+	SignupOrgID string
+
 	// The model that writes signal explanations. Optional: with no key
 	// the explanations are assembled from the figures instead, which is
 	// plainer and still true.
@@ -175,6 +186,7 @@ func Load() Config {
 		OIDCClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
 		OIDCRedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
 		OIDCOrgID:        getenv("OIDC_ORG_ID", "default"),
+		SignupOrgID:      getenv("SIGNUP_ORG_ID", "default"),
 
 		LLMAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
 		LLMModel:  getenv("LLM_MODEL", "claude-sonnet-5"),
@@ -188,6 +200,41 @@ func Load() Config {
 func (c Config) SSOEnabled() bool {
 	return c.OIDCIssuer != "" && c.OIDCClientID != "" &&
 		c.OIDCClientSecret != "" && c.OIDCRedirectURL != ""
+}
+
+// SSOProviderName is the provider's name, for the label on the sign-in
+// button. Derived from the issuer rather than configured separately, so
+// the two cannot disagree about who the button sends you to.
+//
+// A known host gets its name; anything else gets the generic wording.
+// Guessing from an unrecognised domain would be worse than generic: a
+// button that names the wrong company is a reason not to click it.
+func (c Config) SSOProviderName() string {
+	host := c.OIDCIssuer
+	if u, err := url.Parse(c.OIDCIssuer); err == nil && u.Host != "" {
+		host = u.Host
+	}
+	host = strings.ToLower(host)
+	switch {
+	case host == "accounts.google.com":
+		return "Google"
+	case under(host, "microsoftonline.com"), under(host, "windows.net"):
+		return "Microsoft"
+	case under(host, "okta.com"), under(host, "oktapreview.com"):
+		return "Okta"
+	case under(host, "auth0.com"):
+		return "Auth0"
+	case under(host, "onelogin.com"):
+		return "OneLogin"
+	}
+	return "single sign-on"
+}
+
+// under reports whether host is domain itself or a subdomain of it.
+// A bare suffix test would also match "evilmicrosoftonline.com", which
+// is the one answer this function must never give.
+func under(host, domain string) bool {
+	return host == domain || strings.HasSuffix(host, "."+domain)
 }
 
 // Validate reports configuration that cannot work, as distinct from

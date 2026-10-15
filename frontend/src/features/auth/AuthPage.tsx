@@ -3,6 +3,7 @@ import { useAuthOptions } from "../../api/auth";
 import { AuthArt, FeatureIcon, type FeatureIconName } from "./AuthArt";
 import { SignInForm } from "./SignInForm";
 import { SignUpForm } from "./SignUpForm";
+import { ssoFailureMessage } from "./SsoButton";
 import "./AuthPage.css";
 
 const FEATURES: { icon: FeatureIconName; title: string; body: string }[] = [
@@ -36,11 +37,20 @@ export function AuthPage() {
   // retype the address they typed a second ago.
   const [justCreated, setJustCreated] = useState<string | null>(null);
 
+  // A failed trip to the identity provider comes back as ?sso=… on a
+  // redirect, because the callback is a browser navigation and cannot
+  // answer with JSON. Read once, at mount: it describes the attempt
+  // that landed here, and it must not reappear after the next one.
+  const [ssoError] = useState<string | null>(() =>
+    ssoFailureMessage(window.location.search),
+  );
+
   // If this request fails the screen stays sign-in only. Hiding a working
   // link is a smaller harm than offering one that leads to a 404.
   const { data: options } = useAuthOptions();
   const signupEnabled = options?.signupEnabled ?? false;
   const ssoEnabled = options?.ssoEnabled ?? false;
+  const ssoLabel = options?.ssoLabel || "single sign-on";
   const minPasswordLength = options?.minPasswordLength ?? 10;
 
   // Defensive: if signup is switched off server-side while this tab is
@@ -103,6 +113,8 @@ export function AuthPage() {
             {showSignup ? (
               <SignUpForm
                 minPasswordLength={minPasswordLength}
+                ssoEnabled={ssoEnabled}
+                ssoLabel={ssoLabel}
                 onCreated={(email) => {
                   setJustCreated(email);
                   setMode("signin");
@@ -112,7 +124,9 @@ export function AuthPage() {
             ) : (
               <SignInForm
                 ssoEnabled={ssoEnabled}
+                ssoLabel={ssoLabel}
                 initialEmail={justCreated ?? ""}
+                error={ssoError}
                 notice={
                   justCreated
                     ? "Account created. Sign in with the password you just chose."

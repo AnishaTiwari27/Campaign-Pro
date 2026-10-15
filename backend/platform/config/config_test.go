@@ -178,3 +178,27 @@ func TestLoadAllowSignup(t *testing.T) {
 		})
 	}
 }
+
+// The label is what the button says, and the whole point of deriving it
+// from the issuer is that it cannot name a provider other than the one
+// the button reaches. An unrecognised issuer must therefore fall back to
+// the generic wording rather than guess from the domain.
+func TestSSOProviderName(t *testing.T) {
+	cases := map[string]string{
+		"https://accounts.google.com":                       "Google",
+		"https://accounts.google.com/":                      "Google",
+		"https://login.microsoftonline.com/common/v2.0":     "Microsoft",
+		"https://agency.okta.com":                           "Okta",
+		"https://agency.eu.auth0.com":                       "Auth0",
+		"https://id.example.co.in":                          "single sign-on",
+		"":                                                  "single sign-on",
+		"https://accounts.google.com.attacker.example.test": "single sign-on",
+		// A lookalike that a bare suffix test would call Microsoft.
+		"https://evilmicrosoftonline.com": "single sign-on",
+	}
+	for issuer, want := range cases {
+		if got := (Config{OIDCIssuer: issuer}).SSOProviderName(); got != want {
+			t.Errorf("issuer %q labelled %q, want %q", issuer, got, want)
+		}
+	}
+}

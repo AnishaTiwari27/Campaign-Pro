@@ -1,20 +1,29 @@
 import { useState, type FormEvent } from "react";
 import { useLogin } from "../../api/auth";
 import { ApiError } from "../../api/client";
+import { SsoButton } from "./SsoButton";
 
 export function SignInForm({
   initialEmail = "",
   notice,
+  error,
   onSwitchToSignUp,
   ssoEnabled = false,
+  ssoLabel = "single sign-on",
 }: {
   initialEmail?: string;
   /** Shown above the fields, e.g. after an account has just been created. */
   notice?: string | null;
+  /** A failure that happened before this form was mounted — a refused
+   *  trip to the identity provider, which redirects back here. Shown
+   *  until this form produces an error of its own. */
+  error?: string | null;
   /** Absent when signup is disabled, which hides the link entirely. */
   onSwitchToSignUp?: () => void;
   /** True only when the server actually discovered a provider at boot. */
   ssoEnabled?: boolean;
+  /** The provider's name, derived server-side from the issuer. */
+  ssoLabel?: string;
 }) {
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
@@ -33,7 +42,7 @@ export function SignInForm({
       ? login.error.message
       : login.error
         ? "Something went wrong. Please try again."
-        : null;
+        : (error ?? null);
 
   return (
     <form className="auth-form" onSubmit={submit} noValidate>
@@ -85,18 +94,9 @@ export function SignInForm({
         {login.isPending ? "Signing in…" : "Sign in"}
       </button>
 
-      {/* A plain link, not a fetch: the provider answers with a
-          top-level redirect and the browser has to follow it itself.
-          Shown only when the server discovered a provider at boot, so
+      {/* Shown only when the server discovered a provider at boot, so
           this is never a button that leads nowhere. */}
-      {ssoEnabled && (
-        <>
-          <p className="auth-or">or</p>
-          <a className="btn auth-submit auth-sso" href="/api/auth/sso/start">
-            Continue with single sign-on
-          </a>
-        </>
-      )}
+      {ssoEnabled && <SsoButton label={ssoLabel} />}
 
       {onSwitchToSignUp && (
         <p className="auth-switch">

@@ -31,7 +31,15 @@ export function useLogin() {
 
 /** What the sign-in screen is allowed to offer. Public, so it resolves
  *  before anyone has a session. */
-export type AuthOptions = { signupEnabled: boolean; ssoEnabled: boolean; minPasswordLength: number };
+export type AuthOptions = {
+  signupEnabled: boolean;
+  ssoEnabled: boolean;
+  /** The provider's name for the button — "Google", "Okta", or the
+   *  generic wording. Derived server-side from the issuer, so the label
+   *  cannot name a provider other than the one the button reaches. */
+  ssoLabel: string;
+  minPasswordLength: number;
+};
 
 // Asked once per load. If it fails, the screen falls back to sign-in only:
 // better to hide a working signup link than to show one that 404s.

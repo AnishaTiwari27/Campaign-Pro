@@ -26,6 +26,16 @@ type Options struct {
 	SSO identity.SSOProvider
 	// SSOOrgID is the organisation an SSO user joins.
 	SSOOrgID string
+	// SignupOrgID is the organisation a self-registered account joins.
+	// Signup runs outside the tenant middleware, so there is no session
+	// to read one from and it has to be supplied.
+	SignupOrgID string
+	// SSOLabel names the provider on the button — "Google", "Microsoft",
+	// or the generic wording for one this app does not recognise. The
+	// composition root derives it from the issuer it discovered, so the
+	// label cannot name a provider other than the one the button
+	// actually reaches.
+	SSOLabel string
 }
 
 type Handlers struct {
@@ -34,13 +44,17 @@ type Handlers struct {
 	signup   bool
 	sso      identity.SSOProvider
 	ssoOrgID string
-	logger   *slog.Logger
+	// signupOrgID is the organisation a self-registered account joins.
+	signupOrgID string
+	ssoLabel    string
+	logger      *slog.Logger
 }
 
 func New(auth *service.Auth, opts Options, logger *slog.Logger) *Handlers {
 	return &Handlers{
 		auth: auth, secure: opts.SecureCookies, signup: opts.AllowSignup,
-		sso: opts.SSO, ssoOrgID: opts.SSOOrgID, logger: logger,
+		sso: opts.SSO, ssoOrgID: opts.SSOOrgID, signupOrgID: opts.SignupOrgID,
+		ssoLabel: opts.SSOLabel, logger: logger,
 	}
 }
 
@@ -67,6 +81,10 @@ type authOptionsDTO struct {
 	// config, so a provider that failed discovery does not get a button
 	// that leads nowhere.
 	SSOEnabled bool `json:"ssoEnabled"`
+	// SSOLabel is the provider's name, for the button. Sent rather than
+	// hardcoded in the client so one deployment can say "Google" and
+	// another "Okta" without a rebuild.
+	SSOLabel string `json:"ssoLabel"`
 	// Echoed so the form can enforce the same rule the server will, and
 	// the two cannot drift.
 	MinPasswordLength int `json:"minPasswordLength"`
@@ -78,8 +96,19 @@ func (h *Handlers) AuthOptions(w http.ResponseWriter, r *http.Request) {
 	httpx.WriteJSON(w, http.StatusOK, authOptionsDTO{
 		SignupEnabled:     h.signup,
 		SSOEnabled:        h.sso != nil,
+		SSOLabel:          h.providerLabel(),
 		MinPasswordLength: service.MinPasswordLength,
 	})
+}
+
+// providerLabel falls back to the generic wording rather than an empty
+// string, so a deployment that configured SSO without a recognised
+// issuer still gets a button that reads as a sentence.
+func (h *Handlers) providerLabel() string {
+	if h.ssoLabel == "" {
+		return "single sign-on"
+	}
+	return h.ssoLabel
 }
 
 type signupRequest struct {
@@ -100,7 +129,7 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.auth.Signup(r.Context(), service.SignupInput{
 		Name: req.Name, Email: req.Email, Password: req.Password,
-	})
+	}, h.signupOrgID)
 	if err != nil {
 		if msg, field, ok := service.AsValidationError(err); ok {
 			httpx.WriteValidationError(w, msg, field)

@@ -57,3 +57,34 @@ test("an analyst can read everything but is shown no approval controls", async (
   await expect(page.locator(".approval-card")).not.toHaveCount(0);
   await expect(page.locator('.approval-card-actions button')).toHaveCount(0);
 });
+
+// Registering and then signing in, through the form, because that is how
+// the failure was reported: correct details, and a 500. The server-side
+// cause is covered by cmd/server's own test; this is the half that proves
+// the form reaches it and shows what came back.
+test("a stranger can register and then sign in with the password they chose", async ({ page }) => {
+  const email = `e2e-signup-${Date.now()}@example.test`;
+  const password = "correct horse battery staple";
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create an account" }).click();
+  await expect(page.getByRole("heading", { name: "Create your account" })).toBeVisible();
+
+  await page.fill("input[type=text]", "E2E Signup");
+  await page.fill("input[type=email]", email);
+  const passwords = page.locator("input[type=password]");
+  await passwords.nth(0).fill(password);
+  await passwords.nth(1).fill(password);
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  // Signup deliberately issues no session: it hands the address back to
+  // the sign-in form, which is where the password gets proved.
+  await expect(page.getByRole("status")).toContainText("Account created");
+  await expect(page.locator("input[type=email]")).toHaveValue(email);
+
+  await signIn(page, email, password);
+  await expect(page.locator(".rail-user-name")).toBeVisible();
+
+  // An analyst, which is the whole security question for self-registration.
+  await expect(page.getByRole("button", { name: "Approve" })).toHaveCount(0);
+});

@@ -99,7 +99,7 @@ func TestValidateSignup(t *testing.T) {
 // The role a stranger gets is the whole security question for this feature,
 // so it is pinned rather than left to whatever the constant happens to say.
 func TestSignupRoleGrantsNoAuthority(t *testing.T) {
-	u := signupUser("id", "a@b.com", "A")
+	u := signupUser("id", "a@b.com", "A", "default")
 	if u.CanApprove() {
 		t.Error("a self-registered account can approve — it must not")
 	}

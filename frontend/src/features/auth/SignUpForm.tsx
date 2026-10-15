@@ -1,17 +1,24 @@
 import { useState, type FormEvent } from "react";
 import { useSignup } from "../../api/auth";
 import { ApiError } from "../../api/client";
+import { SsoButton } from "./SsoButton";
 
 export function SignUpForm({
   minPasswordLength,
   onCreated,
   onSwitchToSignIn,
+  ssoEnabled = false,
+  ssoLabel = "single sign-on",
 }: {
   minPasswordLength: number;
   /** Hands the new address to the sign-in form, which is where signup
    *  ends: the account exists, now prove the password works. */
   onCreated: (email: string) => void;
   onSwitchToSignIn: () => void;
+  /** True only when the server actually discovered a provider at boot. */
+  ssoEnabled?: boolean;
+  /** The provider's name, derived server-side from the issuer. */
+  ssoLabel?: string;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -129,6 +136,11 @@ export function SignUpForm({
       <button type="submit" className="btn btn-primary auth-submit" disabled={signup.isPending}>
         {signup.isPending ? "Creating account…" : "Create account"}
       </button>
+
+      {/* The same flow as on the sign-in form: an account arrives if the
+          address has none, and no password is chosen at all — which is
+          the point of offering it here rather than only there. */}
+      {ssoEnabled && <SsoButton label={ssoLabel} />}
 
       <p className="auth-switch">
         Already have an account?{" "}
