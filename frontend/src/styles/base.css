@@ -373,3 +373,104 @@ tr:last-child td {
   color: var(--muted);
   text-align: center;
 }
+
+
+/* ---------------------------------------------------------------------
+   Shared page furniture.
+
+   These used to live in the stylesheet of whichever feature happened to
+   need them first — .page-header in CampaignsPage.css, .stat-cell and
+   .side-panel in campaign-detail's. That worked only because every
+   stylesheet was in one bundle. Splitting the routes made each feature's
+   CSS load with its own chunk, so a page that used .page-header without
+   importing the campaigns stylesheet rendered unstyled: the Overview
+   header lost its flex row and its buttons fell on top of the section
+   below. Anything used by more than one feature belongs here, where it
+   is always loaded.
+   --------------------------------------------------------------------- */
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.page-header h1 {
+  font-size: 22px;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Keeps the actions on the right when the header wraps at narrow
+     widths, rather than letting them sit under the title where they
+     crowd whatever follows. */
+  margin-left: auto;
+}
+
+.stat-rail {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin: 18px 0;
+}
+
+.stat-cell {
+  background: var(--surface);
+  padding: 14px 16px;
+}
+
+.stat-cell-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.stat-cell-value {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.stat-cell-value-crit {
+  color: var(--crit);
+}
+
+.stat-cell-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+  text-transform: capitalize;
+}
+
+@media (max-width: 900px) {
+  .stat-rail { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .stat-rail { grid-template-columns: repeat(2, 1fr); }
+}
+
+.side-panel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.side-panel h4 {
+  font-size: 13px;
+}
+
+.side-panel-muted {
+  color: var(--muted);
+  font-size: 12.5px;
+}

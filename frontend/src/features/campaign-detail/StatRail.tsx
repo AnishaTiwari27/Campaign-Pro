@@ -1,6 +1,5 @@
 import type { Campaign } from "../../api/types";
 import { formatCPM, formatMoney, formatPct, formatReach } from "../../lib/format";
-import "./StatRail.css";
 
 export function StatRail({ campaign }: { campaign: Campaign }) {
   const overBudget = campaign.pace >= 100;
