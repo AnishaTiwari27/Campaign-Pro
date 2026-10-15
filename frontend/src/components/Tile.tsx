@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { Campaign } from "../api/types";
 import { Pill } from "./Pill";
@@ -9,6 +10,28 @@ import { useCreatorIndex } from "../api/creatorPhotos";
 import { adFilmFor, adFilmThumb, filmCropStyle } from "../data/adFilms";
 import { approvalBlockOf } from "../lib/metrics";
 import "./Tile.css";
+
+/** The brand's own mark, over the corner of its ad.
+ *
+ *  A brand campaign's tile shows a frame of the film, which is the ad
+ *  but is not always obviously that brand's ad — plenty of frames have
+ *  no logo or packshot in them. This puts the mark back without taking
+ *  the picture away.
+ *
+ *  Not every domain has a usable logo: fetch-logos.sh skips the ones
+ *  that come back too small. A miss hides the chip rather than leaving
+ *  a broken image or a lettered square, because an initial over an ad
+ *  reads as a sticker rather than a brand.
+ */
+function BrandMark({ domain, name }: { domain: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <span className="tile-brandmark">
+      <img src={`/logos/${domain}.png`} alt={name} loading="lazy" onError={() => setFailed(true)} />
+    </span>
+  );
+}
 
 export function Tile({
   campaign,
@@ -86,6 +109,9 @@ export function Tile({
               loading="lazy"
               style={filmCropStyle(film, "clip")}
             />
+            {campaign.subjectType === "brand" && campaign.brandDomain && (
+              <BrandMark domain={campaign.brandDomain} name={campaign.name} />
+            )}
           </>
         ) : (
           <SubjectImage

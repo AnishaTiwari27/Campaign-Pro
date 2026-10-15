@@ -188,3 +188,28 @@
   color: var(--accent);
   margin-top: 1px;
 }
+
+/* The brand's mark over the corner of its own ad. Light chip rather
+   than a bare logo: these are supplied on transparent or white
+   backgrounds and would disappear into a pale frame. */
+.tile-brandmark {
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 1px 5px rgb(0 0 0 / 0.3);
+  display: grid;
+  place-items: center;
+}
+
+.tile-brandmark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
