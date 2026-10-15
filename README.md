@@ -16,7 +16,7 @@ needed if you change the SQL.
 ```bash
 make db-create   # creates the database + role
 make migrate     # applies backend/db/migrations
-make seed        # 35 campaigns, 7 creators, 3 reports, 3 users
+make seed        # 45 campaigns, 10 creators, 3 reports, 3 users
 make dev         # api on :8090, web on :5173
 ```
 
