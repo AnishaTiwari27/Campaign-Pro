@@ -159,6 +159,23 @@ func creatorSeeds() []creatorSeed {
 				{"Myntra", campaigns.AdSocial, "Instagram", campaigns.StatusEnded, 16, 9, 360_000, 820_000, 1.3, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "story"},
 			},
 		},
+		{
+			// A pan-India star whose endorsement book is the point of
+			// this product rather than an app roster: ice cream, dairy
+			// and watches, in three languages, none of it a startup.
+			// Her KSDL/Mysore Sandal deal is real and deliberately not
+			// here — it drew an organised public objection, and a
+			// fixture is no place to restage a live controversy about
+			// someone.
+			id: "tamannaah-bhatia", name: "Tamannaah Bhatia", role: "Actor", initials: "TB",
+			category: "Entertainment", region: "Mumbai", followers: 28_400_000,
+			platform: "Instagram", languages: []string{"Telugu", "Tamil", "Hindi"},
+			campaigns: []creatorCampaignSeed{
+				{"Havmor", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 14, 62, 2_400_000, 3_200_000, 2.1, campaigns.ApprovalApproved, campaigns.CurveFast, "Hindi", "tvc"},
+				{"Mother Dairy", campaigns.AdVideo, "YouTube", campaigns.StatusLive, 9, 41, 1_500_000, 2_600_000, 1.8, campaigns.ApprovalApproved, campaigns.CurveSteady, "Hindi", "tvc"},
+				{"Guess Watches", campaigns.AdSocial, "Instagram", campaigns.StatusLive, 6, 24, 900_000, 1_800_000, 1.5, campaigns.ApprovalApproved, campaigns.CurveSteady, "English", "reel"},
+			},
+		},
 	}
 }
 
@@ -174,6 +191,7 @@ var brandDomains = map[string]string{
 	"Pepsi": "pepsi.com", "Suzuki": "marutisuzuki.com", "Thums Up": "coca-colaindia.com",
 	"Louis Vuitton": "louisvuitton.com", "Cartier": "cartier.com", "Tissot": "tissotwatches.com",
 	"Adidas": "adidas.co.in", "Jack & Jones": "jackjones.in", "MakeMyTrip": "makemytrip.com",
+	"Havmor": "havmor.com", "Mother Dairy": "motherdairy.com", "Guess Watches": "guess.com",
 	"CARS24": "cars24.com", "SEVEN": "seven.co.in", "Shaka Harry": "shakaharry.com",
 	// Content-creator campaigns.
 	"Ola Electric": "olaelectric.com", "Beyoung": "beyoung.in",

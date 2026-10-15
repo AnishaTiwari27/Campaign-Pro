@@ -34,6 +34,16 @@ function unescapeLiteral(s) {
     .replace(/\\"/g, '"');
 }
 
+// Titles are compared for "is this still the same video", not for
+// byte equality. A non-breaking space where a plain one was typed is
+// invisible in the file, invisible in a diff, and says nothing about
+// the video having changed — Havmor's title carries one between "Flea"
+// and "Market". Normalising the whitespace keeps the check pointed at
+// what it is for.
+function normaliseTitle(s) {
+  return s.replace(/[\s\u00a0\u200b-\u200d\ufeff]+/g, " ").trim();
+}
+
 async function check({ campaign, id, channel, title }) {
   const url =
     "https://www.youtube.com/oembed?url=" +
@@ -58,7 +68,7 @@ async function check({ campaign, id, channel, title }) {
       why: `published by "${data.author_name.trim()}", not "${channel}" — this is not the advertiser's own upload`,
     };
   }
-  if (data.title.trim() !== unescapeLiteral(title).trim()) {
+  if (normaliseTitle(data.title) !== normaliseTitle(unescapeLiteral(title))) {
     return { campaign, ok: false, why: `title is now "${data.title}" — the video was replaced` };
   }
   return { campaign, ok: true, why: `${data.author_name.trim()} — ${data.title}` };

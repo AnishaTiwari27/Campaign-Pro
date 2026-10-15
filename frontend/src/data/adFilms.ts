@@ -124,6 +124,16 @@ export const AD_FILMS: Record<string, AdFilm> = {
     title: "Salman Khan ke #HarGhoontMeinSwag hai",
     crop: { top: 0.1403, bottom: 0.1403 },
   },
+  "tamannaah-bhatia-havmor": {
+    id: "CjMboY8I8fI",
+    channel: "Havmor Ice Cream",
+    title: "So Tasty You Wanna Havmor | Tamannaah Bhatia x Hardik Pandya x Havmor | Flea Market",
+  },
+  "tamannaah-bhatia-mother-dairy": {
+    id: "o--VuDypWzc",
+    channel: "Mother Dairy",
+    title: "Isey uthao, baki sab pe pause lagao Ft Tamannaah Bhatia | 30 Sec",
+  },
   "alia-bhatt-l-or-al-paris": {
     id: "xfrr3fk1_T0",
     channel: "L’Oréal Paris India",

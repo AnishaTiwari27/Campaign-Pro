@@ -156,6 +156,22 @@ var people = []Person{
 		},
 	},
 	{
+		ID: "tamannaah-bhatia", Name: "Tamannaah Bhatia", Role: "Actor", Initials: "TB",
+		Field:  "Film",
+		Source: "https://en.wikipedia.org/wiki/Tamannaah",
+		Photo: Photo{
+			URL: "/celebs/tamannaah-bhatia.jpg", Artist: "Bollywood Hungama",
+			License: "CC BY 3.0", LicenseURL: "https://creativecommons.org/licenses/by/3.0",
+			Source: "https://commons.wikimedia.org/wiki/File:Tamannaah_Bhatia_Lakme_Fashion_Week_2017.jpg",
+		},
+		Deals: []Deal{
+			{Brand: "Havmor", Period: "2025", Note: "Brand ambassador — \"Soooo Tasty, You Wanna Havmoorrrr!\"", Kind: KindAmbassador},
+			{Brand: "Mother Dairy", Period: "2026", Note: "Flavoured milk campaign", Kind: KindEndorsement},
+			{Brand: "Guess Watches", Period: "2026", Note: "Brand ambassador, FW26 watches collection", Kind: KindAmbassador},
+			{Brand: "Shiseido", Period: "2025", Note: "Ultimune Power Infusing Serum campaign", Kind: KindEndorsement},
+		},
+	},
+	{
 		ID: "ms-dhoni", Name: "MS Dhoni", Role: "Cricketer", Initials: "MD",
 		Field:  "Cricket",
 		Source: "https://en.wikipedia.org/wiki/MS_Dhoni",

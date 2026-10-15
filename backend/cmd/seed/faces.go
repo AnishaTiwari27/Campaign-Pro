@@ -30,6 +30,7 @@ var creatorFaces = map[string]string{
 	"bhuvan-bam":       "/celebs/bhuvan-bam.jpg",
 	"prajakta-koli":    "/celebs/prajakta-koli.jpg",
 	"kusha-kapila":     "/celebs/kusha-kapila.jpg",
+	"tamannaah-bhatia": "/celebs/tamannaah-bhatia.jpg",
 }
 
 // applyCreatorFaces sets each creator's photograph after the roster is
