@@ -403,3 +403,18 @@ export interface BenchmarkTrendPoint {
   campaignCount: number;
   medianCostPerLakh: number;
 }
+
+export interface InsightFact {
+  label: string;
+  display: string;
+}
+
+/** A written diagnosis of why a campaign is flagged. */
+export interface Insight {
+  campaignId: string;
+  text: string;
+  /** "model" when written, "fallback" when assembled from the figures. */
+  source: "model" | "fallback";
+  /** The figures the text was allowed to draw on. */
+  facts: InsightFact[];
+}

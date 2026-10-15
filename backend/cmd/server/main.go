@@ -15,6 +15,7 @@ import (
 
 	"campaigntrackerpro/platform/config"
 	"campaigntrackerpro/platform/database"
+	"campaigntrackerpro/platform/llm"
 	"campaigntrackerpro/platform/mail"
 	"campaigntrackerpro/platform/oidc"
 	"campaigntrackerpro/platform/scope"
@@ -26,6 +27,7 @@ import (
 	identity "campaigntrackerpro/services/identity/module"
 	ingestsvc "campaigntrackerpro/services/ingest"
 	ingest "campaigntrackerpro/services/ingest/module"
+	insights "campaigntrackerpro/services/insights/module"
 	reports "campaigntrackerpro/services/reports/module"
 	"campaigntrackerpro/web"
 )
@@ -95,6 +97,7 @@ func main() {
 			SSOOrgID:      cfg.OIDCOrgID,
 		}, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
+	insightsMod := insights.New(campaignsMod.Service(), explainer(cfg, logger), logger)
 	// No database: the public record is reference data, not the agency's.
 	endorsementsMod := endorsements.New(logger)
 	ingestMod := ingest.New(db, ingestsvc.GoogleAdsConfig{
@@ -120,7 +123,8 @@ func main() {
 
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(),
 		rateLimits{APIPerMinute: cfg.RateAPIPerMinute, AuthPerMinute: cfg.RateAuthPerMinute}, logger,
-		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod, ingestMod)
+		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod, ingestMod,
+		insightsMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 
@@ -213,4 +217,18 @@ func discoverSSO(ctx context.Context, cfg config.Config, logger *slog.Logger) id
 	}
 	logger.Info("sso enabled", "issuer", cfg.OIDCIssuer, "org", cfg.OIDCOrgID)
 	return p
+}
+
+// explainer returns the model client, or nil when no key is set.
+//
+// Nil rather than an error: signal explanations are a nicety, and a
+// deployment without a key should still show the figures assembled
+// into a sentence rather than lose the panel or fail to boot.
+func explainer(cfg config.Config, logger *slog.Logger) llm.Client {
+	if cfg.LLMAPIKey == "" {
+		logger.Info("no model key set — signal explanations will be assembled from the figures")
+		return nil
+	}
+	logger.Info("signal explanations enabled", "model", cfg.LLMModel)
+	return llm.Anthropic{APIKey: cfg.LLMAPIKey, Model: cfg.LLMModel, MaxTokens: 400, Timeout: 20 * time.Second}
 }

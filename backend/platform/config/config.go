@@ -124,6 +124,12 @@ type Config struct {
 	// can bring its own provider; that is a table and a admin screen,
 	// not a config line, and is deliberately not half-built here.
 	OIDCOrgID string
+
+	// The model that writes signal explanations. Optional: with no key
+	// the explanations are assembled from the figures instead, which is
+	// plainer and still true.
+	LLMAPIKey string
+	LLMModel  string
 }
 
 func Load() Config {
@@ -157,6 +163,9 @@ func Load() Config {
 		OIDCClientSecret: os.Getenv("OIDC_CLIENT_SECRET"),
 		OIDCRedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
 		OIDCOrgID:        getenv("OIDC_ORG_ID", "default"),
+
+		LLMAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
+		LLMModel:  getenv("LLM_MODEL", "claude-sonnet-5"),
 	}
 }
 

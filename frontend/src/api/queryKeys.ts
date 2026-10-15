@@ -20,5 +20,6 @@ export const queryKeys = {
   authOptions: () => ["auth", "options"] as const,
   endorsements: () => ["endorsements"] as const,
   endorsementPerson: (id: string) => ["endorsements", id] as const,
+  insight: (id: string) => ["insights", id] as const,
   health: () => ["health"] as const,
 };

@@ -15,6 +15,7 @@ import { SkeletonBlock } from "../../components/Skeleton";
 import { ApiError } from "../../api/client";
 import { approvalBlockOf } from "../../lib/metrics";
 import { StatRail } from "./StatRail";
+import { SignalExplainer } from "./SignalExplainer";
 import { PerformanceTab } from "./PerformanceTab";
 import { CreativesTab } from "./CreativesTab";
 import { ActivityTab } from "./ActivityTab";
@@ -175,6 +176,8 @@ export function CampaignDetailPage() {
       </div>
 
       <StatRail campaign={campaign} />
+
+      <SignalExplainer campaignId={campaign.id} flagReason={campaign.flagReason} />
 
       <div className="campaign-detail-body">
         <div className="campaign-detail-main">
