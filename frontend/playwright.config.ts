@@ -17,7 +17,7 @@ export default defineConfig({
   // parallel makes the counts race, so they run serially — and
   // globalSetup reseeds first, so the suite is self-sufficient however
   // it is started rather than only via `make test-e2e`.
-  globalSetup: "./tests/global-setup.ts",
+  globalSetup: "./playwright.setup.ts",
   fullyParallel: false,
   workers: 1,
   testMatch: "**/*.spec.ts",

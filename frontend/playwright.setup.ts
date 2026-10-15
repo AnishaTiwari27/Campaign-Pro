@@ -18,6 +18,10 @@ import { fileURLToPath } from "node:url";
  *
  * Skipped when E2E_NO_SEED is set, for running against a deployment
  * where reseeding would be destructive.
+ *
+ * Lives beside playwright.config.ts rather than in tests/ because it is
+ * configuration, not a spec: it uses node builtins, and tests/ is
+ * typechecked by the app's tsconfig, which has no node types.
  */
 export default function globalSetup() {
   if (process.env.E2E_NO_SEED) {
@@ -26,7 +30,7 @@ export default function globalSetup() {
   }
   // import.meta.url rather than __dirname: this config is ESM.
   const here = path.dirname(fileURLToPath(import.meta.url));
-  const backend = path.resolve(here, "..", "..", "backend");
+  const backend = path.resolve(here, "..", "backend");
   const databaseURL =
     process.env.DATABASE_URL ??
     "postgres://campaign_tracker_pro:campaign_tracker_pro_dev_pw@localhost:5432/campaign_tracker_pro?sslmode=disable";
