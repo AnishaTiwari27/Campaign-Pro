@@ -1,3 +1,5 @@
+import type React from "react";
+
 /** The real ad film a campaign is running, where one can be verified.
  *
  *  Every entry is a video published by the brand on its *own* YouTube
@@ -26,6 +28,12 @@ export type AdFilm = {
   channel: string;
   /** The title as YouTube reports it, so a swapped video is noticed. */
   title: string;
+  /** Black bars baked into the film's own frame, as a fraction of its
+   *  height. A cinematic ad is shot wider than 16:9 and uploaded
+   *  inside a 16:9 video, so the bars are in the picture YouTube
+   *  serves rather than anything the layout did. Measured by
+   *  scripts/measure-letterbox.mjs; absent means none. */
+  crop?: { top: number; bottom: number };
 };
 
 /** Keyed by campaign id. Verified 15 October 2026 via YouTube oEmbed. */
@@ -34,6 +42,7 @@ export const AD_FILMS: Record<string, AdFilm> = {
     id: "voALGUnxdPQ",
     channel: "Dream11",
     title: "Dream11: Aamir ne liya panga 𝚂̶𝙸̶𝙽̶𝙶̶𝙷̶ Kapoor se. | #AapkiTeamMeinKaun",
+    crop: { top: 0, bottom: 0.05 },
   },
   lenskart: {
     id: "kPMLVO45XaU",
@@ -62,6 +71,7 @@ export const AD_FILMS: Record<string, AdFilm> = {
     id: "gBQwlE6nNiY",
     channel: "PhonePe App",
     title: "PhonePe - Utilities Advertisement (Hindi)",
+    crop: { top: 0.0556, bottom: 0.0556 },
   },
   zepto: {
     id: "Lmk9nmVXUFw",
@@ -78,6 +88,7 @@ export const AD_FILMS: Record<string, AdFilm> = {
     id: "bgGQYrlpRHA",
     channel: "Rapido",
     title: "#GoRapido- Don’t be late, Save your date",
+    crop: { top: 0.0542, bottom: 0.0556 },
   },
 
   // Creator campaigns get the film that features that person for that
@@ -99,16 +110,19 @@ export const AD_FILMS: Record<string, AdFilm> = {
     id: "j078Y9Au8-M",
     channel: "PUMA",
     title: "PUMA INDIA | One8 by PUMAxVirat Kohli #ComeOutAndPlay | Wanna skip this ad? That's cool!",
+    crop: { top: 0.1653, bottom: 0.1667 },
   },
   "salman-khan-thums-up": {
     id: "KPj0DZWyrPY",
     channel: "ThumsUpOfficial",
     title: "Thums Up #AbAayegaToofan with Salman Khan",
+    crop: { top: 0.1208, bottom: 0.0903 },
   },
   "salman-khan-pepsi": {
     id: "MN2VM6DXeTQ",
     channel: "pepsiindia",
     title: "Salman Khan ke #HarGhoontMeinSwag hai",
+    crop: { top: 0.1403, bottom: 0.1403 },
   },
   "alia-bhatt-l-or-al-paris": {
     id: "xfrr3fk1_T0",
@@ -134,4 +148,33 @@ export function adFilmFor(campaignId: string): AdFilm | undefined {
  */
 export function adFilmThumb(id: string, size: "tile" | "hero"): string {
   return `https://i.ytimg.com/vi/${id}/${size === "hero" ? "maxresdefault" : "mqdefault"}.jpg`;
+}
+
+/** Inline style that hides a film's baked-in bars.
+ *
+ *  "clip" trims them and leaves the gap to whatever is behind — right
+ *  for a tile, which has a blurred copy of the frame filling the box
+ *  anyway. "fill" trims them and then scales the remaining band back
+ *  up so it covers the frame, which is what the spotlight wants: no
+ *  black, edge to edge. The translate re-centres a film whose bars are
+ *  uneven, as Salman Khan's Thums Up upload is.
+ *
+ *  Playback is untouched. The video YouTube serves still carries its
+ *  own bars, and scaling the player to match would push its controls
+ *  out of view — so this is the still only.
+ */
+export function filmCropStyle(
+  film: AdFilm,
+  mode: "clip" | "fill",
+  /** Extra scale for the blurred backdrop layer, which oversizes
+   *  itself so the blur has pixels to bleed from at the edges. */
+  bleed = 1,
+): React.CSSProperties | undefined {
+  const crop = film.crop;
+  if (!crop || (crop.top === 0 && crop.bottom === 0)) return undefined;
+  const clipPath = `inset(${(crop.top * 100).toFixed(2)}% 0 ${(crop.bottom * 100).toFixed(2)}% 0)`;
+  if (mode === "clip") return { clipPath };
+  const scale = bleed / (1 - crop.top - crop.bottom);
+  const shift = ((crop.bottom - crop.top) / 2) * 100;
+  return { clipPath, transform: `translateY(${shift.toFixed(2)}%) scale(${scale.toFixed(4)})` };
 }

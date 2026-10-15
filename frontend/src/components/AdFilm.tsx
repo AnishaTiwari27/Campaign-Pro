@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { adFilmThumb, type AdFilm as AdFilmData } from "../data/adFilms";
+import { adFilmThumb, filmCropStyle, type AdFilm as AdFilmData } from "../data/adFilms";
 import "./AdFilm.css";
 
 /** The campaign's actual ad film, played in place.
@@ -67,6 +67,7 @@ export function AdFilm({
               src={thumb}
               alt=""
               loading="lazy"
+              style={filmCropStyle(film, "fill")}
               // hq720 keeps the 16:9 frame; hqdefault would letterbox it.
               onError={() => setThumb(`https://i.ytimg.com/vi/${film.id}/hq720.jpg`)}
             />

@@ -6,7 +6,7 @@ import { SubjectImage } from "./SubjectImage";
 import { useDecision } from "../api/campaigns";
 import { useSession } from "../api/auth";
 import { useCreatorIndex } from "../api/creatorPhotos";
-import { adFilmFor, adFilmThumb } from "../data/adFilms";
+import { adFilmFor, adFilmThumb, filmCropStyle } from "../data/adFilms";
 import { approvalBlockOf } from "../lib/metrics";
 import "./Tile.css";
 
@@ -72,12 +72,19 @@ export function Tile({
               alt=""
               aria-hidden="true"
               loading="lazy"
+              // Cropped too. Blurring the uncropped frame put the
+              // film's own black bars back into the backdrop, so the
+              // band around the still came out black rather than
+              // carrying its colours. 1.18 is the bleed the CSS would
+              // otherwise apply on its own.
+              style={filmCropStyle(film, "fill", 1.18)}
             />
             <img
               className="tile-film"
               src={adFilmThumb(film.id, "tile")}
               alt=""
               loading="lazy"
+              style={filmCropStyle(film, "clip")}
             />
           </>
         ) : (

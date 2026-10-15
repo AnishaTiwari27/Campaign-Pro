@@ -109,7 +109,11 @@
    line up. min-height is the floor for the tallest tile in a rail,
    which gets no slack to give away. */
 .tile-art {
-  display: block;
+  /* Flex-centred so the still can be its own size inside the box
+     rather than stretched to it — see .tile-film. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
   flex: 1 1 auto;
   min-height: 150px;
@@ -143,15 +147,22 @@
   text-decoration: underline;
 }
 
-/* The still, whole. Contained rather than cropped, because an ad's
-   wording is part of the ad — and the tile is taller than 16:9, so
-   cover was taking a third of the width off the sides. */
+/* The still, whole. The tile is taller than 16:9, so cover was taking
+   a third of the width off the sides and an ad's wording is part of
+   the ad.
+   
+   Sized to the picture rather than to the box — width 100% and a 16:9
+   ratio — instead of filling the box with object-fit: contain. They
+   look identical until something clips: clip-path measures the
+   element, and under contain the element is the whole box while the
+   picture is a band in the middle of it, so a crop in percent lands
+   somewhere other than the film's own bars. */
 .tile-film {
   position: relative;
   z-index: 1;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
   display: block;
 }
 
