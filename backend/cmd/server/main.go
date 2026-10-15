@@ -28,6 +28,7 @@ import (
 	ingestsvc "campaigntrackerpro/services/ingest"
 	ingest "campaigntrackerpro/services/ingest/module"
 	insights "campaigntrackerpro/services/insights/module"
+	radar "campaigntrackerpro/services/radar/module"
 	reports "campaigntrackerpro/services/reports/module"
 	"campaigntrackerpro/web"
 )
@@ -98,6 +99,7 @@ func main() {
 		}, logger)
 	creatorsMod := creators.New(db, campaignsMod.Service(), logger)
 	insightsMod := insights.New(campaignsMod.Service(), explainer(cfg, logger), logger)
+	radarMod := radar.New(db, campaignsMod.Service(), logger)
 	// No database: the public record is reference data, not the agency's.
 	endorsementsMod := endorsements.New(logger)
 	ingestMod := ingest.New(db, ingestsvc.GoogleAdsConfig{
@@ -125,10 +127,15 @@ func main() {
 	// composition root is the one place allowed to know about both.
 	go captureBenchmarks(scope.SystemOrg(ctx), analyticsMod, logger)
 
+	// Launch radar: polls its sources and settles outcomes on its own
+	// slow loop, for the same reason — the composition root is the one
+	// place allowed to know about both.
+	go radarMod.Run(ctx)
+
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(),
 		rateLimits{APIPerMinute: cfg.RateAPIPerMinute, AuthPerMinute: cfg.RateAuthPerMinute}, logger,
 		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod, ingestMod,
-		insightsMod)
+		insightsMod, radarMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}
 

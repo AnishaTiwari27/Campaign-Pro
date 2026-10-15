@@ -22,6 +22,7 @@ const CreatorsPage = lazy(() => import("../features/creators/CreatorsPage").then
 const CreatorDetailPage = lazy(() => import("../features/creators/CreatorDetailPage").then((m) => ({ default: m.CreatorDetailPage })));
 const EndorsementsPage = lazy(() => import("../features/endorsements/EndorsementsPage").then((m) => ({ default: m.EndorsementsPage })));
 const EndorsementDetailPage = lazy(() => import("../features/endorsements/EndorsementDetailPage").then((m) => ({ default: m.EndorsementDetailPage })));
+const RadarPage = lazy(() => import("../features/radar/RadarPage").then((m) => ({ default: m.RadarPage })));
 const RegionsPage = lazy(() => import("../features/regions/RegionsPage").then((m) => ({ default: m.RegionsPage })));
 const RegionDetailPage = lazy(() => import("../features/regions/RegionDetailPage").then((m) => ({ default: m.RegionDetailPage })));
 const BenchmarksPage = lazy(() => import("../features/benchmarks/BenchmarksPage").then((m) => ({ default: m.BenchmarksPage })));
@@ -65,6 +66,7 @@ export function AppRoutes() {
           <Route path="creators/:id" element={<CreatorDetailPage />} />
           <Route path="endorsements" element={<EndorsementsPage />} />
           <Route path="endorsements/:id" element={<EndorsementDetailPage />} />
+          <Route path="radar" element={<AgencyOnly><RadarPage /></AgencyOnly>} />
           <Route path="regions" element={<RegionsPage />} />
           <Route path="regions/:id" element={<RegionDetailPage />} />
           <Route path="signals" element={<SignalsPage />} />

@@ -11,6 +11,7 @@ import {
   IconOverview,
   IconCreators,
   IconEndorsements,
+  IconRadar,
   IconRegions,
   IconReports,
   IconLogout,
@@ -77,6 +78,9 @@ export function Rail() {
         {/* Public figures and their reported brand work. Sits apart from
             Influencers on purpose: that page is the agency's roster with
             its performance data, this one is published fact with none. */}
+        {/* Prospecting data — who to approach before they start
+            spending — so it is agency-only like Benchmarks. */}
+        {!isClient && <NavItem to="/radar" icon={<IconRadar />} label="Launch radar" />}
         <NavItem to="/endorsements" icon={<IconEndorsements />} label="Public record" />
         <NavItem to="/regions" icon={<IconRegions />} label="Regions" />
         <NavItem to="/signals" icon={<IconSignals />} label="Signals" />

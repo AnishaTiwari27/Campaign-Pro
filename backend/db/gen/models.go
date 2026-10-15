@@ -641,6 +641,25 @@ type IngestRun struct {
 	Error       pgtype.Text        `json:"error"`
 }
 
+type Launch struct {
+	ID              string             `json:"id"`
+	OrgID           string             `json:"org_id"`
+	Source          string             `json:"source"`
+	ExternalID      string             `json:"external_id"`
+	Name            string             `json:"name"`
+	Tagline         string             `json:"tagline"`
+	Url             string             `json:"url"`
+	Category        string             `json:"category"`
+	LaunchedAt      pgtype.Timestamptz `json:"launched_at"`
+	FirstSeenAt     pgtype.Timestamptz `json:"first_seen_at"`
+	Traction        int32              `json:"traction"`
+	HasSite         bool               `json:"has_site"`
+	Readiness       string             `json:"readiness"`
+	Basis           string             `json:"basis"`
+	FirstCampaignAt pgtype.Timestamptz `json:"first_campaign_at"`
+	DaysToMarket    pgtype.Int4        `json:"days_to_market"`
+}
+
 type Organization struct {
 	ID        string             `json:"id"`
 	Name      string             `json:"name"`

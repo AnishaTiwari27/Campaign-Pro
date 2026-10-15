@@ -418,3 +418,23 @@ export interface Insight {
   /** The figures the text was allowed to draw on. */
   facts: InsightFact[];
 }
+
+export type LaunchReadiness = "soon" | "building" | "quiet" | "unclear";
+
+/** A product or brand the radar has seen launch. */
+export interface Launch {
+  id: string;
+  source: string;
+  name: string;
+  tagline: string;
+  url: string;
+  category: string;
+  launchedAt: string;
+  traction: number;
+  hasSite: boolean;
+  readiness: LaunchReadiness;
+  /** The signals the band was computed from, so it can be argued with. */
+  basis: string;
+  firstCampaignAt?: string;
+  daysToMarket?: number;
+}

@@ -71,6 +71,11 @@ type Querier interface {
 	ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error)
 	ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	ListIngestRuns(ctx context.Context, arg ListIngestRunsParams) ([]ListIngestRunsRow, error)
+	// first_seen_at and the outcome columns are deliberately absent from
+	// the update: re-polling a launch must not reset when we first saw it,
+	// nor erase an outcome already recorded against it.
+	ListLaunches(ctx context.Context, arg ListLaunchesParams) ([]ListLaunchesRow, error)
+	ListLaunchesAwaitingOutcome(ctx context.Context, arg ListLaunchesAwaitingOutcomeParams) ([]ListLaunchesAwaitingOutcomeRow, error)
 	ListOrganizationIDs(ctx context.Context) ([]string, error)
 	ListPendingCampaigns(ctx context.Context, arg ListPendingCampaignsParams) ([]Campaign, error)
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
@@ -84,6 +89,7 @@ type Querier interface {
 	// that is a wash; it is the shape that stops the overview getting
 	// slower in proportion to the book of business.
 	OverviewTotals(ctx context.Context, arg OverviewTotalsParams) (OverviewTotalsRow, error)
+	RecordLaunchOutcome(ctx context.Context, arg RecordLaunchOutcomeParams) error
 	// SessionUser resolves a session to its user in one round trip, and only
 	// when the session has not expired.
 	SessionUser(ctx context.Context, tokenHash []byte) (SessionUserRow, error)
@@ -121,6 +127,7 @@ type Querier interface {
 	// approved campaign to pending would undo somebody's sign-off every
 	// fifteen minutes.
 	UpsertExternalCampaign(ctx context.Context, arg UpsertExternalCampaignParams) (UpsertExternalCampaignRow, error)
+	UpsertLaunch(ctx context.Context, arg UpsertLaunchParams) error
 }
 
 var _ Querier = (*Queries)(nil)

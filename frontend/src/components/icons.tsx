@@ -57,6 +57,17 @@ export function IconEndorsements(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+/** Concentric sweep — something scanning for what is new. */
+export function IconRadar(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <circle cx="10" cy="10" r="7" />
+      <circle cx="10" cy="10" r="3" />
+      <line x1="10" y1="10" x2="15" y2="5" />
+    </Base>
+  );
+}
+
 export function IconSignals(props: SVGProps<SVGSVGElement>) {
   return (
     <Base {...props}>
