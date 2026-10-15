@@ -45,12 +45,12 @@ export function Tile({
         }
       }}
     >
-      {/* The picture is the whole panel and nothing is written across
-          it. The ad's headline used to sit over the lower half, which
-          put two lines of white text across the face of the person the
-          tile is about — the one thing the image is there to show. The
-          copy still lives on the campaign and on the creator's page,
-          where it has room to be read rather than squinted past. */}
+      {/* Nothing is drawn over the picture at all — no headline, no
+          byline, no status badge. Everything that was on it had to be
+          legible against an arbitrary photograph, which meant a scrim,
+          and the scrim dimmed the face the tile exists to show. It all
+          reads better as text under the image, where it needs no
+          treatment to be readable. */}
       <div className="tile-art">
         <SubjectImage
           name={campaign.name}
@@ -61,26 +61,6 @@ export function Tile({
           seed={campaign.creatorId ?? campaign.brandDomain ?? campaign.name}
           fill
         />
-        {/* The byline. A tile is one campaign, but the face on it has a
-            body of work, and the person is what someone wants next —
-            so their name on the picture goes to them, not to this ad. */}
-        {creator && (
-          <Link
-            to={`/creators/${creator.id}`}
-            className="tile-byline"
-            title={`${creator.name} — ${creator.campaigns} campaign${creator.campaigns === 1 ? "" : "s"}`}
-            // The whole tile is a link to the campaign; this one is not it.
-            onClick={(e) => e.stopPropagation()}
-            onKeyDown={(e) => e.stopPropagation()}
-          >
-            <span className="tile-byline-name truncate">{creator.name}</span>
-            <span className="tile-byline-go" aria-hidden="true">›</span>
-          </Link>
-        )}
-        <span className="tile-status">
-          <Pill status={campaign.status} />
-        </span>
-        {campaign.flagReason && <span className="tile-flag-dot" aria-label={`Flagged: ${campaign.flagReason}`} title={campaign.flagReason} />}
       </div>
 
       <div className="tile-body">
@@ -88,6 +68,25 @@ export function Tile({
         <div className="tile-subtitle truncate">
           {campaign.role || campaign.category} · {campaign.region}
         </div>
+      </div>
+
+      {/* Status and the route to the person, on one row. The flag dot
+          that used to sit on the image is gone with them: the reason is
+          spelled out just below, so the dot only ever repeated it. */}
+      <div className="tile-meta">
+        <Pill status={campaign.status} />
+        {creator && (
+          <Link
+            to={`/creators/${creator.id}`}
+            className="tile-profile"
+            title={`${creator.name} — ${creator.campaigns} campaign${creator.campaigns === 1 ? "" : "s"}`}
+            // The whole tile is a link to the campaign; this one is not it.
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            View profile <span aria-hidden="true">›</span>
+          </Link>
+        )}
       </div>
 
       {campaign.flagReason && <div className="tile-flag-reason truncate">{campaign.flagReason}</div>}

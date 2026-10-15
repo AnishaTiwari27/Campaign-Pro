@@ -33,25 +33,6 @@
   );
 }
 
-.tile-status {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  z-index: 3;
-}
-
-.tile-flag-dot {
-  position: absolute;
-  top: 7px;
-  right: 7px;
-  z-index: 3;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--crit);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--crit) 22%, transparent);
-}
-
 .tile-body {
   min-width: 0;
 }
@@ -81,7 +62,9 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  margin-top: auto;
+  /* No auto margin: it would claim the free space before .tile-art's
+     flex-grow could, putting the gap back above this block. The art
+     absorbing the slack already leaves this sitting at the foot. */
   padding-top: 9px;
   border-top: 1px solid var(--line);
 }
@@ -112,82 +95,50 @@
 }
 
 /* The art panel is the ad, and the picture is the whole panel: the image
-   fills it edge to edge and the copy sits over a scrim at the foot. An
-   earlier pass pinned a 30px round portrait in the corner — the user's
-   read of it was "small images inside rounds", and they were right: a
-   thumbnail on a gradient is a contact sheet, not an advertisement. */
+   fills it edge to edge. An earlier pass pinned a 30px round portrait
+   in the corner — the user's read of it was "small images inside
+   rounds", and they were right: a thumbnail on a gradient is a contact
+   sheet, not an advertisement.
+
+   The height is the slack rather than a number. Tiles in a rail stretch
+   to the tallest, and the stat block is pinned to the foot, so a tile
+   with less to say than its neighbours — no flag reason, no approve
+   buttons — used to end up with a band of dead space in the middle.
+   Letting the picture grow into it means the leftover room goes to the
+   one element that can actually use it, and the card bottoms still
+   line up. min-height is the floor for the tallest tile in a rail,
+   which gets no slack to give away. */
 .tile-art {
   display: block;
   position: relative;
-  height: 138px;
+  flex: 1 1 auto;
+  min-height: 150px;
   padding: 0;
 }
 
-/* A much lighter scrim than this carried before. It existed to make two
-   lines of white headline readable over any photograph; with the copy
-   gone its only job is to keep the status pill and the byline chip off
-   a bright background, so it darkens the two corners they sit in rather
-   than half the picture. */
-.tile-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    linear-gradient(to top, rgba(0, 0, 0, 0.42) 0%, transparent 28%),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, transparent 24%);
-}
 
-
-
-
-/* The status pill now sits on a photograph, where a pale tinted chip wants
-   a tinted surface behind it and finds a face instead. It becomes a dark
-   chip with white text; the status colour moves to the dot, which is the
-   only part that has to carry it. */
-.tile-status .pill {
-  background: rgba(12, 12, 16, 0.62);
-  color: #fff;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
-.tile-status .pill-live::before { background: #4ade80; }
-.tile-status .pill-scheduled::before { background: #93b4ff; }
-.tile-status .pill-paused::before { background: #fbbf24; }
-.tile-status .pill-ended::before { background: #d4d4d8; }
-
-/* The byline chip. Same dark-chip treatment as the status pill, for the
-   same reason: it sits on a photograph and cannot rely on a surface. */
-.tile-byline {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  right: 28px;
-  z-index: 3;
-  width: fit-content;
-  max-width: calc(100% - 36px);
-  display: inline-flex;
+/* Status and the link to the person, below the picture rather than on
+   it. As plain text on the card's own surface neither needs a scrim, a
+   backdrop blur or a text shadow to be readable — all of which the
+   overlaid versions did need, and all of which cost the photograph
+   some clarity. */
+.tile-meta {
+  display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 3px 6px 3px 9px;
-  border-radius: 999px;
-  background: rgba(12, 12, 16, 0.62);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 1.55;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.tile-profile {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
   text-decoration: none;
-  transition: background 120ms ease;
+  white-space: nowrap;
 }
 
-.tile-byline:hover,
-.tile-byline:focus-visible {
-  background: rgba(12, 12, 16, 0.85);
+.tile-profile:hover,
+.tile-profile:focus-visible {
+  text-decoration: underline;
 }
-
-.tile-byline-name { min-width: 0; }
-.tile-byline-go { opacity: 0.72; font-size: 13px; line-height: 1; }
