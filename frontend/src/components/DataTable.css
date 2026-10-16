@@ -65,7 +65,7 @@
 }
 
 /* ---------------------------------------------------------------
-   Phone: a table becomes a list of cards.
+   Phone and tablet: a table becomes a list of cards.
 
    The wrapper scrolls sideways, so strictly nothing was broken — but
    a 12-column table on a 390px screen shows the first column and
@@ -73,8 +73,14 @@
    scrolling away from the values it labels. That is truncation, not
    adaptation. Each row becomes a card, and every value carries the
    label the header used to give it.
+
+   900px is not a guess. It is .data-table's own min-width, so below
+   it the table is already scrolling sideways and there are no intact
+   columns left to preserve — a 768px tablet was showing five of nine.
+   It is also the width the rest of the app turns at: the layout, the
+   overview and the spotlight all break there.
    --------------------------------------------------------------- */
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   .data-table-sortbar {
     display: flex;
     align-items: center;
@@ -181,5 +187,38 @@
   /* The select-all checkbox has no row to head on a phone. */
   .data-table-checkbox-col {
     display: none;
+  }
+}
+
+/* Between a phone and the table: the card is wide enough that one
+   field per line leaves half the width empty and a nine-field card
+   runs taller than the screen. Two columns, with the heading spanning
+   both. Below this the pairs would be too narrow for a label and a
+   value on one line. */
+@media (min-width: 560px) and (max-width: 900px) {
+  /* Qualified by the table, because the rule above that makes a row a
+     block is ".data-table tr" — a class plus a type, which outranks a
+     bare ".data-table-row" however late it comes. */
+  .data-table tr.data-table-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 22px;
+    align-content: start;
+  }
+
+  .data-table tr.data-table-row td {
+    width: auto;
+  }
+
+  .data-table tr.data-table-row td[data-primary] {
+    grid-column: 1 / -1;
+  }
+
+  /* The row's own checkbox keeps to the heading line rather than
+     taking a cell of its own in the grid. */
+  .data-table tr.data-table-row > td:not([data-label]) {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+    padding: 0;
   }
 }

@@ -69,9 +69,49 @@ test.describe("on a phone", () => {
   });
 });
 
-test("on a desktop the table is still a table", async ({ page }) => {
-  await signIn(page);
-  await page.goto("/campaigns");
-  await expect(page.locator(".data-table thead")).toBeVisible();
-  await expect(page.locator(".data-table-sortbar")).toBeHidden();
+// A 768px tablet was showing five of nine columns and scrolling for
+// the rest, which is the same failure as the phone with more of it
+// visible. The switch is at .data-table's own 900px min-width: below
+// that there is no intact table left to keep.
+test.describe("on a tablet", () => {
+  test.use({ viewport: { width: 768, height: 1024 } });
+
+  test("a table is cards here too", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/campaigns");
+    await expect(page.locator(".data-table-row").first()).toBeVisible();
+    await expect(page.locator(".data-table thead")).toBeHidden();
+    await expect(page.locator(".data-table-sortbar")).toBeVisible();
+    expect(await overflow(page)).toBeLessThanOrEqual(1);
+  });
+
+  test("the card pairs its fields rather than running one per line", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/campaigns");
+    const row = page.locator(".data-table-row").first();
+    await expect(row).toBeVisible();
+
+    // Asserted by position rather than by computed display, because
+    // what matters is that two fields share a line — a grid that
+    // silently fell back to one column would still report "grid".
+    const [a, b] = await Promise.all([
+      row.locator('td[data-label="Category"]').boundingBox(),
+      row.locator('td[data-label="Region"]').boundingBox(),
+    ]);
+    expect(a && b).toBeTruthy();
+    expect(Math.abs(a!.y - b!.y), "Category and Region are not on the same line").toBeLessThan(4);
+    expect(b!.x).toBeGreaterThan(a!.x);
+  });
+});
+
+// Wide enough for every column, so nothing is gained by breaking it up.
+test.describe("on a desktop", () => {
+  test.use({ viewport: { width: 1280, height: 900 } });
+
+  test("the table is still a table", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/campaigns");
+    await expect(page.locator(".data-table thead")).toBeVisible();
+    await expect(page.locator(".data-table-sortbar")).toBeHidden();
+  });
 });
