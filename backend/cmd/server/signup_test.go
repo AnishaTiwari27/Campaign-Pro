@@ -50,6 +50,9 @@ func TestSignupThenSignIn(t *testing.T) {
 	h := newRouter(
 		func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) },
 		identityMod, campaignsMod.Grants(),
+		// Signing up happens before any organisation has paid, so the
+		// subscription gate is deliberately absent here.
+		nil, nil, nil,
 		rateLimits{APIPerMinute: 600, AuthPerMinute: 600}, logger,
 	)
 

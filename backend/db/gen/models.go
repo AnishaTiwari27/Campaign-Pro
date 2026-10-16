@@ -697,6 +697,19 @@ type Session struct {
 	Ip        pgtype.Text        `json:"ip"`
 }
 
+type Subscription struct {
+	OrgID                  string             `json:"org_id"`
+	Plan                   string             `json:"plan"`
+	Status                 string             `json:"status"`
+	TrialEndsAt            pgtype.Timestamptz `json:"trial_ends_at"`
+	CurrentPeriodEnd       pgtype.Timestamptz `json:"current_period_end"`
+	Provider               string             `json:"provider"`
+	ProviderCustomerID     string             `json:"provider_customer_id"`
+	ProviderSubscriptionID string             `json:"provider_subscription_id"`
+	CreatedAt              pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `json:"updated_at"`
+}
+
 type User struct {
 	ID           pgtype.UUID        `json:"id"`
 	Email        string             `json:"email"`

@@ -8,6 +8,7 @@ import (
 
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/platform/scope"
+	"campaigntrackerpro/services/billing"
 	"campaigntrackerpro/web"
 
 	"github.com/go-chi/chi/v5"
@@ -57,7 +58,13 @@ type publicMountable interface {
 	Authenticator() httpx.SessionAuthenticator
 }
 
+// subscriptionGate answers whether an organisation may use the app.
+// Declared here, in the composition root, so platform does not learn
+// about billing and billing does not learn about the router.
+type subscriptionGate func(ctx context.Context, orgID string) (billing.Subscription, bool, error)
+
 func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup,
+	gate subscriptionGate, ungatedRoutes func(chi.Router), billingWebhook func(chi.Router),
 	limits rateLimits, logger *slog.Logger, modules ...mountable) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
@@ -101,6 +108,14 @@ func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup
 			auth.PublicRoutes(r)
 		})
 
+		// The provider's webhook. Outside the session guard because
+		// Razorpay has no session, and outside the gate because the
+		// event that says an organisation paid obviously cannot
+		// require that it has. Its signature is what authenticates it.
+		if billingWebhook != nil {
+			billingWebhook(r)
+		}
+
 		r.Group(func(r chi.Router) {
 			r.Use(httpx.RequireSession(auth.Authenticator(), logger))
 			// Immediately after the session is resolved and before any
@@ -113,9 +128,31 @@ func newRouter(health http.HandlerFunc, auth publicMountable, grants grantLookup
 			r.Use(orgScope(logger))
 			r.Use(clientScope(grants, logger))
 			r.Get("/health", health)
-			for _, m := range modules {
-				m.Routes(r)
+
+			// Signed in, but in front of the paywall. Two kinds of
+			// thing belong here.
+			//
+			// Billing, because an organisation that cannot use the app
+			// is exactly the one that needs to reach it — behind the
+			// gate it would be a door that locks from the inside.
+			//
+			// And identity, because /me is how the app learns who is
+			// signed in. Behind the gate it answers 402, the session
+			// check fails, and the browser concludes nobody is logged
+			// in and shows the sign-in screen — so a lapsed customer
+			// is bounced to a login form instead of a way to pay.
+			if ungatedRoutes != nil {
+				ungatedRoutes(r)
 			}
+
+			r.Group(func(r chi.Router) {
+				if gate != nil {
+					r.Use(requireSubscription(gate, logger))
+				}
+				for _, m := range modules {
+					m.Routes(r)
+				}
+			})
 		})
 	})
 
@@ -195,5 +232,50 @@ func orgScope(logger *slog.Logger) func(http.Handler) http.Handler {
 			ctx := scope.WithOrg(r.Context(), scope.Org{ID: p.Organisation()})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
+	}
+}
+
+// requireSubscription refuses the whole API when an organisation has no
+// active subscription.
+//
+// It runs after orgScope, because it needs the tenant, and before any
+// handler, because the alternative is remembering to check in each of
+// them. 402 rather than 403: forbidden tells the client this account
+// may never do this and the feature should be hidden, where the truth
+// is that it could, as soon as someone pays.
+func requireSubscription(gate subscriptionGate, logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			org := scope.OrgFrom(r.Context())
+			sub, ok, err := gate(r.Context(), org.ID)
+			if err != nil {
+				// Fail closed. A database that cannot answer "has this
+				// tenant paid" is not grounds for assuming it has.
+				logger.Error("subscription check failed", "org", org.ID, "err", err)
+				httpx.WriteServiceError(w, logger, err)
+				return
+			}
+			if !ok {
+				httpx.WritePaymentRequired(w, refusalFor(sub))
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// refusalFor says which way the subscription failed, because "trial
+// ended" and "payment failed" need different things from the reader
+// and a single generic message would send both to the wrong place.
+func refusalFor(sub billing.Subscription) string {
+	switch sub.Status {
+	case billing.StatusTrialing:
+		return "Your trial has ended. Choose a plan to carry on."
+	case billing.StatusPastDue:
+		return "We could not take the last payment. Update your card to restore access."
+	case billing.StatusCancelled:
+		return "This subscription was cancelled. Choose a plan to start again."
+	default:
+		return "This organisation does not have a subscription yet."
 	}
 }

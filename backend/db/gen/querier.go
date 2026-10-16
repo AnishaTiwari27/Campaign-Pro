@@ -50,6 +50,7 @@ type Querier interface {
 	GetCreator(ctx context.Context, arg GetCreatorParams) (Creator, error)
 	GetLastReportRun(ctx context.Context, reportID pgtype.UUID) (ReportRun, error)
 	GetReport(ctx context.Context, arg GetReportParams) (Report, error)
+	GetSubscription(ctx context.Context, orgID string) (Subscription, error)
 	GetUser(ctx context.Context, arg GetUserParams) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error)
@@ -97,6 +98,12 @@ type Querier interface {
 	// SetCreatorPhoto attaches a creator's own photograph, or clears it when
 	// the url is empty. The avatar takes over again when it is cleared.
 	SetCreatorPhoto(ctx context.Context, arg SetCreatorPhotoParams) error
+	// SetSubscriptionStatus is what a provider webhook writes. It is keyed
+	// by the provider's own subscription id rather than by an organisation,
+	// because a webhook arrives with no session and no tenant — the id is
+	// the only thing tying the event to a row, and it was stored on that
+	// row when the subscription was created in-org.
+	SetSubscriptionStatus(ctx context.Context, arg SetSubscriptionStatusParams) (Subscription, error)
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	StartIngestRun(ctx context.Context, arg StartIngestRunParams) (pgtype.UUID, error)
 	// TopCreativePerCampaign is the lead asset for each campaign — the one a
@@ -128,6 +135,7 @@ type Querier interface {
 	// fifteen minutes.
 	UpsertExternalCampaign(ctx context.Context, arg UpsertExternalCampaignParams) (UpsertExternalCampaignRow, error)
 	UpsertLaunch(ctx context.Context, arg UpsertLaunchParams) error
+	UpsertSubscription(ctx context.Context, arg UpsertSubscriptionParams) (Subscription, error)
 }
 
 var _ Querier = (*Queries)(nil)

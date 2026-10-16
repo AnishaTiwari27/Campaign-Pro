@@ -15,6 +15,7 @@ import {
   IconRegions,
   IconReports,
   IconLogout,
+  IconBilling,
   IconSettings,
 } from "./icons";
 import "./Rail.css";
@@ -96,6 +97,7 @@ export function Rail() {
 
       <div className="rail-footer">
         {canManageUsers && <NavItem to="/users" icon={<IconUsers />} label="Team" />}
+        <NavItem to="/billing" icon={<IconBilling />} label="Billing" />
         <NavItem to="/settings" icon={<IconSettings />} label="Settings" />
         {me && (
           <div className="rail-user-row">

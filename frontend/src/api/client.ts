@@ -6,6 +6,14 @@ export class ApiError extends Error {
     return this.status === 401;
   }
 
+  /** True for 402 — signed in, but the organisation has no active
+   *  subscription. Distinct from 403: this is not "you may never",
+   *  it is "not until someone pays", so the app shows a way to pay
+   *  rather than hiding the feature. */
+  get isPaymentRequired() {
+    return this.status === 402;
+  }
+
   status: number;
   field?: string;
   constructor(status: number, message: string, field?: string) {

@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { queryClient } from "./app/queryClient";
 import { AppRoutes } from "./app/AppRoutes";
 import { AuthGate } from "./app/AuthGate";
+import { SubscriptionGate } from "./app/SubscriptionGate";
 import "./styles/base.css";
 
 createRoot(document.getElementById("root")!).render(
@@ -12,7 +13,12 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthGate>
-          <AppRoutes />
+          {/* Inside AuthGate: a subscription belongs to an
+              organisation, and there is no organisation until someone
+              has signed in. */}
+          <SubscriptionGate>
+            <AppRoutes />
+          </SubscriptionGate>
         </AuthGate>
       </BrowserRouter>
     </QueryClientProvider>

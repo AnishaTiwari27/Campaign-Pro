@@ -62,6 +62,15 @@ func WriteConflict(w http.ResponseWriter, message string) {
 	WriteJSON(w, http.StatusConflict, Error{Error: message})
 }
 
+// WritePaymentRequired is the subscription gate's refusal. 402 rather
+// than 403: forbidden means this account may never do this, and the
+// client would be right to hide the feature. 402 means the account
+// could, once the organisation pays — so the client shows a way to pay
+// instead of pretending the app is not there.
+func WritePaymentRequired(w http.ResponseWriter, message string) {
+	WriteJSON(w, http.StatusPaymentRequired, Error{Error: message})
+}
+
 // WriteTooManyRequests is the rate limiter's refusal. Retry-After is set
 // by the caller, because only the limiter knows how long the window has
 // left to run.

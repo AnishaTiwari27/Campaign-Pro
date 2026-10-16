@@ -51,6 +51,9 @@ func TestAuthLimitIsPerClientNotPerProxy(t *testing.T) {
 	h := newRouter(
 		func(http.ResponseWriter, *http.Request) {},
 		stubAuth{}, stubGrants{},
+		// No gate: these exercise the rate limiter, and a paywall in
+		// front of it would be testing two things at once.
+		nil, nil, nil,
 		rateLimits{APIPerMinute: 1000, AuthPerMinute: 3},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)
@@ -75,6 +78,9 @@ func TestRateLimitRefusalIsJSON(t *testing.T) {
 	h := newRouter(
 		func(http.ResponseWriter, *http.Request) {},
 		stubAuth{}, stubGrants{},
+		// No gate: these exercise the rate limiter, and a paywall in
+		// front of it would be testing two things at once.
+		nil, nil, nil,
 		rateLimits{APIPerMinute: 1000, AuthPerMinute: 1},
 		slog.New(slog.NewTextHandler(io.Discard, nil)),
 	)

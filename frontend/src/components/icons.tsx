@@ -184,3 +184,14 @@ export function IconMoon(props: SVGProps<SVGSVGElement>) {
     </Base>
   );
 }
+
+/** Billing. A card, because that is what the page is about. */
+export function IconBilling(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <rect x="1.8" y="4" width="14.4" height="10" rx="1.8" />
+      <line x1="1.8" y1="7.6" x2="16.2" y2="7.6" />
+      <line x1="4.6" y1="11.2" x2="7.4" y2="11.2" />
+    </Base>
+  );
+}

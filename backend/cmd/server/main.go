@@ -20,6 +20,8 @@ import (
 	"campaigntrackerpro/platform/oidc"
 	"campaigntrackerpro/platform/scope"
 	analytics "campaigntrackerpro/services/analytics/module"
+	billingsvc "campaigntrackerpro/services/billing"
+	billing "campaigntrackerpro/services/billing/module"
 	campaigns "campaigntrackerpro/services/campaigns/module"
 	creators "campaigntrackerpro/services/creators/module"
 	endorsements "campaigntrackerpro/services/endorsements/module"
@@ -31,6 +33,8 @@ import (
 	radar "campaigntrackerpro/services/radar/module"
 	reports "campaigntrackerpro/services/reports/module"
 	"campaigntrackerpro/web"
+
+	"github.com/go-chi/chi/v5"
 )
 
 const workerTick = 30 * time.Second
@@ -116,6 +120,14 @@ func main() {
 		AdAccountID: cfg.MetaAdAccountID,
 	}, explainer(cfg, logger), logger)
 	analyticsMod := analytics.New(db, campaignsMod.Service(), creatorsMod.Store(), logger)
+	// Billing gates every other service, so it is wired before the
+	// router and depends on none of them.
+	billingMod := billing.New(db, billingsvc.RazorpayConfig{
+		KeyID:         cfg.RazorpayKeyID,
+		KeySecret:     cfg.RazorpayKeySecret,
+		WebhookSecret: cfg.RazorpayWebhookSecret,
+		PlanIDs:       cfg.RazorpayPlanIDs,
+	}, logger)
 	reportsMod := reports.New(db, campaignsMod.Service(), campaignsMod.Detector(),
 		mailerFor(cfg, logger), logger, workerTick)
 
@@ -135,8 +147,14 @@ func main() {
 	go radarMod.Run(ctx)
 
 	router := newRouter(analyticsMod.Health(), identityMod, campaignsMod.Grants(),
+		billingMod.Gate(),
+		func(r chi.Router) {
+			identityMod.Routes(r)
+			billingMod.Routes(r)
+		},
+		billingMod.WebhookRoutes,
 		rateLimits{APIPerMinute: cfg.RateAPIPerMinute, AuthPerMinute: cfg.RateAuthPerMinute}, logger,
-		identityMod, campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod, ingestMod,
+		campaignsMod, creatorsMod, analyticsMod, reportsMod, endorsementsMod, ingestMod,
 		insightsMod, radarMod)
 
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: router}

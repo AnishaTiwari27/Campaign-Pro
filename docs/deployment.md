@@ -170,6 +170,44 @@ Ad Library archive API covers only political and issue ads in India,
 and what the competitive-intelligence vendors sell is modelled
 estimates, not actuals.
 
+### Subscriptions (Razorpay)
+
+The whole API sits behind a subscription. An organisation without an
+active one gets `402 Payment Required` on everything except the
+session check and the billing screen — a locked tenant must still be
+able to see who it is and how to pay, or the paywall is a door that
+locks from the inside.
+
+**Existing organisations are grandfathered.** The migration that
+creates the table also writes an `active` row with no expiry for every
+organisation that already exists, in the same transaction. Without
+that, running it would lock out every current tenant — including a
+live deployment whose users never agreed to a paywall.
+
+Razorpay rather than Stripe because this prices in rupees for Indian
+agencies, and UPI and netbanking are how those invoices get paid.
+
+| Env var | Value |
+|---|---|
+| `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET` | From the Razorpay dashboard |
+| `RAZORPAY_WEBHOOK_SECRET` | The secret set on the webhook. **Without it every webhook is refused** — an unverified one lets anyone who finds the URL grant themselves a subscription |
+| `RAZORPAY_PLAN_IDS` | `starter:plan_xxx,growth:plan_yyy,scale:plan_zzz`. Razorpay's plan ids are generated, so they cannot be derived from ours |
+
+Point the webhook at `https://your-host/api/billing/webhook` and
+subscribe it to the `subscription.*` events. It is outside the session
+guard, because a payment provider has no session; the HMAC-SHA256
+signature over the raw body is what authenticates it.
+
+With no keys set the app still runs: the billing screen says payments
+are not configured, and the 14-day trial still works. Prices live in
+`services/billing` and are a starting point, not researched pricing —
+change them there.
+
+**Not yet run against the live API.** The request shapes and the
+signature check are written from Razorpay's published reference and
+covered by tests, but nobody has taken a real payment through this.
+Treat it as unproven until one has gone through.
+
 ### Creating the first account
 
 **Never run `make seed` against a deployment.** It begins with

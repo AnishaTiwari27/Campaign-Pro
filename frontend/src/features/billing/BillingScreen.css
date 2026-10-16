@@ -1,0 +1,201 @@
+.billing {
+  max-width: 1040px;
+}
+
+/* The locked variant is the whole page rather than a panel in the app,
+   because there is no app behind it to frame. */
+.billing-locked {
+  margin: 0 auto;
+  padding: 36px 0 60px;
+}
+
+.billing-head h1 {
+  font-size: 23px;
+}
+
+.billing-lede {
+  margin-top: 5px;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+
+.billing-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 34px;
+  padding: 16px 20px;
+  margin-top: 18px;
+}
+
+.billing-status > div {
+  display: grid;
+  gap: 3px;
+}
+
+.billing-status-label {
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.billing-status-value {
+  font-size: 15px;
+  font-weight: 620;
+}
+
+.billing-status-active {
+  color: var(--good);
+}
+
+.billing-status-trialing {
+  color: var(--accent);
+}
+
+.billing-status-past_due {
+  color: var(--warn);
+}
+
+.billing-status-cancelled,
+.billing-status-none {
+  color: var(--crit);
+}
+
+.billing-trial {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  margin-top: 14px;
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+}
+
+.billing-trial p {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.billing-notice {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--warn);
+  background: var(--warn-soft);
+}
+
+.billing-error {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--crit);
+  background: var(--crit-soft);
+}
+
+.billing-plans {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.billing-plan {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 20px;
+}
+
+.billing-plan-current {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--line));
+}
+
+.billing-plan-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.billing-plan-head h2 {
+  font-size: 16px;
+}
+
+.billing-plan-badge {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: var(--good);
+  background: var(--good-soft);
+}
+
+.billing-plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.billing-plan-price strong {
+  font-size: 26px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.billing-plan-price span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.billing-plan-blurb {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.billing-plan-includes {
+  display: grid;
+  gap: 6px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--muted);
+  /* Pushes the button to the foot so the three cards' CTAs line up
+     however many lines each plan lists. */
+  flex: 1 1 auto;
+}
+
+.billing-plan-includes li {
+  position: relative;
+  padding-left: 17px;
+}
+
+.billing-plan-includes li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--good);
+  font-weight: 700;
+}
+
+.billing-plan-cta {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .billing-plans {
+    grid-template-columns: 1fr;
+  }
+
+  .billing-status {
+    gap: 20px;
+  }
+}

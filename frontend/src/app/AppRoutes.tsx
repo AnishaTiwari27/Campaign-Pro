@@ -29,6 +29,7 @@ const BenchmarksPage = lazy(() => import("../features/benchmarks/BenchmarksPage"
 const SignalsPage = lazy(() => import("../features/signals/SignalsPage").then((m) => ({ default: m.SignalsPage })));
 const ReportsPage = lazy(() => import("../features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import("../features/reports/ReportDetailPage").then((m) => ({ default: m.ReportDetailPage })));
+const BillingScreen = lazy(() => import("../features/billing/BillingScreen").then((m) => ({ default: m.BillingScreen })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const UsersPage = lazy(() => import("../features/users/UsersPage").then((m) => ({ default: m.UsersPage })));
 
@@ -75,6 +76,7 @@ export function AppRoutes() {
           <Route path="reports/:id" element={<ReportDetailPage />} />
           <Route path="users" element={<UsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="billing" element={<BillingScreen />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

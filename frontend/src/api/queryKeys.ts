@@ -24,4 +24,5 @@ export const queryKeys = {
   launches: () => ["radar", "launches"] as const,
   marketFacts: () => ["endorsements", "market"] as const,
   health: () => ["health"] as const,
+  billing: () => ["billing"] as const,
 };

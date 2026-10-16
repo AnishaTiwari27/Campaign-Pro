@@ -144,6 +144,20 @@ type Config struct {
 	// database will accept.
 	SignupOrgID string
 
+	// Razorpay, for subscriptions. Off unless the key pair is set: a
+	// deployment with no processor should still run, and say so on the
+	// billing screen, rather than offer a button that cannot work.
+	RazorpayKeyID     string
+	RazorpayKeySecret string
+	// RazorpayWebhookSecret verifies that an event came from Razorpay.
+	// Without it every webhook is refused, because an unverified one
+	// lets anyone who finds the URL grant themselves a subscription.
+	RazorpayWebhookSecret string
+	// RazorpayPlanIDs maps this app's plan ids to the ones created in
+	// the Razorpay dashboard, as "starter:plan_xxx,growth:plan_yyy".
+	// Theirs are generated, so they cannot be derived.
+	RazorpayPlanIDs map[string]string
+
 	// The model that writes signal explanations. Optional: with no key
 	// the explanations are assembled from the figures instead, which is
 	// plainer and still true.
@@ -187,6 +201,11 @@ func Load() Config {
 		OIDCRedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
 		OIDCOrgID:        getenv("OIDC_ORG_ID", "default"),
 		SignupOrgID:      getenv("SIGNUP_ORG_ID", "default"),
+
+		RazorpayKeyID:         os.Getenv("RAZORPAY_KEY_ID"),
+		RazorpayKeySecret:     os.Getenv("RAZORPAY_KEY_SECRET"),
+		RazorpayWebhookSecret: os.Getenv("RAZORPAY_WEBHOOK_SECRET"),
+		RazorpayPlanIDs:       parsePairs(os.Getenv("RAZORPAY_PLAN_IDS")),
 
 		LLMAPIKey: os.Getenv("ANTHROPIC_API_KEY"),
 		LLMModel:  getenv("LLM_MODEL", "claude-sonnet-5"),
@@ -294,4 +313,22 @@ func or(v, def string) string {
 		return v
 	}
 	return def
+}
+
+// parsePairs reads "a:1,b:2" into a map. Used for the plan id mapping,
+// which is a handful of pairs and does not justify a second file or a
+// JSON blob in an environment variable.
+func parsePairs(v string) map[string]string {
+	out := map[string]string{}
+	for _, pair := range strings.Split(v, ",") {
+		k, val, ok := strings.Cut(strings.TrimSpace(pair), ":")
+		if !ok {
+			continue
+		}
+		k, val = strings.TrimSpace(k), strings.TrimSpace(val)
+		if k != "" && val != "" {
+			out[k] = val
+		}
+	}
+	return out
 }
