@@ -29,11 +29,6 @@ export function InFocus({
   const creatorPhotos = useCreatorPhotos();
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
-  // A film playing holds the carousel still on its own account. Kept
-  // apart from `paused`, which is the pointer being over the card: if
-  // they shared one flag, moving the mouse away would rotate the card
-  // out from under a video that is still playing.
-  const [filmPlaying, setFilmPlaying] = useState(false);
   // Drives the progress ring. Kept separate from `active` so restarting the
   // cycle doesn't require re-rendering the whole card.
   const [elapsed, setElapsed] = useState(0);
@@ -51,7 +46,11 @@ export function InFocus({
   );
 
   useEffect(() => {
-    if (paused || filmPlaying || count <= 1) return;
+    // Playback no longer holds the carousel. It did when starting a
+    // film was a deliberate click; now every card plays on arrival, so
+    // the same rule would mean it never advanced at all. Hover is the
+    // way to hold one — which the subtitle already tells you.
+    if (paused || count <= 1) return;
     const id = setInterval(() => {
       const since = Date.now() - startedAt.current;
       if (since >= ROTATE_MS) {
@@ -63,7 +62,7 @@ export function InFocus({
       }
     }, 250);
     return () => clearInterval(id);
-  }, [paused, filmPlaying, count]);
+  }, [paused, count]);
 
   if (count === 0) return null;
 
@@ -186,12 +185,7 @@ export function InFocus({
               </span>
               <Pill status={campaign.status} />
             </Link>
-            <AdFilm
-              film={film}
-              campaignName={campaign.name}
-              onPlayingChange={setFilmPlaying}
-              hero
-            />
+            <AdFilm film={film} campaignName={campaign.name} hero />
           </>
         ) : (
           <>

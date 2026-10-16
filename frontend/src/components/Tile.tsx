@@ -91,7 +91,7 @@ export function Tile({
           <>
             <img
               className="tile-film-fill"
-              src={adFilmThumb(film.id, "tile")}
+              src={adFilmThumb(film.id)}
               alt=""
               aria-hidden="true"
               loading="lazy"
@@ -104,7 +104,7 @@ export function Tile({
             />
             <img
               className="tile-film"
-              src={adFilmThumb(film.id, "tile")}
+              src={adFilmThumb(film.id)}
               alt=""
               loading="lazy"
               style={filmCropStyle(film, "clip")}

@@ -1,102 +1,66 @@
-import { useEffect, useState } from "react";
-import { adFilmThumb, filmCropStyle, type AdFilm as AdFilmData } from "../data/adFilms";
+import { filmCropStyle, type AdFilm as AdFilmData } from "../data/adFilms";
 import "./AdFilm.css";
 
-/** The campaign's actual ad film, played in place.
+/** The campaign's actual ad film, playing in place.
  *
- *  Nothing from YouTube loads until someone asks for it. Until then
- *  this is a still and a play button — the "facade" pattern, and not
- *  only for weight: an embedded player that mounts on page load sets
- *  cookies and phones home for every visitor who never watches, on a
- *  dashboard where most of them never will. Clicking is consent.
+ *  It starts on its own and muted, which is the only kind of autoplay
+ *  a browser allows without a gesture. The player's own controls stay,
+ *  so sound is one click away; nothing here can unmute for you.
  *
- *  The still is the brand's own video frame, served by YouTube, so even
- *  before anyone presses play the card is showing real creative rather
- *  than a letter in a box.
+ *  This replaced a still-and-play-button facade. The facade existed so
+ *  a visitor who never watched loaded nothing from YouTube — which was
+ *  the better default for a dashboard, and is the cost of autoplay:
+ *  the player now loads for everyone who opens Overview.
  */
 export function AdFilm({
   film,
   campaignName,
-  onPlayingChange,
   hero = false,
 }: {
   film: AdFilmData;
   campaignName: string;
-  /** Lets a rotating container hold still while something is playing. */
-  onPlayingChange?: (playing: boolean) => void;
   /** The spotlight's treatment: the film is the card, not an inset. */
   hero?: boolean;
 }) {
-  const [playing, setPlaying] = useState(false);
-  // maxres does not exist for every upload — plenty of ad films predate
-  // it — so a miss falls back to the size that always does.
-  const [thumb, setThumb] = useState(adFilmThumb(film.id, "hero"));
-
-  // A different campaign is a different film: stop the old one rather
-  // than leave it playing under new numbers.
-  useEffect(() => {
-    setPlaying(false);
-    setThumb(adFilmThumb(film.id, "hero"));
-  }, [film.id]);
-
-  useEffect(() => {
-    onPlayingChange?.(playing);
-  }, [playing, onPlayingChange]);
+  const params = new URLSearchParams({
+    autoplay: "1",
+    // Required. An unmuted autoplay is refused and the film would sit
+    // on its first frame instead.
+    mute: "1",
+    // iOS otherwise takes the video fullscreen the moment it starts.
+    playsinline: "1",
+    // Ads are short; without this a 20-second film spends the rest of
+    // its turn in the carousel showing YouTube's end screen.
+    loop: "1",
+    playlist: film.id,
+    rel: "0",
+    modestbranding: "1",
+  });
 
   return (
     <figure className={hero ? "ad-film ad-film-hero" : "ad-film"}>
       <div className="ad-film-frame">
-        {playing ? (
-          <iframe
-            className="ad-film-player"
-            // nocookie, and only ever after a click: the privacy-forward
-            // host is pointless if the player has already loaded.
-            src={`https://www.youtube-nocookie.com/embed/${film.id}?autoplay=1&rel=0&modestbranding=1`}
-            title={film.title}
-            allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-            allowFullScreen
-          />
-        ) : (
-          <button
-            type="button"
-            className="ad-film-poster"
-            onClick={() => setPlaying(true)}
-            aria-label={`Play the ${campaignName} ad film: ${film.title}`}
-          >
-            <img
-              src={thumb}
-              alt=""
-              loading="lazy"
-              style={filmCropStyle(film, "fill")}
-              // hq720 keeps the 16:9 frame; hqdefault would letterbox it.
-              onError={() => setThumb(`https://i.ytimg.com/vi/${film.id}/hq720.jpg`)}
-            />
-            <span className="ad-film-scrim" aria-hidden="true" />
-            <span className="ad-film-play" aria-hidden="true">
-              <svg viewBox="0 0 24 24" width="22" height="22">
-                <path d="M8 5.5v13l11-6.5z" fill="currentColor" />
-              </svg>
-            </span>
-            <span className="ad-film-badge" aria-hidden="true">
-              Ad film
-            </span>
-          </button>
-        )}
+        <iframe
+          className="ad-film-player"
+          src={`https://www.youtube-nocookie.com/embed/${film.id}?${params}`}
+          title={`${campaignName} — ${film.title}`}
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          // The same crop the still gets, so a cinematic film fills the
+          // frame while it plays instead of growing its bars back the
+          // moment it starts. On a heavily letterboxed film this does
+          // push the player's controls past the edge.
+          style={filmCropStyle(film, "fill")}
+        />
       </div>
       {/* Attribution is not decoration here: it is the claim that this
           is the advertiser's own upload, which is what makes embedding
-          it legitimate. It stays visible whether or not it is playing —
-          in hero mode it rides over the foot of the picture rather than
-          taking a strip of its own. */}
+          it legitimate. */}
       <figcaption className="ad-film-caption">
         <span className="truncate" title={film.title}>
           {film.title}
         </span>
         <span className="ad-film-source">
-          {/* Who is fronting the ad, where the film credits them. On a
-              brand's campaign this is the thing the product is about:
-              the campaign row says "Tanishq", and this says whose face
-              is actually in it. */}
           {film.featuring && film.featuring.length > 0 && (
             <>Featuring {film.featuring.join(", ")} · </>
           )}

@@ -97,7 +97,21 @@ its first run.
 A campaign with no verified film shows what it showed before. A gap is
 not a thing to fill with something approximate.
 
-The player is a facade — a still and a play button until clicked, then
-`youtube-nocookie.com`. On a dashboard most visitors never press play,
-and an embed that mounts on load would phone home and set cookies for
-all of them.
+The spotlight autoplays the film, muted, with no play button. Muted is
+not a preference: an unmuted autoplay is refused and the film would
+sit on its first frame. The player's own controls stay, so sound is
+one click away.
+
+This replaced a facade — a still and a play button, with nothing
+loaded from YouTube until clicked. That was the better default for a
+dashboard, where most visitors never press play, and giving it up is
+the cost of autoplay: the player now loads for everyone who opens
+Overview.
+
+Two things followed from it. The carousel no longer waits for
+playback to finish, because every card plays on arrival and the old
+rule would have frozen it; hover is what holds a card now. And the
+letterbox crop is applied to the player as well as the still, or a
+cinematic film would grow its bars back the moment it started — at
+the cost of pushing the player's controls past the edge on the most
+heavily letterboxed ones.
