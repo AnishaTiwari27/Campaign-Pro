@@ -47,6 +47,40 @@ test("the spotlight plays the brand's own ad film, without being asked", async (
   // its first frame instead.
   await expect(player).toHaveAttribute("src", /[?&]mute=1/);
   await expect(player).toHaveAttribute("src", /[?&]autoplay=1/);
+  // YouTube's own chrome is off: a scrub bar and a centre play button
+  // sat permanently over the ad and over this card's header.
+  await expect(player).toHaveAttribute("src", /[?&]controls=0/);
+});
+
+test("the player's chrome stays off, and our controls only appear on hover", async ({ page }) => {
+  await openSpotlight(page);
+  const controls = page.locator(".ad-film-controls");
+  await expect(controls).toHaveCount(1);
+
+  // Park the pointer away from the film.
+  await page.mouse.move(5, 5);
+  await expect(controls).toHaveCSS("opacity", "0");
+
+  const box = await page.locator(".ad-film-frame").boundingBox();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await expect(controls).toHaveCSS("opacity", "1");
+
+  // The iframe must not take the pointer, or YouTube throws its title
+  // and centre controls back up the moment you hover — which no CSS
+  // of ours can hide, the player being cross-origin.
+  await expect(page.locator(".ad-film-player")).toHaveCSS("pointer-events", "none");
+});
+
+test("the mute button reaches the player", async ({ page }) => {
+  await openSpotlight(page);
+  const video = page.frameLocator(".ad-film-player").locator("video").first();
+  await expect(video).toHaveCount(1, { timeout: 20000 });
+  expect(await video.evaluate((v: HTMLVideoElement) => v.muted)).toBe(true);
+
+  await page.getByRole("button", { name: /Unmute/ }).click();
+  await expect
+    .poll(async () => video.evaluate((v: HTMLVideoElement) => v.muted), { timeout: 10000 })
+    .toBe(false);
 });
 
 // The claim is that it plays, not merely that an iframe exists, so

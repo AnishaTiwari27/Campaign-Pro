@@ -6,8 +6,17 @@
 }
 
 /* The player fills the frame. Without this an iframe falls back to
-   its intrinsic 300x150 and sits in the corner of a full-size card. */
+   its intrinsic 300x150 and sits in the corner of a full-size card.
+
+   pointer-events: none is what actually keeps YouTube's chrome away.
+   controls=0 removes the control bar, but the player still throws up
+   a title, a centre play button and a "More videos" strip the moment
+   it sees the pointer — and being cross-origin, none of that can be
+   hidden with CSS. If the iframe never sees the pointer, it never
+   shows any of it. Interaction is ours instead: the buttons below sit
+   over the top and take their events back. */
 .ad-film-player {
+  pointer-events: none;
   position: absolute;
   inset: 0;
   width: 100%;
@@ -127,5 +136,69 @@
     line-height: 1.35;
     color: var(--muted);
     text-shadow: none;
+  }
+}
+
+/* Our own controls, in place of the player's. Hidden until the
+   pointer is over the film — the whole point of turning YouTube's
+   chrome off was to stop a scrub bar sitting permanently on the ad. */
+.ad-film-controls {
+  /* Taken back from the iframe, which has them switched off. */
+  pointer-events: auto;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  gap: 7px;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.ad-film-frame:hover .ad-film-controls,
+/* Keyboard users never hover, so focus has to reveal it too or the
+   buttons are unreachable. */
+.ad-film-controls:focus-within {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: none) {
+  /* Nothing hovers on a touch screen, so hiding them would hide them
+     for good. */
+  .ad-film-controls {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ad-film-controls button {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #fff;
+  background: rgb(0 0 0 / 0.58);
+  backdrop-filter: blur(4px);
+  transition: background 140ms ease;
+}
+
+.ad-film-controls button:hover {
+  background: rgb(0 0 0 / 0.78);
+}
+
+.ad-film-controls button svg {
+  width: 19px;
+  height: 19px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ad-film-controls {
+    transition: none;
   }
 }
