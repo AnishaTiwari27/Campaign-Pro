@@ -21,6 +21,24 @@ const THEME_OPTIONS: { value: ThemeChoice; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
+/** Which theme a tap on `clicked` should select.
+ *
+ *  Normally itself — these are radio options. But below 640px the bar
+ *  renders only the active option, because three labelled ones cost
+ *  about 130px and squeezed the breadcrumb to "Camp". The one button
+ *  left has to cycle, or the control would be inert on a phone.
+ *
+ *  Checked at click time rather than render, so a rotated phone or a
+ *  dragged window gets the right behaviour with no resize listener.
+ */
+function nextThemeOnNarrow(clicked: ThemeChoice, current: ThemeChoice): ThemeChoice {
+  const collapsed =
+    typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
+  if (!collapsed || clicked !== current) return clicked;
+  const i = THEME_OPTIONS.findIndex((o) => o.value === current);
+  return THEME_OPTIONS[(i + 1) % THEME_OPTIONS.length].value;
+}
+
 export function CommandBar() {
   const { breadcrumbs } = useBreadcrumbs();
   const theme = useThemeStore((s) => s.theme);
@@ -66,7 +84,7 @@ export function CommandBar() {
             role="radio"
             aria-checked={theme === opt.value}
             className={`command-bar-theme-opt${theme === opt.value ? " command-bar-theme-opt-active" : ""}`}
-            onClick={() => setTheme(opt.value)}
+            onClick={() => setTheme(nextThemeOnNarrow(opt.value, theme))}
           >
             {opt.label}
           </button>

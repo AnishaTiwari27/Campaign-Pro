@@ -38,9 +38,43 @@ export function DataTable<T extends { id: string }>({
   density = "comfortable",
 }: DataTableProps<T>) {
   const allSelected = !!selectable && rows.length > 0 && rows.every((r) => selectedIds?.has(r.id));
+  const sortable = columns.filter((c) => c.sortable);
 
   return (
     <div className={`data-table-wrap data-table-${density}`}>
+      {/* Narrow screens turn each row into a card and drop the header
+          row with it — and the header row is where sorting lives. This
+          puts it back as a control rather than letting the table lose
+          a feature on a phone. Hidden by CSS at table widths, so there
+          is no viewport guessing in JS. */}
+      {sortable.length > 0 && onSort && (
+        <div className="data-table-sortbar">
+          <label>
+            Sort by
+            <select
+              value={sort ?? ""}
+              onChange={(e) => onSort(e.target.value)}
+              aria-label="Sort rows by column"
+            >
+              {sortable.map((col) => (
+                <option key={col.key} value={col.key}>
+                  {col.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {sort && (
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => onSort(sort)}
+              aria-label={`Sort ${dir === "asc" ? "descending" : "ascending"}`}
+            >
+              {dir === "asc" ? "↑ Asc" : "↓ Desc"}
+            </button>
+          )}
+        </div>
+      )}
       <table className="data-table">
         <thead>
           <tr>
@@ -76,8 +110,16 @@ export function DataTable<T extends { id: string }>({
                   />
                 </td>
               )}
-              {columns.map((col) => (
-                <td key={col.key} className={col.className}>
+              {columns.map((col, i) => (
+                // data-label is what the card layout shows in place of
+                // the header row it no longer has. The first column is
+                // the card's title, so it is marked and gets none.
+                <td
+                  key={col.key}
+                  className={col.className}
+                  data-label={col.label}
+                  data-primary={i === 0 ? "" : undefined}
+                >
                   {col.render(row)}
                 </td>
               ))}

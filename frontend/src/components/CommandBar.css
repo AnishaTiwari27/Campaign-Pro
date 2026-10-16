@@ -91,6 +91,19 @@
   .command-bar-search-label {
     display: none;
   }
+
+  /* Three labelled options cost about 130px, which on a 390px bar was
+     squeezing the breadcrumb down to "Camp". Only the chosen one
+     stays, so the control still reads as a theme switch and still
+     tells you which theme you are in; tapping it cycles. The full
+     three-way lives in Settings. */
+  .command-bar-theme-opt {
+    display: none;
+  }
+
+  .command-bar-theme-opt-active {
+    display: inline-flex;
+  }
 }
 
 .command-bar-kbd {

@@ -335,3 +335,26 @@
 .in-focus-filmhead .pill {
   margin-left: auto;
 }
+
+/* Phone: the header rides over the picture, so it has to stay short.
+   The status pill goes — the strip below already carries each
+   campaign's state, and over a photograph at this size it was a chip
+   competing with the name. */
+@media (max-width: 640px) {
+  .in-focus-filmhead {
+    padding: 9px 12px 24px;
+    gap: 8px;
+  }
+
+  .in-focus-filmhead-name {
+    font-size: 14.5px;
+  }
+
+  .in-focus-filmhead-meta {
+    font-size: 10px;
+  }
+
+  .in-focus-filmhead .pill {
+    display: none;
+  }
+}

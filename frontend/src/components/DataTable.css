@@ -57,3 +57,129 @@
 .data-table-comfortable th {
   padding: 12px;
 }
+
+/* The sort control that stands in for the header row on a phone.
+   Hidden wherever the real table renders. */
+.data-table-sortbar {
+  display: none;
+}
+
+/* ---------------------------------------------------------------
+   Phone: a table becomes a list of cards.
+
+   The wrapper scrolls sideways, so strictly nothing was broken — but
+   a 12-column table on a 390px screen shows the first column and
+   hides every number behind a sideways scroll, with the header row
+   scrolling away from the values it labels. That is truncation, not
+   adaptation. Each row becomes a card, and every value carries the
+   label the header used to give it.
+   --------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .data-table-sortbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+
+  .data-table-sortbar label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .data-table-sortbar select {
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 6px 8px;
+    min-height: 34px;
+  }
+
+  .data-table-wrap {
+    overflow-x: visible;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  /* The 900px floor is what keeps the columns readable while this is
+     a table. As cards there are no columns, and leaving it on pushes
+     the page 589px wider than the phone. */
+  .data-table {
+    min-width: 0;
+  }
+
+  /* The card border is on the row now, so the wrapper's own frame
+     would draw a box around the whole list. */
+  .data-table-wrap {
+    border: 0;
+    background: none;
+    border-radius: 0;
+  }
+
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table-row {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    padding: 11px 13px;
+    margin-bottom: 10px;
+  }
+
+  .data-table-row td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 5px 0;
+    border: 0;
+    min-height: 0;
+    text-align: right;
+  }
+
+  .data-table-row td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    text-align: left;
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* The first column is the card's heading: no label, full width,
+     and it carries the row's weight. */
+  .data-table-row td[data-primary] {
+    justify-content: flex-start;
+    text-align: left;
+    font-size: 15px;
+    font-weight: 650;
+    padding-bottom: 9px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .data-table-row td[data-primary]::before {
+    content: none;
+  }
+
+  /* The select-all checkbox has no row to head on a phone. */
+  .data-table-checkbox-col {
+    display: none;
+  }
+}

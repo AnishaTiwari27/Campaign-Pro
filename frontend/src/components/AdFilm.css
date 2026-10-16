@@ -170,3 +170,49 @@
 .ad-film-hero .ad-film-badge {
   display: none;
 }
+
+/* Phone: the hero caption had the film's full title on one clipped
+   line and the attribution under it, in a band narrower than either.
+   They collided and the title broke mid-word. The title wraps to two
+   lines and both shrink; the attribution stays, because it is the
+   claim that makes embedding the film legitimate and not decoration
+   to be dropped when space is short. */
+@media (max-width: 640px) {
+  /* Below the picture, not over it. A 390px-wide card makes the film
+     about 170px tall, and an overlaid caption of a title plus an
+     attribution line was taking a quarter of it — on a desktop that
+     band is a sliver, here it is a chunk of the ad. Out of the frame
+     it costs the picture nothing and reads better besides. */
+  .ad-film-hero .ad-film-caption {
+    position: static;
+    background: none;
+    padding: 8px 12px 10px;
+    gap: 2px;
+    text-align: left;
+    justify-items: start;
+  }
+
+  .ad-film-hero .ad-film-caption > span:first-child {
+    font-size: 11.5px;
+    line-height: 1.3;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--ink-2);
+    text-shadow: none;
+  }
+
+  .ad-film-hero .ad-film-source {
+    font-size: 10px;
+    line-height: 1.35;
+    color: var(--muted);
+    text-shadow: none;
+  }
+
+  .ad-film-hero .ad-film-play {
+    width: 52px;
+    height: 52px;
+  }
+}
