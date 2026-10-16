@@ -64,45 +64,88 @@
   background: var(--good);
 }
 
+/* The search affordance. A button, not an input — it opens the
+   palette — so it is styled as a field only far enough to say "type
+   here", and the keycap carries the rest. */
 .command-bar-search {
   margin-left: auto;
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 32px;
-  padding: 0 10px;
-  border-radius: var(--radius-md);
+  gap: 9px;
+  height: 34px;
+  padding: 0 7px 0 11px;
+  border-radius: 999px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
   color: var(--muted);
   cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
 }
 
-.command-bar-search:hover {
-  border-color: var(--accent);
+.command-bar-search:hover,
+.command-bar-search:focus-visible {
   color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--line-strong));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.command-bar-search-icon {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
 }
 
 .command-bar-search-label {
+  display: flex;
+  gap: 4px;
   font-size: 13px;
+  white-space: nowrap;
+}
+
+/* The cycling word, in a fixed box so the button does not resize as
+   the word changes — a control that grows and shrinks under the
+   pointer is one you misclick. */
+.command-bar-search-cycle {
+  position: relative;
+  display: inline-block;
+  width: 74px;
+  overflow: hidden;
+  text-align: left;
+  color: var(--accent);
+  font-weight: 560;
+}
+
+.command-bar-search-word {
+  display: inline-block;
+  animation: command-bar-word 320ms ease;
+}
+
+@keyframes command-bar-word {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 @media (max-width: 640px) {
+  /* The word goes; the icon and the keycap carry it. The theme switch
+     needs no special case any more — three icons are 96px where three
+     words were about 130px, which is what had been squeezing the
+     breadcrumb down to "Camp". */
   .command-bar-search-label {
     display: none;
   }
 
-  /* Three labelled options cost about 130px, which on a 390px bar was
-     squeezing the breadcrumb down to "Camp". Only the chosen one
-     stays, so the control still reads as a theme switch and still
-     tells you which theme you are in; tapping it cycles. The full
-     three-way lives in Settings. */
-  .command-bar-theme-opt {
-    display: none;
-  }
-
-  .command-bar-theme-opt-active {
-    display: inline-flex;
+  .command-bar-search {
+    padding: 0 7px 0 9px;
   }
 }
 
@@ -115,27 +158,66 @@
   border: 1px solid var(--line);
 }
 
+/* A track with one thumb that slides, rather than three buttons that
+   each light up. Only the thumb moves, so the control reads as a
+   single switch with a position. */
 .command-bar-theme {
+  position: relative;
   display: flex;
-  padding: 2px;
-  border-radius: var(--radius-md);
+  padding: 3px;
+  border-radius: 999px;
   background: var(--surface-2);
-  gap: 2px;
+  border: 1px solid var(--line);
+}
+
+.command-bar-theme-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 30px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.18);
+  /* --theme-index comes inline from the chosen option. */
+  transform: translateX(calc(var(--theme-index, 0) * 30px));
+  transition: transform 260ms cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
 .command-bar-theme-opt {
+  position: relative;
+  z-index: 1;
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
   border: none;
   background: transparent;
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
+  border-radius: 999px;
   color: var(--muted);
   cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.command-bar-theme-opt svg {
+  width: 15px;
+  height: 15px;
+}
+
+.command-bar-theme-opt:hover {
+  color: var(--ink-2);
 }
 
 .command-bar-theme-opt-active {
-  background: var(--surface);
-  color: var(--ink);
-  box-shadow: var(--elevation-1);
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .command-bar-theme-thumb {
+    transition: none;
+  }
+
+  .command-bar-search-word {
+    animation: none;
+  }
 }

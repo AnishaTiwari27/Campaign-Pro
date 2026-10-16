@@ -156,3 +156,31 @@ export function IconLogout(props: SVGProps<SVGSVGElement>) {
     </Base>
   );
 }
+
+/** Theme switch. Auto is the dial half-filled — the same circle as
+ *  the other two, with the system deciding which half you get. */
+export function IconAuto(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <circle cx="9" cy="9" r="6.2" />
+      <path d="M9 2.8a6.2 6.2 0 0 0 0 12.4z" fill="currentColor" stroke="none" />
+    </Base>
+  );
+}
+
+export function IconSun(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <circle cx="9" cy="9" r="3.4" />
+      <path d="M9 1.6v1.6M9 14.8v1.6M16.4 9h-1.6M3.2 9H1.6M14.2 3.8l-1.1 1.1M4.9 13.1l-1.1 1.1M14.2 14.2l-1.1-1.1M4.9 4.9 3.8 3.8" />
+    </Base>
+  );
+}
+
+export function IconMoon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M15 10.4A6.4 6.4 0 0 1 7.6 3a6.6 6.6 0 1 0 7.4 7.4z" />
+    </Base>
+  );
+}
