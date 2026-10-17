@@ -195,3 +195,51 @@ export function IconBilling(props: SVGProps<SVGSVGElement>) {
     </Base>
   );
 }
+
+export function IconBell(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M4.6 7.4a4.4 4.4 0 1 1 8.8 0c0 3.1 1.2 4.3 1.2 4.3H3.4s1.2-1.2 1.2-4.3z" />
+      <path d="M7.3 14.2a1.9 1.9 0 0 0 3.4 0" />
+    </Base>
+  );
+}
+
+export function IconLifebuoy(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <circle cx="9" cy="9" r="6.6" />
+      <circle cx="9" cy="9" r="2.7" />
+      <path d="M4.3 4.3 7 7M11 11l2.7 2.7M13.7 4.3 11 7M7 11l-2.7 2.7" />
+    </Base>
+  );
+}
+
+export function IconSparkle(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M9 2.2 10.5 6.6 15 8.1l-4.5 1.5L9 14.1 7.5 9.6 3 8.1l4.5-1.5z" />
+    </Base>
+  );
+}
+
+export function IconHistory(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M3 9a6 6 0 1 0 1.8-4.3" />
+      <path d="M2.6 2.9v3.4h3.4" />
+      <path d="M9 5.9V9l2.2 1.5" />
+    </Base>
+  );
+}
+
+export function IconHandshake(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Base {...props}>
+      <path d="M2.2 7.4 5 5.2l2.6 1.9 2.8-1.9 2.4 2.2" />
+      <path d="M5 5.2 1.6 8.6l2.2 2.2 1.6-1.3" />
+      <path d="M13 7.4l3.4 1.2-2 2.6-1.8-1" />
+      <path d="M5.4 9.5l2.4 2.3 1.4-1 1.6 1.4 1.5-1.3" />
+    </Base>
+  );
+}

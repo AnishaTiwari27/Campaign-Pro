@@ -102,6 +102,21 @@ type CampaignChoice struct {
 // what it needs as an interface without importing this package.
 func (u User) Organisation() string { return u.OrgID }
 
+// SignIn is one recorded session, for the account's own history.
+//
+// Nothing here identifies anyone but the caller: the list is keyed by
+// the user id resolved from their own session, so it cannot be made to
+// show somebody else's.
+type SignIn struct {
+	At        time.Time
+	ExpiresAt time.Time
+	UserAgent string
+	IP        string
+	// Current marks the session making this request, so the list can
+	// say which line is you.
+	Current bool
+}
+
 // SSOProvider is the identity provider, as this service needs it.
 //
 // Declared in the public package rather than beside the handlers

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"errors"
@@ -110,6 +111,35 @@ func (s *Store) SetPassword(ctx context.Context, userID, hash string) error {
 	}
 	return s.db.Queries.SetUserPassword(ctx, gen.SetUserPasswordParams{
 		OrgSystem: sys, OrgID: org, ID: uid, PasswordHash: database.TextParam(hash)})
+}
+
+// SignIns is the caller's own recent sessions, newest first.
+//
+// currentToken marks which row is the request making the call. It is
+// compared by hash, because the raw token is never stored — which is
+// also why this cannot be turned into a way to read anyone else's.
+func (s *Store) SignIns(ctx context.Context, userID, currentToken string) ([]identity.SignIn, error) {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.db.Queries.ListSessionsForUser(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+	current := HashToken(currentToken)
+	out := make([]identity.SignIn, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, identity.SignIn{
+			At:        database.TimeOf(r.CreatedAt),
+			ExpiresAt: database.TimeOf(r.ExpiresAt),
+			UserAgent: database.TextOrEmpty(r.UserAgent),
+			IP:        database.TextOrEmpty(r.Ip),
+			// Compared by hash because the raw token is never stored.
+			Current: bytes.Equal(r.TokenHash, current),
+		})
+	}
+	return out, nil
 }
 
 // PurgeExpired clears sessions past their expiry. Expired sessions are

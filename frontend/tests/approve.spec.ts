@@ -10,7 +10,7 @@ async function signIn(page: Page, email: string) {
   await page.fill("input[type=email]", email);
   await page.fill("input[type=password]", PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".rail-user-name")).toBeVisible();
+  await expect(page.locator(".account-name")).toBeVisible();
 }
 
 // The one end-to-end smoke test the spec calls for: approve a campaign

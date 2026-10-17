@@ -32,9 +32,12 @@ test("a wrong password is rejected without revealing whether the account exists"
 test("signing out revokes the session, and back does not restore it", async ({ page }) => {
   await page.goto("/");
   await signIn(page, APPROVER);
-  await expect(page.locator(".rail-user-name")).toBeVisible();
+  await expect(page.locator(".account-name")).toBeVisible();
 
-  await page.getByRole("button", { name: "Sign out" }).click();
+  // Signing out moved into the account menu with everything else
+  // about the account.
+  await page.locator(".account-chip").click();
+  await page.getByRole("menuitem", { name: "Log out" }).click();
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
 
   // The session is gone server-side, so returning to a dashboard URL must
@@ -46,7 +49,7 @@ test("signing out revokes the session, and back does not restore it", async ({ p
 test("an analyst can read everything but is shown no approval controls", async ({ page }) => {
   await page.goto("/");
   await signIn(page, ANALYST);
-  await expect(page.locator(".rail-user-role")).toHaveText("Analyst");
+  await expect(page.locator(".account-role")).toHaveText("Analyst");
 
   // Reading is fine.
   await expect(page.locator(".in-focus-card")).toBeVisible();
@@ -83,7 +86,7 @@ test("a stranger can register and then sign in with the password they chose", as
   await expect(page.locator("input[type=email]")).toHaveValue(email);
 
   await signIn(page, email, password);
-  await expect(page.locator(".rail-user-name")).toBeVisible();
+  await expect(page.locator(".account-name")).toBeVisible();
 
   // An analyst, which is the whole security question for self-registration.
   await expect(page.getByRole("button", { name: "Approve" })).toHaveCount(0);

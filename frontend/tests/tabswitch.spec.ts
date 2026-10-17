@@ -23,7 +23,7 @@ test("switching away and back inside the app keeps filters and the typed query",
   await page.fill("input[type=email]", "anishatiwari695@gmail.com");
   await page.fill("input[type=password]", "demo-password-change-me");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".rail-user-name")).toBeVisible();
+  await expect(page.locator(".account-name")).toBeVisible();
 
   await page.goto("/campaigns?category=Fintech");
   await page.fill("input[type=search]", "cred");

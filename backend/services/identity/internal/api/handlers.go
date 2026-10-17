@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"campaigntrackerpro/platform/httpx"
 	"campaigntrackerpro/services/identity"
@@ -149,7 +150,43 @@ func (h *Handlers) Signup(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) Routes(r chi.Router) {
 	r.Post("/auth/logout", h.Logout)
 	r.Get("/me", h.Me)
+	r.Get("/me/sign-ins", h.SignIns)
 	h.UserRoutes(r)
+}
+
+type signInDTO struct {
+	At        string `json:"at"`
+	UserAgent string `json:"userAgent"`
+	IP        string `json:"ip"`
+	Current   bool   `json:"current"`
+}
+
+// SignIns is the caller's own sign-in history.
+//
+// Scoped to the caller by construction, not by a filter someone has to
+// remember: the user id comes from the resolved session, so there is no
+// parameter that could be changed to read another account's.
+func (h *Handlers) SignIns(w http.ResponseWriter, r *http.Request) {
+	user, ok := currentUser(r)
+	if !ok {
+		httpx.WriteUnauthorized(w, "sign in to continue")
+		return
+	}
+	list, err := h.auth.SignIns(r.Context(), user.ID, httpx.TokenFromContext(r.Context()))
+	if err != nil {
+		httpx.WriteServiceError(w, h.logger, err)
+		return
+	}
+	out := make([]signInDTO, 0, len(list))
+	for _, s := range list {
+		out = append(out, signInDTO{
+			At:        s.At.Format(time.RFC3339),
+			UserAgent: s.UserAgent,
+			IP:        s.IP,
+			Current:   s.Current,
+		})
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
 }
 
 type loginRequest struct {

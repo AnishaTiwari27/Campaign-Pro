@@ -1,11 +1,10 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useBreadcrumbs } from "../app/BreadcrumbContext";
-import { useThemeStore, type ThemeChoice } from "../app/useTheme";
 import { useUIStore } from "../app/useUIStore";
 import { useSyncStore } from "../app/syncStore";
 import { useNow } from "../app/useNow";
-import { IconAuto, IconMoon, IconSearch, IconSun } from "./icons";
+import { IconSearch } from "./icons";
 import "./CommandBar.css";
 
 function syncLabel(lastSyncedAt: number | null, now: number): string {
@@ -15,12 +14,6 @@ function syncLabel(lastSyncedAt: number | null, now: number): string {
   if (mins === 1) return "Synced 1 min ago";
   return `Synced ${mins} min ago`;
 }
-
-const THEME_OPTIONS: { value: ThemeChoice; label: string; Icon: typeof IconAuto }[] = [
-  { value: "auto", label: "Auto", Icon: IconAuto },
-  { value: "light", label: "Light", Icon: IconSun },
-  { value: "dark", label: "Dark", Icon: IconMoon },
-];
 
 /** What the search button offers to find, cycled one at a time.
  *
@@ -47,8 +40,6 @@ function useSearchHint(): number {
 
 export function CommandBar() {
   const { breadcrumbs } = useBreadcrumbs();
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
   const openPalette = useUIStore((s) => s.openPalette);
   const lastSyncedAt = useSyncStore((s) => s.lastSyncedAt);
   const now = useNow();
@@ -98,33 +89,6 @@ export function CommandBar() {
         <kbd className="command-bar-kbd">⌘K</kbd>
       </button>
 
-      {/* A track with a thumb that slides to the chosen one, rather
-          than three buttons that each light up. Icons, not words:
-          three words cost about 130px and squeezed the breadcrumb to
-          "Camp" on a phone — three icons fit, so the narrow-screen
-          collapse that used to paper over that is gone. */}
-      <div
-        className="command-bar-theme"
-        role="radiogroup"
-        aria-label="Theme"
-        style={{ "--theme-index": THEME_OPTIONS.findIndex((o) => o.value === theme) } as CSSProperties}
-      >
-        <span className="command-bar-theme-thumb" aria-hidden="true" />
-        {THEME_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            role="radio"
-            aria-checked={theme === opt.value}
-            aria-label={opt.label}
-            title={opt.label}
-            className={`command-bar-theme-opt${theme === opt.value ? " command-bar-theme-opt-active" : ""}`}
-            onClick={() => setTheme(opt.value)}
-          >
-            <opt.Icon />
-          </button>
-        ))}
-      </div>
     </header>
   );
 }

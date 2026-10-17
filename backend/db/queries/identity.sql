@@ -31,3 +31,13 @@ DELETE FROM sessions WHERE user_id = $1;
 
 -- name: DeleteExpiredSessions :exec
 DELETE FROM sessions WHERE expires_at <= now();
+
+-- ListSessionsForUser is the "recent sign-ins" list. Keyed by a user id
+-- that was resolved from the caller's own session, so it can only ever
+-- return the caller's.
+-- name: ListSessionsForUser :many
+SELECT token_hash, created_at, expires_at, user_agent, ip
+FROM sessions
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT 10;

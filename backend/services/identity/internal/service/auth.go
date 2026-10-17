@@ -85,6 +85,12 @@ func (a *Auth) Login(ctx context.Context, email, password, userAgent, ip string)
 	return user, token, nil
 }
 
+// SignIns is the caller's own recent sessions, newest first, with the
+// one making this request marked.
+func (a *Auth) SignIns(ctx context.Context, userID, currentToken string) ([]identity.SignIn, error) {
+	return a.store.SignIns(ctx, userID, currentToken)
+}
+
 // Logout revokes the session server-side. Clearing the cookie alone would
 // leave a working token in anyone's hands who had copied it.
 func (a *Auth) Logout(ctx context.Context, token string, user identity.User) error {

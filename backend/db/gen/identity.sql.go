@@ -139,6 +139,51 @@ func (q *Queries) GetUserForAuth(ctx context.Context, email string) (GetUserForA
 	return i, err
 }
 
+const listSessionsForUser = `-- name: ListSessionsForUser :many
+SELECT token_hash, created_at, expires_at, user_agent, ip
+FROM sessions
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT 10
+`
+
+type ListSessionsForUserRow struct {
+	TokenHash []byte             `json:"token_hash"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UserAgent pgtype.Text        `json:"user_agent"`
+	Ip        pgtype.Text        `json:"ip"`
+}
+
+// ListSessionsForUser is the "recent sign-ins" list. Keyed by a user id
+// that was resolved from the caller's own session, so it can only ever
+// return the caller's.
+func (q *Queries) ListSessionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListSessionsForUserRow, error) {
+	rows, err := q.db.Query(ctx, listSessionsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSessionsForUserRow
+	for rows.Next() {
+		var i ListSessionsForUserRow
+		if err := rows.Scan(
+			&i.TokenHash,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.UserAgent,
+			&i.Ip,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const sessionUser = `-- name: SessionUser :one
 SELECT u.id, u.email, u.name, u.role, u.can_approve, u.is_agency, u.password_hash, u.created_at, u.org_id
 FROM sessions s JOIN users u ON u.id = s.user_id

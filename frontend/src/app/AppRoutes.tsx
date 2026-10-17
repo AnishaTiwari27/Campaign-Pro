@@ -29,6 +29,8 @@ const BenchmarksPage = lazy(() => import("../features/benchmarks/BenchmarksPage"
 const SignalsPage = lazy(() => import("../features/signals/SignalsPage").then((m) => ({ default: m.SignalsPage })));
 const ReportsPage = lazy(() => import("../features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 const ReportDetailPage = lazy(() => import("../features/reports/ReportDetailPage").then((m) => ({ default: m.ReportDetailPage })));
+const SignIns = lazy(() => import("../features/account/SignIns").then((m) => ({ default: m.SignIns })));
+const ComingSoon = lazy(() => import("../features/account/ComingSoon").then((m) => ({ default: m.ComingSoon })));
 const BillingScreen = lazy(() => import("../features/billing/BillingScreen").then((m) => ({ default: m.BillingScreen })));
 const SettingsPage = lazy(() => import("../features/settings/SettingsPage").then((m) => ({ default: m.SettingsPage })));
 const UsersPage = lazy(() => import("../features/users/UsersPage").then((m) => ({ default: m.UsersPage })));
@@ -77,6 +79,45 @@ export function AppRoutes() {
           <Route path="users" element={<UsersPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="billing" element={<BillingScreen />} />
+          <Route path="sign-ins" element={<SignIns />} />
+          {/* Listed in the account menu, so they need somewhere to
+              land. Each says plainly that it is not built. */}
+          <Route
+            path="soon/notifications"
+            element={
+              <ComingSoon
+                title="Notifications"
+                description="Alerts for flagged campaigns and approvals waiting on you will arrive here. Today those reach you by scheduled report instead."
+              />
+            }
+          />
+          <Route
+            path="soon/ai-credits"
+            element={
+              <ComingSoon
+                title="AI credits"
+                description="Signal explanations are written by a model when one is configured, and assembled from the figures when not. There is no metering behind this yet."
+              />
+            }
+          />
+          <Route
+            path="soon/affiliate"
+            element={
+              <ComingSoon
+                title="Affiliate"
+                description="Nothing here yet. There is no referral programme to join."
+              />
+            }
+          />
+          <Route
+            path="soon/troubleshooting"
+            element={
+              <ComingSoon
+                title="Troubleshooting"
+                description="Health, ingestion runs and recent errors would live here. For now the health of each source is on the Overview, and ingestion runs are under Settings."
+              />
+            }
+          />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

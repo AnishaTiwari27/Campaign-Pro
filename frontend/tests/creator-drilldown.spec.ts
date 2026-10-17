@@ -9,7 +9,7 @@ async function signIn(page: Page) {
   await page.fill("input[type=email]", APPROVER);
   await page.fill("input[type=password]", PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.locator(".rail-user-name")).toBeVisible();
+  await expect(page.locator(".account-name")).toBeVisible();
 }
 
 // A tile is one campaign, but the person on it has a body of work. This

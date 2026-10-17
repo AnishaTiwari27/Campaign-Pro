@@ -82,6 +82,10 @@ type Querier interface {
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
 	ListReports(ctx context.Context, arg ListReportsParams) ([]Report, error)
 	ListRunningCampaigns(ctx context.Context, arg ListRunningCampaignsParams) ([]Campaign, error)
+	// ListSessionsForUser is the "recent sign-ins" list. Keyed by a user id
+	// that was resolved from the caller's own session, so it can only ever
+	// return the caller's.
+	ListSessionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListSessionsForUserRow, error)
 	ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	// OverviewTotals replaces loading every campaign and summing it in Go.

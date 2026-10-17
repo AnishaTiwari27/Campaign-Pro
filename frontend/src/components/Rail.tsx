@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { useSession, useLogout } from "../api/auth";
+import { useSession } from "../api/auth";
 import { usePendingCount } from "../api/overview";
 import {
   IconApprovals,
   IconBenchmarks,
   IconSignals,
-  IconUsers,
   IconCampaigns,
   IconOverview,
   IconCreators,
@@ -14,19 +13,9 @@ import {
   IconRadar,
   IconRegions,
   IconReports,
-  IconLogout,
-  IconBilling,
-  IconSettings,
 } from "./icons";
+import { AccountMenu } from "./AccountMenu";
 import "./Rail.css";
-
-const ROLE_LABEL: Record<string, string> = {
-  admin: "Admin",
-  approver: "Approver",
-  analyst: "Analyst",
-  client: "Client",
-  viewer: "Viewer",
-};
 
 function NavItem({ to, icon, label, badge }: { to: string; icon: ReactNode; label: string; badge?: number }) {
   return (
@@ -40,7 +29,6 @@ function NavItem({ to, icon, label, badge }: { to: string; icon: ReactNode; labe
 
 export function Rail() {
   const { data: me } = useSession();
-  const logout = useLogout();
   const { data: pendingCount } = usePendingCount();
   // An external client is not agency staff. The approval queue is the
   // agency deciding its own spend, and benchmarks compare accounts across
@@ -96,33 +84,12 @@ export function Rail() {
       <div className="rail-spacer" />
 
       <div className="rail-footer">
-        {canManageUsers && <NavItem to="/users" icon={<IconUsers />} label="Team" />}
-        <NavItem to="/billing" icon={<IconBilling />} label="Billing" />
-        <NavItem to="/settings" icon={<IconSettings />} label="Settings" />
-        {me && (
-          <div className="rail-user-row">
-            <NavLink to="/settings" className="rail-user-chip">
-              <span className="rail-user-initials">{me.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}</span>
-              <span className="rail-user-info">
-                <span className="rail-user-name truncate">{me.name}</span>
-                <span className="rail-user-role">
-                  {ROLE_LABEL[me.role] ?? me.role}
-                  {me.canApprove ? " · approver" : ""}
-                </span>
-              </span>
-            </NavLink>
-            <button
-              type="button"
-              className="rail-logout"
-              aria-label="Sign out"
-              title="Sign out"
-              disabled={logout.isPending}
-              onClick={() => logout.mutate()}
-            >
-              <IconLogout />
-            </button>
-          </div>
-        )}
+        {/* Team, Billing and Settings used to sit here as three more
+            rows. They are about the account rather than the data, and
+            they are in the account menu now — listing them in both
+            places is two routes to one screen and a longer rail for
+            nothing. */}
+        <AccountMenu canManageUsers={canManageUsers} />
       </div>
     </nav>
   );
