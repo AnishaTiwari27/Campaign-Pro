@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 
 	"campaigntrackerpro/platform/database"
@@ -83,6 +84,61 @@ func (a *Auth) Login(ctx context.Context, email, password, userAgent, ip string)
 	_ = a.auditor.Record(ctx, user.ID, user.Name, "Signed in", "session", user.ID)
 
 	return user, token, nil
+}
+
+// MaxNameLength mirrors signup's limit, so a name cannot be changed to
+// something signup would have refused.
+const profileNameMax = MaxNameLength
+
+// UpdateName changes the caller's own display name.
+//
+// The name appears on every audit line they have ever written, so it
+// is validated the same way signup validates it rather than trusted
+// because the person is already signed in.
+func (a *Auth) UpdateName(ctx context.Context, userID, name string) (string, error) {
+	clean := strings.TrimSpace(name)
+	if clean == "" {
+		return "", validationError{field: "name", msg: "your name is required"}
+	}
+	if len([]rune(clean)) > profileNameMax {
+		return "", validationError{
+			field: "name",
+			msg:   fmt.Sprintf("name must be %d characters or fewer", profileNameMax),
+		}
+	}
+	if err := a.store.SetName(ctx, userID, clean); err != nil {
+		return "", err
+	}
+	return clean, nil
+}
+
+// ChangePassword replaces the caller's own password.
+//
+// The current one is required and checked, even though the caller
+// already holds a valid session. A session left open on a shared
+// machine is the ordinary way an account gets taken over, and without
+// this step that session is enough to lock the owner out of it.
+func (a *Auth) ChangePassword(ctx context.Context, userID, current, next string) error {
+	user, hash, err := a.store.UserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if hash == "" || bcrypt.CompareHashAndPassword([]byte(hash), []byte(current)) != nil {
+		_ = a.auditor.Record(ctx, user.ID, user.Name, "Failed password change", "user", user.ID)
+		return validationError{field: "currentPassword", msg: "that is not your current password"}
+	}
+	if err := validatePassword(next); err != nil {
+		return err
+	}
+	newHash, err := HashPassword(next)
+	if err != nil {
+		return err
+	}
+	if err := a.store.SetPassword(ctx, userID, newHash); err != nil {
+		return err
+	}
+	_ = a.auditor.Record(ctx, user.ID, user.Name, "Changed password", "user", user.ID)
+	return nil
 }
 
 // SignIns is the caller's own recent sessions, newest first, with the

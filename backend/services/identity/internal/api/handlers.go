@@ -151,7 +151,69 @@ func (h *Handlers) Routes(r chi.Router) {
 	r.Post("/auth/logout", h.Logout)
 	r.Get("/me", h.Me)
 	r.Get("/me/sign-ins", h.SignIns)
+	r.Patch("/me", h.UpdateMe)
+	r.Post("/me/password", h.ChangePassword)
 	h.UserRoutes(r)
+}
+
+type updateMeRequest struct {
+	Name string `json:"name"`
+}
+
+// UpdateMe changes the caller's own profile. Scoped by construction:
+// the id comes from the resolved session, so there is no parameter
+// that could point at another account.
+func (h *Handlers) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	user, ok := currentUser(r)
+	if !ok {
+		httpx.WriteUnauthorized(w, "sign in to continue")
+		return
+	}
+	var req updateMeRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.WriteValidationError(w, "invalid JSON body", "")
+		return
+	}
+	name, err := h.auth.UpdateName(r.Context(), user.ID, req.Name)
+	if err != nil {
+		if msg, field, ok := service.AsValidationError(err); ok {
+			httpx.WriteValidationError(w, msg, field)
+			return
+		}
+		httpx.WriteServiceError(w, h.logger, err)
+		return
+	}
+	user.Name = name
+	httpx.WriteJSON(w, http.StatusOK, toDTO(user))
+}
+
+type changePasswordRequest struct {
+	CurrentPassword string `json:"currentPassword"`
+	NewPassword     string `json:"newPassword"`
+}
+
+// ChangePassword replaces the caller's own password, having checked
+// the current one.
+func (h *Handlers) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	user, ok := currentUser(r)
+	if !ok {
+		httpx.WriteUnauthorized(w, "sign in to continue")
+		return
+	}
+	var req changePasswordRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		httpx.WriteValidationError(w, "invalid JSON body", "")
+		return
+	}
+	if err := h.auth.ChangePassword(r.Context(), user.ID, req.CurrentPassword, req.NewPassword); err != nil {
+		if msg, field, ok := service.AsValidationError(err); ok {
+			httpx.WriteValidationError(w, msg, field)
+			return
+		}
+		httpx.WriteServiceError(w, h.logger, err)
+		return
+	}
+	httpx.WriteJSON(w, http.StatusOK, map[string]bool{"ok": true})
 }
 
 type signInDTO struct {

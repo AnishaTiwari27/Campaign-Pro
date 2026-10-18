@@ -221,6 +221,22 @@ func (q *Queries) SessionUser(ctx context.Context, tokenHash []byte) (SessionUse
 	return i, err
 }
 
+const setUserName = `-- name: SetUserName :exec
+UPDATE users SET name = $2 WHERE id = $1
+`
+
+type SetUserNameParams struct {
+	ID   pgtype.UUID `json:"id"`
+	Name string      `json:"name"`
+}
+
+// SetUserName changes a person's own display name. Keyed by the id
+// resolved from their session, so it cannot rename anyone else.
+func (q *Queries) SetUserName(ctx context.Context, arg SetUserNameParams) error {
+	_, err := q.db.Exec(ctx, setUserName, arg.ID, arg.Name)
+	return err
+}
+
 const setUserPassword = `-- name: SetUserPassword :exec
 UPDATE users SET password_hash = $2 WHERE id = $1 AND ($3::bool OR org_id = $4::text)
 `

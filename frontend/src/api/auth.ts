@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, post } from "./client";
+import { get, patch, post } from "./client";
 import { queryKeys } from "./queryKeys";
 import type { Me } from "./types";
 
@@ -74,5 +74,29 @@ export function useLogout() {
       qc.clear();
       window.location.assign("/");
     },
+  });
+}
+
+/** Changes your own display name. The name is on every audit line you
+ *  have ever written, so the server validates it the same way signup
+ *  does rather than trusting a signed-in caller. */
+export function useUpdateName() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => patch<Me>("/me", { name }),
+    onSuccess: (me) => {
+      qc.setQueryData(queryKeys.me(), me);
+      qc.invalidateQueries();
+    },
+  });
+}
+
+/** Changes your own password. The current one is required even though
+ *  you are signed in — a session left open on a shared machine is the
+ *  ordinary way an account is taken over. */
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (v: { currentPassword: string; newPassword: string }) =>
+      post<{ ok: boolean }>("/me/password", v),
   });
 }

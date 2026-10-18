@@ -29,6 +29,10 @@ var exempt = map[string]string{
 	"SessionUser":    "resolves the principal the org is then read from",
 	"GetUserByID":    "keyed by a primary key resolved during auth",
 	"TouchUserLogin": "keyed by a primary key resolved during auth",
+	// Changes the caller's own name, keyed by the id resolved from
+	// their session. There is no parameter that could name another
+	// tenant's row.
+	"SetUserName": "keyed by the caller's own id, resolved from their session",
 	// Operate on a row already fetched under an org-scoped read, keyed
 	// by a primary key the caller could only have learned from one.
 	"SetCampaignCreator":  "writes a column on an already-scoped row",

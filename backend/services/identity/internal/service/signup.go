@@ -159,25 +159,37 @@ func validateSignup(in SignupInput) (SignupInput, error) {
 		return SignupInput{}, validationError{field: "email", msg: "that does not look like an email address"}
 	}
 
-	// Not trimmed: leading and trailing spaces are legitimate password
-	// characters, and silently removing them would lock people out of an
-	// account they can no longer reproduce the password for.
-	if n := len(in.Password); n < MinPasswordLength {
-		return SignupInput{}, validationError{
+	if err := validatePassword(in.Password); err != nil {
+		return SignupInput{}, err
+	}
+
+	return SignupInput{Name: name, Email: email, Password: in.Password}, nil
+}
+
+// validatePassword is the one place the password rules live, so
+// signing up and changing a password cannot come to disagree about
+// what is acceptable — which would leave someone able to set a
+// password at one door that the other would have refused.
+//
+// Not trimmed: leading and trailing spaces are legitimate password
+// characters, and silently removing them would lock people out of an
+// account they can no longer reproduce the password for.
+func validatePassword(pw string) error {
+	if n := len(pw); n < MinPasswordLength {
+		return validationError{
 			field: "password",
 			msg:   fmt.Sprintf("password must be at least %d characters", MinPasswordLength),
 		}
 	} else if n > MaxPasswordLength {
-		return SignupInput{}, validationError{
+		return validationError{
 			field: "password",
 			msg:   fmt.Sprintf("password must be %d characters or fewer", MaxPasswordLength),
 		}
 	}
-	if strings.TrimFunc(in.Password, unicode.IsSpace) == "" {
-		return SignupInput{}, validationError{field: "password", msg: "password cannot be only spaces"}
+	if strings.TrimFunc(pw, unicode.IsSpace) == "" {
+		return validationError{field: "password", msg: "password cannot be only spaces"}
 	}
-
-	return SignupInput{Name: name, Email: email, Password: in.Password}, nil
+	return nil
 }
 
 // validationError carries which field was wrong, so the API can point the

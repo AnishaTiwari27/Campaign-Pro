@@ -2,17 +2,11 @@ import { useHealth, useMe } from "../../api/misc";
 import { useOverview } from "../../api/overview";
 import { useRegions } from "../../api/regions";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
-import { useThemeStore, type ThemeChoice } from "../../app/useTheme";
 import { useUIStore } from "../../app/useUIStore";
 import { SkeletonBlock } from "../../components/Skeleton";
+import { ProfilePanel } from "./ProfilePanel";
 import { CATEGORIES } from "../../lib/constants";
 import "./SettingsPage.css";
-
-const THEME_OPTIONS: { value: ThemeChoice; label: string }[] = [
-  { value: "auto", label: "Auto" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-];
 
 export function SettingsPage() {
   useSetBreadcrumbs([{ label: "Settings" }]);
@@ -21,8 +15,6 @@ export function SettingsPage() {
   const { data: health } = useHealth();
   const { data: overview } = useOverview();
   const { data: regions } = useRegions();
-  const theme = useThemeStore((s) => s.theme);
-  const setTheme = useThemeStore((s) => s.setTheme);
   const density = useUIStore((s) => s.density);
   const setDensity = useUIStore((s) => s.setDensity);
 
@@ -59,28 +51,15 @@ export function SettingsPage() {
           </dl>
         </section>
 
+        {/* Appearance is gone. Theme lives in the account menu, and
+            having it in two places meant two controls for one setting;
+            the density toggle that shared the card is below, with the
+            other things you can actually change. */}
+        <ProfilePanel />
+
         <section className="card settings-panel">
-          <h4>Appearance</h4>
+          <h4>Preferences</h4>
           <div className="settings-rows">
-            <div className="settings-row">
-              <dt>Theme</dt>
-              <dd>
-                <div className="settings-segmented" role="radiogroup" aria-label="Theme">
-                  {THEME_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={theme === opt.value}
-                      className={`settings-segmented-opt${theme === opt.value ? " settings-segmented-opt-active" : ""}`}
-                      onClick={() => setTheme(opt.value)}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </dd>
-            </div>
             <div className="settings-row">
               <dt>Compact tables</dt>
               <dd>

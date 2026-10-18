@@ -108,6 +108,9 @@ type Querier interface {
 	// the only thing tying the event to a row, and it was stored on that
 	// row when the subscription was created in-org.
 	SetSubscriptionStatus(ctx context.Context, arg SetSubscriptionStatusParams) (Subscription, error)
+	// SetUserName changes a person's own display name. Keyed by the id
+	// resolved from their session, so it cannot rename anyone else.
+	SetUserName(ctx context.Context, arg SetUserNameParams) error
 	SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error
 	StartIngestRun(ctx context.Context, arg StartIngestRunParams) (pgtype.UUID, error)
 	// TopCreativePerCampaign is the lead asset for each campaign — the one a

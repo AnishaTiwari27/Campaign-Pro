@@ -41,3 +41,8 @@ FROM sessions
 WHERE user_id = $1
 ORDER BY created_at DESC
 LIMIT 10;
+
+-- SetUserName changes a person's own display name. Keyed by the id
+-- resolved from their session, so it cannot rename anyone else.
+-- name: SetUserName :exec
+UPDATE users SET name = $2 WHERE id = $1;

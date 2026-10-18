@@ -113,6 +113,33 @@ func (s *Store) SetPassword(ctx context.Context, userID, hash string) error {
 		OrgSystem: sys, OrgID: org, ID: uid, PasswordHash: database.TextParam(hash)})
 }
 
+// UserByID reads one account and its password hash, for the checks a
+// person makes against their own account.
+func (s *Store) UserByID(ctx context.Context, userID string) (identity.User, string, error) {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return identity.User{}, "", err
+	}
+	r, err := s.db.Queries.GetUserByID(ctx, uid)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return identity.User{}, "", database.ErrNotFound
+		}
+		return identity.User{}, "", err
+	}
+	u := toUser(r.ID, r.Email, r.Name, r.Role, r.IsAgency, r.PasswordHash, r.CreatedAt, r.OrgID)
+	return u.User, u.PasswordHash, nil
+}
+
+// SetName changes a person's own display name.
+func (s *Store) SetName(ctx context.Context, userID, name string) error {
+	uid, err := database.UuidParam(userID)
+	if err != nil {
+		return err
+	}
+	return s.db.Queries.SetUserName(ctx, gen.SetUserNameParams{ID: uid, Name: name})
+}
+
 // SignIns is the caller's own recent sessions, newest first.
 //
 // currentToken marks which row is the request making the call. It is

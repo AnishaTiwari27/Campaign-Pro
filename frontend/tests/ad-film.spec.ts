@@ -91,15 +91,23 @@ test("the film is actually running, muted", async ({ page }) => {
 
   const video = page.frameLocator(".ad-film-player").locator("video").first();
   await expect(video).toHaveCount(1, { timeout: 20000 });
-  await page.waitForTimeout(4000);
-  const first = await video.evaluate((v: HTMLVideoElement) => v.currentTime);
-  await page.waitForTimeout(2500);
+
+  // Waited for rather than sampled at a fixed moment. The film is
+  // fetched from YouTube, so under a full suite run it can still be
+  // buffering when a two-second window closes — and "it had not
+  // started yet" is not the same failure as "it does not play". The
+  // assertion is unchanged: the time has to move.
+  const at = async () => video.evaluate((v: HTMLVideoElement) => v.currentTime);
+  await expect.poll(at, { timeout: 30000, intervals: [500] }).toBeGreaterThan(0);
+  const first = await at();
+  await expect
+    .poll(at, { timeout: 30000, intervals: [500] })
+    .toBeGreaterThan(first);
+
   const state = await video.evaluate((v: HTMLVideoElement) => ({
-    t: v.currentTime,
     muted: v.muted,
     paused: v.paused,
   }));
-  expect(state.t, "the film is not advancing").toBeGreaterThan(first);
   expect(state.paused).toBe(false);
   expect(state.muted, "an unmuted autoplay would have been blocked").toBe(true);
 });
