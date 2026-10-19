@@ -6,7 +6,14 @@ import { queryClient } from "./app/queryClient";
 import { AppRoutes } from "./app/AppRoutes";
 import { AuthGate } from "./app/AuthGate";
 import { SubscriptionGate } from "./app/SubscriptionGate";
+import { cleanLocationInPlace } from "./app/cleanLocation";
 import "./styles/base.css";
+
+// Before the router reads the location. A path carrying a newline —
+// which is what a URL pasted with its line break still attached looks
+// like — matches no route at all, not even the catch-all, and the app
+// renders a blank screen.
+cleanLocationInPlace();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

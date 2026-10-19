@@ -91,3 +91,24 @@ test("a stranger can register and then sign in with the password they chose", as
   // An analyst, which is the whole security question for self-registration.
   await expect(page.getByRole("button", { name: "Approve" })).toHaveCount(0);
 });
+
+// A URL pasted with its line break still attached. React Router's
+// catch-all compiles to `(.*)`, and `.` does not match a newline, so
+// this matched no route at all — not the page, not the 404 — and the
+// app rendered a blank screen with no rail and no error.
+test("a URL with a trailing newline still loads the page", async ({ page }) => {
+  await page.goto("/");
+  await signIn(page, APPROVER);
+  await expect(page.locator(".account-name")).toBeVisible();
+
+  await page.goto("/overview%0A");
+  // The address bar is corrected rather than redirected: the newline
+  // was never meant to be there and should not cost a Back press.
+  await expect(page).toHaveURL(/\/overview$/);
+  await expect(page.getByText("What needs you today")).toBeVisible();
+
+  // An unknown path still reaches the 404 rather than a blank screen.
+  await page.goto("/nonsense%0A");
+  await expect(page).toHaveURL(/\/nonsense$/);
+  await expect(page.getByText("Page not found")).toBeVisible();
+});
