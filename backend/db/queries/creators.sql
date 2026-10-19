@@ -19,3 +19,29 @@ UPDATE campaigns SET creator_id = $2, updated_at = now() WHERE id = $1;
 -- the url is empty. The avatar takes over again when it is cleared.
 -- name: SetCreatorPhoto :exec
 UPDATE creators SET image_url = NULLIF($2, '') WHERE id = $1;
+
+-- ListCreatorsForFollowerSync is the roster the Instagram sync walks:
+-- those with a handle established. Ordered so a run that stops early
+-- resumes somewhere sensible rather than at the same few.
+-- name: ListCreatorsForFollowerSync :many
+SELECT id, name, instagram_handle
+FROM creators
+WHERE instagram_handle <> ''
+  AND (@org_system::bool OR org_id = @org_id::text)
+ORDER BY followers_synced_at ASC NULLS FIRST, id;
+
+-- SetCreatorFollowers records a fetched follower count. Writing the
+-- timestamp is what distinguishes it from the seeded figure it
+-- replaces.
+-- name: SetCreatorFollowers :exec
+UPDATE creators
+SET followers = $2, followers_synced_at = now(), updated_at = now()
+WHERE id = $1 AND (@org_system::bool OR org_id = @org_id::text);
+
+-- SetCreatorInstagramHandle records which account to look up. Kept
+-- separate from creation because a handle is established later and by
+-- hand, and is wrong often enough to be worth changing on its own.
+-- name: SetCreatorInstagramHandle :exec
+UPDATE creators
+SET instagram_handle = $2, updated_at = now()
+WHERE id = $1 AND (@org_system::bool OR org_id = @org_id::text);

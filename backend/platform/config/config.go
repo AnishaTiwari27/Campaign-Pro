@@ -144,6 +144,14 @@ type Config struct {
 	// database will accept.
 	SignupOrgID string
 
+	// Instagram, for refreshing creator follower counts through the
+	// business discovery endpoint. Both are yours: the token
+	// authorises you, and the account id is the professional account
+	// the query is made through. The creators looked up grant
+	// nothing — only their public professional profile is returned.
+	InstagramAccessToken     string
+	InstagramBusinessAccount string
+
 	// Razorpay, for subscriptions. Off unless the key pair is set: a
 	// deployment with no processor should still run, and say so on the
 	// billing screen, rather than offer a button that cannot work.
@@ -201,6 +209,9 @@ func Load() Config {
 		OIDCRedirectURL:  os.Getenv("OIDC_REDIRECT_URL"),
 		OIDCOrgID:        getenv("OIDC_ORG_ID", "default"),
 		SignupOrgID:      getenv("SIGNUP_ORG_ID", "default"),
+
+		InstagramAccessToken:     os.Getenv("INSTAGRAM_ACCESS_TOKEN"),
+		InstagramBusinessAccount: os.Getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID"),
 
 		RazorpayKeyID:         os.Getenv("RAZORPAY_KEY_ID"),
 		RazorpayKeySecret:     os.Getenv("RAZORPAY_KEY_SECRET"),

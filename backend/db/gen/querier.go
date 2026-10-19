@@ -67,6 +67,10 @@ type Querier interface {
 	ListCampaignsFiltered(ctx context.Context, arg ListCampaignsFilteredParams) ([]Campaign, error)
 	ListCreativesByCampaign(ctx context.Context, campaignID string) ([]Creative, error)
 	ListCreators(ctx context.Context, arg ListCreatorsParams) ([]Creator, error)
+	// ListCreatorsForFollowerSync is the roster the Instagram sync walks:
+	// those with a handle established. Ordered so a run that stops early
+	// resumes somewhere sensible rather than at the same few.
+	ListCreatorsForFollowerSync(ctx context.Context, arg ListCreatorsForFollowerSyncParams) ([]ListCreatorsForFollowerSyncRow, error)
 	ListEnabledReports(ctx context.Context, arg ListEnabledReportsParams) ([]Report, error)
 	ListEnabledReportsByCadence(ctx context.Context, arg ListEnabledReportsByCadenceParams) ([]Report, error)
 	ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error)
@@ -99,6 +103,14 @@ type Querier interface {
 	// when the session has not expired.
 	SessionUser(ctx context.Context, tokenHash []byte) (SessionUserRow, error)
 	SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error
+	// SetCreatorFollowers records a fetched follower count. Writing the
+	// timestamp is what distinguishes it from the seeded figure it
+	// replaces.
+	SetCreatorFollowers(ctx context.Context, arg SetCreatorFollowersParams) error
+	// SetCreatorInstagramHandle records which account to look up. Kept
+	// separate from creation because a handle is established later and by
+	// hand, and is wrong often enough to be worth changing on its own.
+	SetCreatorInstagramHandle(ctx context.Context, arg SetCreatorInstagramHandleParams) error
 	// SetCreatorPhoto attaches a creator's own photograph, or clears it when
 	// the url is empty. The avatar takes over again when it is cleared.
 	SetCreatorPhoto(ctx context.Context, arg SetCreatorPhotoParams) error

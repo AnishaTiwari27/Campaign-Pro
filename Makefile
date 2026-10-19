@@ -123,3 +123,12 @@ fmt:
 #   make verify-ingest SOURCE=meta
 verify-ingest:
 	cd backend && go run ./cmd/verifyingest -source=$(SOURCE)
+
+# Refresh creator follower counts from Instagram, replacing the seeded
+# press-article figures with what the platform reports. Needs
+# INSTAGRAM_ACCESS_TOKEN and INSTAGRAM_BUSINESS_ACCOUNT_ID for an
+# account you control; the creators looked up grant nothing.
+#
+#   make sync-followers
+sync-followers:
+	cd backend && go run ./cmd/syncfollowers

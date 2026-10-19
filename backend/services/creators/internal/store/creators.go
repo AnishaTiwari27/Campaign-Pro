@@ -77,6 +77,42 @@ func (s *Store) All(ctx context.Context) ([]creators.Creator, error) {
 
 // SetPhoto attaches a creator's own photograph, or clears it when the url
 // is empty.
+// ForFollowerSync is the roster the Instagram sync walks: those with
+// a handle established, least recently synced first.
+func (s *Store) ForFollowerSync(ctx context.Context) ([]creators.SyncTarget, error) {
+	sys, org := orgParams(ctx)
+	rows, err := s.db.Queries.ListCreatorsForFollowerSync(ctx,
+		gen.ListCreatorsForFollowerSyncParams{OrgSystem: sys, OrgID: org})
+	if err != nil {
+		return nil, err
+	}
+	out := make([]creators.SyncTarget, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, creators.SyncTarget{
+			ID: r.ID, Name: r.Name, InstagramHandle: r.InstagramHandle,
+		})
+	}
+	return out, nil
+}
+
+// SetFollowers records a fetched follower count and stamps the time,
+// which is what separates a figure fetched from Instagram from the
+// seeded one it replaces.
+func (s *Store) SetFollowers(ctx context.Context, creatorID string, followers int64) error {
+	sys, org := orgParams(ctx)
+	return s.db.Queries.SetCreatorFollowers(ctx, gen.SetCreatorFollowersParams{
+		ID: creatorID, Followers: followers, OrgSystem: sys, OrgID: org,
+	})
+}
+
+// SetInstagramHandle records which account the follower sync looks up.
+func (s *Store) SetInstagramHandle(ctx context.Context, creatorID, handle string) error {
+	sys, org := orgParams(ctx)
+	return s.db.Queries.SetCreatorInstagramHandle(ctx, gen.SetCreatorInstagramHandleParams{
+		ID: creatorID, InstagramHandle: handle, OrgSystem: sys, OrgID: org,
+	})
+}
+
 func (s *Store) SetPhoto(ctx context.Context, creatorID, imageURL string) error {
 	return s.db.Queries.SetCreatorPhoto(ctx, gen.SetCreatorPhotoParams{ID: creatorID, Column2: imageURL})
 }

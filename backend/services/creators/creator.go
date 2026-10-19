@@ -183,3 +183,21 @@ func CostIndexOf(costPerLakh, tierCostMedian float64) float64 {
 func RankCreators(perf []CreatorPerformance) {
 	sort.SliceStable(perf, func(i, j int) bool { return perf[i].TierIndex > perf[j].TierIndex })
 }
+
+// SyncTarget is one creator the follower sync will look up.
+type SyncTarget struct {
+	ID              string
+	Name            string
+	InstagramHandle string
+}
+
+// SyncResult is what one run of the follower sync did.
+type SyncResult struct {
+	Checked int
+	Updated int
+	// Mismatched counts handles whose profile did not look like the
+	// person it was recorded against. Reported rather than written:
+	// the wrong audience on a real name is the failure this is for.
+	Mismatched []string
+	Failed     []string
+}

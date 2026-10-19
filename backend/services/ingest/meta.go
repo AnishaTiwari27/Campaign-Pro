@@ -40,11 +40,22 @@ type MetaProvider struct{ Config MetaConfig }
 func (p MetaProvider) Source() string   { return "meta" }
 func (p MetaProvider) Configured() bool { return p.Config.complete() }
 
+// apiVersion is pinned rather than tracking "latest", for the same
+// reason the Google client pins: a version change can move field
+// semantics underneath a sync that nobody is watching.
+//
+// The flip side is that a pin goes stale on its own, and this one had.
+// It read v21.0, which shipped in October 2024 — Meta guarantees a
+// version for two years from release, so it was at its expiry. The
+// first live call would have failed on the version in the path, which
+// is exactly how the Google client's v18 pin was found.
 func (p MetaProvider) apiVersion() string {
 	if p.Config.APIVersion != "" {
 		return p.Config.APIVersion
 	}
-	return "v21.0"
+	// Current as of October 2026. Check Meta's changelog before a
+	// first run; the test below only knows what it was told.
+	return "v26.0"
 }
 
 func (p MetaProvider) baseURL() string {

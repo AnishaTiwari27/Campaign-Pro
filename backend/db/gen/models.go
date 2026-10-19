@@ -612,20 +612,22 @@ type Creative struct {
 }
 
 type Creator struct {
-	ID              string             `json:"id"`
-	Name            string             `json:"name"`
-	Role            string             `json:"role"`
-	Initials        string             `json:"initials"`
-	Category        string             `json:"category"`
-	Region          string             `json:"region"`
-	Tier            CreatorTierT       `json:"tier"`
-	Followers       int64              `json:"followers"`
-	PrimaryPlatform string             `json:"primary_platform"`
-	Languages       []string           `json:"languages"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
-	ImageUrl        pgtype.Text        `json:"image_url"`
-	OrgID           string             `json:"org_id"`
+	ID                string             `json:"id"`
+	Name              string             `json:"name"`
+	Role              string             `json:"role"`
+	Initials          string             `json:"initials"`
+	Category          string             `json:"category"`
+	Region            string             `json:"region"`
+	Tier              CreatorTierT       `json:"tier"`
+	Followers         int64              `json:"followers"`
+	PrimaryPlatform   string             `json:"primary_platform"`
+	Languages         []string           `json:"languages"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	ImageUrl          pgtype.Text        `json:"image_url"`
+	OrgID             string             `json:"org_id"`
+	InstagramHandle   string             `json:"instagram_handle"`
+	FollowersSyncedAt pgtype.Timestamptz `json:"followers_synced_at"`
 }
 
 type IngestRun struct {

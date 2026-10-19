@@ -152,6 +152,36 @@ The token is the credential itself — there is no refresh exchange — so
 it expires on Meta's schedule and has to be reissued rather than
 renewed.
 
+**Instagram, for creator follower counts.** A different thing from
+the two above: not campaign data, and not an account you own. Meta's
+business discovery endpoint returns any *public professional*
+account's follower and media counts, queried through an account you
+control. No private metrics, no spend, and the creators looked up
+grant nothing — only their public profile is returned.
+
+| Env var | Value |
+|---|---|
+| `INSTAGRAM_ACCESS_TOKEN` | A token for an Instagram professional account you control, connected to a Facebook Page |
+| `INSTAGRAM_BUSINESS_ACCOUNT_ID` | That account's Instagram professional account id |
+
+```bash
+make sync-followers
+```
+
+This replaces the seeded follower figures — press-article numbers,
+right once, with no way of saying when — and stamps
+`followers_synced_at`, which is what lets the app tell a fetched
+figure from a typed one.
+
+A handle that does not look like the creator it is recorded against
+is **reported and skipped, never written**. A handle is typed by hand,
+and the wrong one does not merely show a wrong number: it attaches
+another person's audience to a real named individual, and that figure
+then flows into their tier, their index, and every comparison drawn
+against them. Five of the ten creators have a handle set; the rest are
+deliberately blank, because a guess is worse than nothing. See
+`backend/cmd/seed/handles.go`.
+
 **Then prove it before trusting it:**
 
 ```bash

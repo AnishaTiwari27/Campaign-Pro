@@ -218,6 +218,13 @@ func seedCreators(ctx context.Context, pool *pgxpool.Pool, camp *campaignsmod.Mo
 		}); err != nil {
 			log.Fatalf("create creator %s: %v", cs.id, err)
 		}
+		// Only where the account could be established. See handles.go
+		// for why an unset handle is better than a guessed one.
+		if h := instagramHandles[cs.id]; h != "" {
+			if err := cre.Store().SetInstagramHandle(ctx, cs.id, h); err != nil {
+				log.Fatalf("set instagram handle for %s: %v", cs.id, err)
+			}
+		}
 
 		for _, cc := range cs.campaigns {
 			campaignID := fmt.Sprintf("%s-%s", cs.id, slugOf(cc.brand))

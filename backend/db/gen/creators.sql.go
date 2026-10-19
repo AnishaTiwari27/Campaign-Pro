@@ -14,7 +14,7 @@ import (
 const createCreator = `-- name: CreateCreator :one
 INSERT INTO creators (id, name, role, initials, category, region, tier, followers, primary_platform, languages, org_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id
+RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at
 `
 
 type CreateCreatorParams struct {
@@ -61,12 +61,14 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 		&i.UpdatedAt,
 		&i.ImageUrl,
 		&i.OrgID,
+		&i.InstagramHandle,
+		&i.FollowersSyncedAt,
 	)
 	return i, err
 }
 
 const getCreator = `-- name: GetCreator :one
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id FROM creators WHERE id = $1 AND ($2::bool OR org_id = $3::text)
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at FROM creators WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
 type GetCreatorParams struct {
@@ -93,6 +95,8 @@ func (q *Queries) GetCreator(ctx context.Context, arg GetCreatorParams) (Creator
 		&i.UpdatedAt,
 		&i.ImageUrl,
 		&i.OrgID,
+		&i.InstagramHandle,
+		&i.FollowersSyncedAt,
 	)
 	return i, err
 }
@@ -155,7 +159,7 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, arg ListCampaignsB
 }
 
 const listCreators = `-- name: ListCreators :many
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id FROM creators WHERE ($1::bool OR org_id = $2::text) ORDER BY followers DESC
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at FROM creators WHERE ($1::bool OR org_id = $2::text) ORDER BY followers DESC
 `
 
 type ListCreatorsParams struct {
@@ -187,7 +191,51 @@ func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]C
 			&i.UpdatedAt,
 			&i.ImageUrl,
 			&i.OrgID,
+			&i.InstagramHandle,
+			&i.FollowersSyncedAt,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listCreatorsForFollowerSync = `-- name: ListCreatorsForFollowerSync :many
+SELECT id, name, instagram_handle
+FROM creators
+WHERE instagram_handle <> ''
+  AND ($1::bool OR org_id = $2::text)
+ORDER BY followers_synced_at ASC NULLS FIRST, id
+`
+
+type ListCreatorsForFollowerSyncParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+type ListCreatorsForFollowerSyncRow struct {
+	ID              string `json:"id"`
+	Name            string `json:"name"`
+	InstagramHandle string `json:"instagram_handle"`
+}
+
+// ListCreatorsForFollowerSync is the roster the Instagram sync walks:
+// those with a handle established. Ordered so a run that stops early
+// resumes somewhere sensible rather than at the same few.
+func (q *Queries) ListCreatorsForFollowerSync(ctx context.Context, arg ListCreatorsForFollowerSyncParams) ([]ListCreatorsForFollowerSyncRow, error) {
+	rows, err := q.db.Query(ctx, listCreatorsForFollowerSync, arg.OrgSystem, arg.OrgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCreatorsForFollowerSyncRow
+	for rows.Next() {
+		var i ListCreatorsForFollowerSyncRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.InstagramHandle); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -209,6 +257,58 @@ type SetCampaignCreatorParams struct {
 
 func (q *Queries) SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error {
 	_, err := q.db.Exec(ctx, setCampaignCreator, arg.ID, arg.CreatorID)
+	return err
+}
+
+const setCreatorFollowers = `-- name: SetCreatorFollowers :exec
+UPDATE creators
+SET followers = $2, followers_synced_at = now(), updated_at = now()
+WHERE id = $1 AND ($3::bool OR org_id = $4::text)
+`
+
+type SetCreatorFollowersParams struct {
+	ID        string `json:"id"`
+	Followers int64  `json:"followers"`
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+// SetCreatorFollowers records a fetched follower count. Writing the
+// timestamp is what distinguishes it from the seeded figure it
+// replaces.
+func (q *Queries) SetCreatorFollowers(ctx context.Context, arg SetCreatorFollowersParams) error {
+	_, err := q.db.Exec(ctx, setCreatorFollowers,
+		arg.ID,
+		arg.Followers,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
+	return err
+}
+
+const setCreatorInstagramHandle = `-- name: SetCreatorInstagramHandle :exec
+UPDATE creators
+SET instagram_handle = $2, updated_at = now()
+WHERE id = $1 AND ($3::bool OR org_id = $4::text)
+`
+
+type SetCreatorInstagramHandleParams struct {
+	ID              string `json:"id"`
+	InstagramHandle string `json:"instagram_handle"`
+	OrgSystem       bool   `json:"org_system"`
+	OrgID           string `json:"org_id"`
+}
+
+// SetCreatorInstagramHandle records which account to look up. Kept
+// separate from creation because a handle is established later and by
+// hand, and is wrong often enough to be worth changing on its own.
+func (q *Queries) SetCreatorInstagramHandle(ctx context.Context, arg SetCreatorInstagramHandleParams) error {
+	_, err := q.db.Exec(ctx, setCreatorInstagramHandle,
+		arg.ID,
+		arg.InstagramHandle,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
 	return err
 }
 
