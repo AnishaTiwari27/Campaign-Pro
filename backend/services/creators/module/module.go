@@ -46,6 +46,13 @@ func (m *Module) SyncFollowers(ctx context.Context, ig service.ProfileLookup, lo
 	return m.svc.SyncFollowers(ctx, ig, logger)
 }
 
+// Discover runs briefs through YouTube and records what it finds as
+// candidates for review. Nothing reaches the roster without a person
+// deciding it should.
+func (m *Module) Discover(ctx context.Context, yt service.ChannelSearch, orgID string, briefs []string, logger *slog.Logger) (service.DiscoverResult, error) {
+	return m.svc.Discover(ctx, yt, orgID, briefs, logger)
+}
+
 // ScanCreators reads each creator's recent posts and records what they
 // establish: today's snapshot, and the evidence of any disclosed brand
 // work. Heavier than SyncFollowers and kept a separate call for that

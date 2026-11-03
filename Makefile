@@ -144,3 +144,15 @@ sync-followers:
 #   make scan-creators
 scan-creators:
 	cd backend && go run ./cmd/scancreators
+
+# Search YouTube for creators matching a brief and record what turns up
+# as candidates for review. Nothing reaches the roster without a person
+# promoting it. Needs YOUTUBE_API_KEY.
+#
+# Each brief costs 100 of the day's 10,000 quota units, so a default day
+# is 100 searches.
+#
+#   make discover BRIEFS="dance creators bangalore"
+#   make discover BRIEFS=-briefs=briefs.txt
+discover:
+	cd backend && go run ./cmd/discover $(BRIEFS)

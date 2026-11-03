@@ -646,6 +646,24 @@ type CreatorBrandPost struct {
 	DetectedAt  pgtype.Timestamptz `json:"detected_at"`
 }
 
+type CreatorCandidate struct {
+	ID                string             `json:"id"`
+	OrgID             string             `json:"org_id"`
+	Platform          string             `json:"platform"`
+	ExternalID        string             `json:"external_id"`
+	Handle            string             `json:"handle"`
+	Name              string             `json:"name"`
+	Description       string             `json:"description"`
+	Followers         pgtype.Int8        `json:"followers"`
+	Videos            int64              `json:"videos"`
+	Views             int64              `json:"views"`
+	FoundFor          string             `json:"found_for"`
+	Status            string             `json:"status"`
+	PromotedCreatorID pgtype.Text        `json:"promoted_creator_id"`
+	DiscoveredAt      pgtype.Timestamptz `json:"discovered_at"`
+	ReviewedAt        pgtype.Timestamptz `json:"reviewed_at"`
+}
+
 type CreatorContact struct {
 	ID           string             `json:"id"`
 	OrgID        string             `json:"org_id"`

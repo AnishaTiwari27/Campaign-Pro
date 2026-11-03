@@ -12,11 +12,13 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func newID() string {
-	b := make([]byte, 12)
+func randomHex(n int) string {
+	b := make([]byte, n)
 	rand.Read(b)
-	return "bp_" + hex.EncodeToString(b)
+	return hex.EncodeToString(b)
 }
+
+func newID() string { return "bp_" + randomHex(12) }
 
 func tsOrNull(t time.Time) pgtype.Timestamptz {
 	if t.IsZero() {

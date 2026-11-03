@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	BrandPostCountsByCreator(ctx context.Context, arg BrandPostCountsByCreatorParams) ([]BrandPostCountsByCreatorRow, error)
 	BulkUpdateApproval(ctx context.Context, arg BulkUpdateApprovalParams) ([]Campaign, error)
+	CountCandidatesByStatus(ctx context.Context, arg CountCandidatesByStatusParams) ([]CountCandidatesByStatusRow, error)
 	CountCreativesByCampaign(ctx context.Context, campaignID string) (int64, error)
 	// The scope predicate below is the one every aggregate has to carry.
 	// Row reads get their visibility applied in Go after loading, but an
@@ -89,6 +90,7 @@ type Querier interface {
 	// nor erase an outcome already recorded against it.
 	ListLaunches(ctx context.Context, arg ListLaunchesParams) ([]ListLaunchesRow, error)
 	ListLaunchesAwaitingOutcome(ctx context.Context, arg ListLaunchesAwaitingOutcomeParams) ([]ListLaunchesAwaitingOutcomeRow, error)
+	ListNewCandidates(ctx context.Context, arg ListNewCandidatesParams) ([]CreatorCandidate, error)
 	ListOrganizationIDs(ctx context.Context) ([]string, error)
 	ListPendingCampaigns(ctx context.Context, arg ListPendingCampaignsParams) ([]Campaign, error)
 	ListReportRuns(ctx context.Context, arg ListReportRunsParams) ([]ReportRun, error)
@@ -116,6 +118,7 @@ type Querier interface {
 	// when the session has not expired.
 	SessionUser(ctx context.Context, tokenHash []byte) (SessionUserRow, error)
 	SetCampaignCreator(ctx context.Context, arg SetCampaignCreatorParams) error
+	SetCandidateStatus(ctx context.Context, arg SetCandidateStatusParams) error
 	// SetCreatorFollowers records a fetched follower count. Writing the
 	// timestamp is what distinguishes it from the seeded figure it
 	// replaces.
@@ -163,6 +166,10 @@ type Querier interface {
 	// never touches dismissed, or every human correction would be undone
 	// on the next run.
 	UpsertBrandPost(ctx context.Context, arg UpsertBrandPostParams) error
+	// Re-running a search finds the same channels. This refreshes their
+	// figures without resetting status, or a rejected candidate would come
+	// back for review every week.
+	UpsertCandidate(ctx context.Context, arg UpsertCandidateParams) error
 	// The platform's own id is the match key. Names get edited and budgets
 	// change, so matching on either would create a duplicate the first time
 	// somebody renamed a campaign in the ad account.

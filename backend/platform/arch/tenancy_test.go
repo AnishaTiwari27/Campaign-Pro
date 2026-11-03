@@ -10,7 +10,7 @@ import (
 // orgOwned are the tables that carry org_id. Anything reading or writing
 // one of them has to say which organisation it means.
 var orgOwned = []string{"campaigns", "creators", "reports", "users", "benchmark_snapshots", "ingest_runs", "launches", "subscriptions",
-	"creator_contacts", "outreach_batches", "outreach_messages", "creator_brand_posts", "creator_follower_snapshots"}
+	"creator_contacts", "outreach_batches", "outreach_messages", "creator_brand_posts", "creator_follower_snapshots", "creator_candidates"}
 
 // exempt lists the queries that legitimately run without an organisation,
 // each with the reason. Keeping them here rather than as a comment in the

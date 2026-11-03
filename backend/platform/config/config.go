@@ -157,6 +157,15 @@ type Config struct {
 	// honest where guessing one from the caption would not be.
 	BrandHandles []string
 
+	// YouTube Data API v3. The only free creator search there is —
+	// Instagram offers none at any price.
+	YouTubeAPIKey string
+	// Region and Language steer results towards the market we work
+	// in. An Indian brief answered with global defaults is the wrong
+	// answer rather than a neutral one, so Region defaults to IN.
+	YouTubeRegion   string
+	YouTubeLanguage string
+
 	// Razorpay, for subscriptions. Off unless the key pair is set: a
 	// deployment with no processor should still run, and say so on the
 	// billing screen, rather than offer a button that cannot work.
@@ -218,6 +227,9 @@ func Load() Config {
 		InstagramAccessToken:     os.Getenv("INSTAGRAM_ACCESS_TOKEN"),
 		InstagramBusinessAccount: os.Getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID"),
 		BrandHandles:             splitList(os.Getenv("BRAND_HANDLES")),
+		YouTubeAPIKey:            os.Getenv("YOUTUBE_API_KEY"),
+		YouTubeRegion:            orDefault(os.Getenv("YOUTUBE_REGION"), "IN"),
+		YouTubeLanguage:          os.Getenv("YOUTUBE_LANGUAGE"),
 
 		RazorpayKeyID:         os.Getenv("RAZORPAY_KEY_ID"),
 		RazorpayKeySecret:     os.Getenv("RAZORPAY_KEY_SECRET"),
@@ -360,4 +372,11 @@ func splitList(raw string) []string {
 		}
 	}
 	return out
+}
+
+func orDefault(v, fallback string) string {
+	if strings.TrimSpace(v) == "" {
+		return fallback
+	}
+	return v
 }
