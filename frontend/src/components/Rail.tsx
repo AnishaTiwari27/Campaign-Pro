@@ -64,6 +64,7 @@ export function Rail() {
             "creators". Renaming those would break every link already shared
             and buy nothing a reader can see. */}
         <NavItem to="/creators" icon={<IconCreators />} label="Influencers" />
+        {!isClient && <NavItem to="/discovered" icon={<IconCreators />} label="Discovered" />}
         {/* Public figures and their reported brand work. Sits apart from
             Influencers on purpose: that page is the agency's roster with
             its performance data, this one is published fact with none. */}

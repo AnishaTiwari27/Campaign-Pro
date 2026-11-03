@@ -50,6 +50,7 @@ type Querier interface {
 	// nothing, so the failure mode of forgetting it is a blank page rather
 	// than another tenant's data.
 	GetCampaign(ctx context.Context, arg GetCampaignParams) (Campaign, error)
+	GetCandidate(ctx context.Context, arg GetCandidateParams) (CreatorCandidate, error)
 	GetCreator(ctx context.Context, arg GetCreatorParams) (Creator, error)
 	GetLastReportRun(ctx context.Context, reportID pgtype.UUID) (ReportRun, error)
 	GetReport(ctx context.Context, arg GetReportParams) (Report, error)
@@ -109,6 +110,10 @@ type Querier interface {
 	// that is a wash; it is the shape that stops the overview getting
 	// slower in proportion to the book of business.
 	OverviewTotals(ctx context.Context, arg OverviewTotalsParams) (OverviewTotalsRow, error)
+	// Links a candidate to the creator a reviewer promoted it into. Kept
+	// so the roster row's provenance survives: which search found them,
+	// and that a person decided rather than a job.
+	PromoteCandidate(ctx context.Context, arg PromoteCandidateParams) error
 	// One row per creator per day. A second scan the same day corrects it
 	// rather than adding a point, which would read as growth that never
 	// happened.

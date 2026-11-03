@@ -18,6 +18,7 @@ import { OverviewPage } from "../features/overview/OverviewPage";
 const CampaignsPage = lazy(() => import("../features/campaigns/CampaignsPage").then((m) => ({ default: m.CampaignsPage })));
 const CampaignDetailPage = lazy(() => import("../features/campaign-detail/CampaignDetailPage").then((m) => ({ default: m.CampaignDetailPage })));
 const ApprovalsPage = lazy(() => import("../features/approvals/ApprovalsPage").then((m) => ({ default: m.ApprovalsPage })));
+const CandidatesPage = lazy(() => import("../features/candidates/CandidatesPage").then((m) => ({ default: m.CandidatesPage })));
 const CreatorsPage = lazy(() => import("../features/creators/CreatorsPage").then((m) => ({ default: m.CreatorsPage })));
 const CreatorDetailPage = lazy(() => import("../features/creators/CreatorDetailPage").then((m) => ({ default: m.CreatorDetailPage })));
 const EndorsementsPage = lazy(() => import("../features/endorsements/EndorsementsPage").then((m) => ({ default: m.EndorsementsPage })));
@@ -66,6 +67,7 @@ export function AppRoutes() {
           <Route path="campaigns/:id" element={<CampaignDetailPage />} />
           <Route path="approvals" element={<AgencyOnly><ApprovalsPage /></AgencyOnly>} />
           <Route path="creators" element={<CreatorsPage />} />
+          <Route path="discovered" element={<AgencyOnly><CandidatesPage /></AgencyOnly>} />
           <Route path="creators/:id" element={<CreatorDetailPage />} />
           <Route path="endorsements" element={<EndorsementsPage />} />
           <Route path="endorsements/:id" element={<EndorsementDetailPage />} />

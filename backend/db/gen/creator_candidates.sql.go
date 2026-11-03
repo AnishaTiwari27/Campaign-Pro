@@ -47,6 +47,40 @@ func (q *Queries) CountCandidatesByStatus(ctx context.Context, arg CountCandidat
 	return items, nil
 }
 
+const getCandidate = `-- name: GetCandidate :one
+SELECT id, org_id, platform, external_id, handle, name, description, followers, videos, views, found_for, status, promoted_creator_id, discovered_at, reviewed_at FROM creator_candidates
+WHERE id = $1::text AND ($2::bool OR org_id = $3::text)
+`
+
+type GetCandidateParams struct {
+	ID        string `json:"id"`
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+func (q *Queries) GetCandidate(ctx context.Context, arg GetCandidateParams) (CreatorCandidate, error) {
+	row := q.db.QueryRow(ctx, getCandidate, arg.ID, arg.OrgSystem, arg.OrgID)
+	var i CreatorCandidate
+	err := row.Scan(
+		&i.ID,
+		&i.OrgID,
+		&i.Platform,
+		&i.ExternalID,
+		&i.Handle,
+		&i.Name,
+		&i.Description,
+		&i.Followers,
+		&i.Videos,
+		&i.Views,
+		&i.FoundFor,
+		&i.Status,
+		&i.PromotedCreatorID,
+		&i.DiscoveredAt,
+		&i.ReviewedAt,
+	)
+	return i, err
+}
+
 const listNewCandidates = `-- name: ListNewCandidates :many
 SELECT id, org_id, platform, external_id, handle, name, description, followers, videos, views, found_for, status, promoted_creator_id, discovered_at, reviewed_at FROM creator_candidates
 WHERE status = 'new' AND ($1::bool OR org_id = $2::text)
@@ -94,6 +128,32 @@ func (q *Queries) ListNewCandidates(ctx context.Context, arg ListNewCandidatesPa
 		return nil, err
 	}
 	return items, nil
+}
+
+const promoteCandidate = `-- name: PromoteCandidate :exec
+UPDATE creator_candidates
+SET status = 'accepted', promoted_creator_id = $1::text, reviewed_at = now()
+WHERE id = $2::text AND ($3::bool OR org_id = $4::text)
+`
+
+type PromoteCandidateParams struct {
+	CreatorID string `json:"creator_id"`
+	ID        string `json:"id"`
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+// Links a candidate to the creator a reviewer promoted it into. Kept
+// so the roster row's provenance survives: which search found them,
+// and that a person decided rather than a job.
+func (q *Queries) PromoteCandidate(ctx context.Context, arg PromoteCandidateParams) error {
+	_, err := q.db.Exec(ctx, promoteCandidate,
+		arg.CreatorID,
+		arg.ID,
+		arg.OrgSystem,
+		arg.OrgID,
+	)
+	return err
 }
 
 const setCandidateStatus = `-- name: SetCandidateStatus :exec

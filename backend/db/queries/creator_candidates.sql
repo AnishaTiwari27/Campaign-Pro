@@ -32,3 +32,15 @@ WHERE id = @id::text AND (@org_system::bool OR org_id = @org_id::text);
 SELECT status, COUNT(*) AS total FROM creator_candidates
 WHERE (@org_system::bool OR org_id = @org_id::text)
 GROUP BY status;
+
+-- name: PromoteCandidate :exec
+-- Links a candidate to the creator a reviewer promoted it into. Kept
+-- so the roster row's provenance survives: which search found them,
+-- and that a person decided rather than a job.
+UPDATE creator_candidates
+SET status = 'accepted', promoted_creator_id = @creator_id::text, reviewed_at = now()
+WHERE id = @id::text AND (@org_system::bool OR org_id = @org_id::text);
+
+-- name: GetCandidate :one
+SELECT * FROM creator_candidates
+WHERE id = @id::text AND (@org_system::bool OR org_id = @org_id::text);

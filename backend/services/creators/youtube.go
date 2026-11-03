@@ -8,9 +8,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // YouTube is the one platform that will answer "who makes this kind of
@@ -348,4 +350,71 @@ func CandidateFrom(c Channel, foundFor string) Candidate {
 		HasFollowers: c.HasSubscribers, Videos: c.Videos, Views: c.Views,
 		FoundFor: foundFor,
 	}
+}
+
+// Promotion is what a reviewer supplies when accepting a candidate.
+//
+// Category, region and languages are not in any search result and are
+// not guessable from a channel title, so they are asked for rather
+// than invented. They are also the axes every benchmark slices on, so
+// a wrong guess here would quietly skew the medians a buyer reads.
+type Promotion struct {
+	Role      string
+	Category  string
+	Region    string
+	Languages []string
+	// Followers overrides the discovered count, and is required where
+	// the channel hides it. Promoting a hidden count as zero would file
+	// a large channel as a nano creator.
+	Followers int64
+}
+
+// Validate reports what is missing, naming the field so the caller can
+// point at it.
+func (p Promotion) Validate(c Candidate) error {
+	switch {
+	case strings.TrimSpace(p.Category) == "":
+		return errors.New("category is required: it is what every benchmark slices on, and it is not in any search result")
+	case strings.TrimSpace(p.Region) == "":
+		return errors.New("region is required: it is not in any search result")
+	case !c.HasFollowers && p.Followers <= 0:
+		return errors.New("this channel hides its subscriber count, so a follower figure has to be supplied: promoting it as zero would file them as a nano creator")
+	}
+	return nil
+}
+
+// FollowerCount is the figure to record: the reviewer's where they
+// gave one, the platform's otherwise.
+func (p Promotion) FollowerCount(c Candidate) int64 {
+	if p.Followers > 0 {
+		return p.Followers
+	}
+	return c.Followers
+}
+
+// InitialsOf is the two-letter stand-in shown where a creator has no
+// photograph we may publish.
+func InitialsOf(name string) string {
+	var out []rune
+	for _, word := range strings.Fields(name) {
+		for _, r := range word {
+			out = append(out, unicode.ToUpper(r))
+			break
+		}
+		if len(out) == 2 {
+			break
+		}
+	}
+	if len(out) == 0 {
+		return "?"
+	}
+	return string(out)
+}
+
+var slugPattern = regexp.MustCompile(`[^a-z0-9]+`)
+
+// SlugOf turns a name into a creator id, matching the seeder's form so
+// hand-seeded and promoted creators read alike.
+func SlugOf(name string) string {
+	return strings.Trim(slugPattern.ReplaceAllString(strings.ToLower(name), "-"), "-")
 }

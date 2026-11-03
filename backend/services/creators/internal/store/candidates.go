@@ -81,3 +81,31 @@ func (s *Store) SetCandidateStatus(ctx context.Context, id, status string) error
 		ID: id, Status: status, OrgSystem: sys, OrgID: org,
 	})
 }
+
+// GetCandidate reads one, for the promotion path.
+func (s *Store) GetCandidate(ctx context.Context, id string) (creators.Candidate, error) {
+	sys, org := orgParams(ctx)
+	r, err := s.db.Queries.GetCandidate(ctx, gen.GetCandidateParams{
+		ID: id, OrgSystem: sys, OrgID: org,
+	})
+	if err != nil {
+		return creators.Candidate{}, err
+	}
+	c := creators.Candidate{
+		ID: r.ID, Platform: r.Platform, ExternalID: r.ExternalID,
+		Handle: r.Handle, Name: r.Name, Description: r.Description,
+		Videos: r.Videos, Views: r.Views, FoundFor: r.FoundFor, Status: r.Status,
+	}
+	if r.Followers.Valid {
+		c.Followers, c.HasFollowers = r.Followers.Int64, true
+	}
+	return c, nil
+}
+
+// LinkPromoted records which creator a candidate became.
+func (s *Store) LinkPromoted(ctx context.Context, candidateID, creatorID string) error {
+	sys, org := orgParams(ctx)
+	return s.db.Queries.PromoteCandidate(ctx, gen.PromoteCandidateParams{
+		ID: candidateID, CreatorID: creatorID, OrgSystem: sys, OrgID: org,
+	})
+}

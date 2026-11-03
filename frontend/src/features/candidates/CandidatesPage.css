@@ -1,0 +1,81 @@
+.candidates-lede {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+  max-width: 70ch;
+  margin-top: 4px;
+}
+
+.candidate-list {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.candidate {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.candidate:last-child { border-bottom: none; }
+
+.candidate-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.candidate-identity { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.candidate-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+}
+.candidate-name:hover { text-decoration: underline; }
+
+.candidate-meta { font-size: 11.5px; color: var(--muted); }
+
+/* The brief that found them. A name with no reason beside it is not
+   something a reviewer can judge. */
+.candidate-found {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.candidate-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-top: 8px;
+  max-width: 80ch;
+}
+
+.candidate-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+.candidate-promote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.candidate-promote .field { display: flex; flex-direction: column; gap: 4px; }
+.candidate-promote .field span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.candidate-promote .field input { width: 150px; }
+
+.candidate-promote-actions { display: flex; gap: 8px; }
+
+.candidate-error { font-size: 11.5px; color: var(--crit); width: 100%; margin: 0; }

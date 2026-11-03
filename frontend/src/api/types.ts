@@ -494,3 +494,28 @@ export interface MarketFact {
   source: string;
   sourceUrl: string;
 }
+
+/** A channel discovery turned up, before anyone has decided whether it
+ *  belongs on the roster.
+ *
+ *  Deliberately not a Creator. Every baseline the product computes —
+ *  tier medians, benchmarks, cost indices — is drawn from the roster,
+ *  so an unreviewed search result joining it would move those figures
+ *  using channels nobody has looked at. */
+export interface Candidate {
+  id: string;
+  platform: string;
+  externalId: string;
+  name: string;
+  description: string;
+  followers: number;
+  /** False where the channel hides its subscriber count. Show "hidden"
+   *  rather than 0, and a figure has to be supplied before promoting. */
+  hasFollowers: boolean;
+  videos: number;
+  views: number;
+  /** The search that found them, so a reviewer can see what they were
+   *  meant to match. */
+  foundFor: string;
+  url: string;
+}
