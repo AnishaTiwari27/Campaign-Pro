@@ -99,3 +99,80 @@ func TestSamePerson(t *testing.T) {
 		}
 	}
 }
+
+func TestLookupMediaReturnsCaptionsAndPermalinks(t *testing.T) {
+	var gotQuery string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Write([]byte(`{"business_discovery":{"username":"mostlysane","name":"Prajakta Koli",
+			"followers_count":7200000,"media_count":1800,"media":{"data":[
+			{"caption":"new routine ft. @nykaa #ad","permalink":"https://instagram.com/p/aaa","timestamp":"2026-03-11T09:30:00+0000"},
+			{"caption":"sunday walk","permalink":"https://instagram.com/p/bbb","timestamp":"not a date"},
+			{"caption":"no link here"}
+			]}},"id":"me"}`))
+	}))
+	defer srv.Close()
+
+	ig := creators.NewInstagram(creators.InstagramConfig{
+		AccessToken: "tok", BusinessAccountID: "17841400000000000",
+		BaseURL: srv.URL, HTTP: srv.Client(),
+	})
+
+	p, posts, err := ig.LookupMedia(t.Context(), "@mostlysane", 25)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The profile rides along so the identity guard can run on the same
+	// response that produced the posts.
+	if p.Username != "mostlysane" {
+		t.Errorf("profile = %+v", p)
+	}
+	// Three in the payload, but one has no permalink: a detection
+	// nobody can open is not evidence.
+	if len(posts) != 2 {
+		t.Fatalf("got %d posts, want the 2 with permalinks", len(posts))
+	}
+	if posts[0].Caption != "new routine ft. @nykaa #ad" {
+		t.Errorf("caption = %q", posts[0].Caption)
+	}
+	if posts[0].PostedAt.IsZero() {
+		t.Error("a valid timestamp did not parse")
+	}
+	// An unparseable date is not worth discarding the post over — the
+	// caption is the evidence and the permalink proves its source.
+	if !posts[1].PostedAt.IsZero() {
+		t.Error("a bad timestamp should leave the zero time, not a guess")
+	}
+	if !strings.Contains(gotQuery, "media") {
+		t.Errorf("query %q did not ask for media", gotQuery)
+	}
+}
+
+func TestLookupMediaCapsTheRequestedLimit(t *testing.T) {
+	var gotQuery string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotQuery = r.URL.RawQuery
+		w.Write([]byte(`{"business_discovery":{"username":"x","name":"X"},"id":"me"}`))
+	}))
+	defer srv.Close()
+
+	ig := creators.NewInstagram(creators.InstagramConfig{
+		AccessToken: "tok", BusinessAccountID: "acct",
+		BaseURL: srv.URL, HTTP: srv.Client(),
+	})
+	for _, limit := range []int{0, -3, 9999} {
+		if _, _, err := ig.LookupMedia(t.Context(), "x", limit); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(gotQuery, "limit%2825%29") && !strings.Contains(gotQuery, "limit(25)") {
+			t.Errorf("limit %d did not clamp to %d: %q", limit, creators.MediaScanLimit, gotQuery)
+		}
+	}
+}
+
+func TestLookupMediaNotConfigured(t *testing.T) {
+	ig := creators.NewInstagram(creators.InstagramConfig{})
+	if _, _, err := ig.LookupMedia(t.Context(), "x", 25); err == nil {
+		t.Fatal("an unconfigured client must refuse rather than call out")
+	}
+}

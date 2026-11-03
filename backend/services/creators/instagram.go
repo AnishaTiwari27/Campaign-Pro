@@ -105,32 +105,16 @@ func (i *Instagram) Lookup(ctx context.Context, handle string) (Profile, error) 
 	if !i.cfg.complete() {
 		return Profile{}, ErrInstagramNotConfigured
 	}
-	handle = strings.TrimPrefix(strings.TrimSpace(handle), "@")
+	handle = cleanHandle(handle)
 	if handle == "" {
 		return Profile{}, fmt.Errorf("no handle to look up")
 	}
 
-	q := url.Values{}
-	// The nested-field syntax business discovery takes. Only the
-	// profile counters: this is not a reason to pull someone's media.
-	q.Set("fields", fmt.Sprintf(
+	// Only the profile counters: a follower sync is not a reason to
+	// pull someone's media. Reading captions is a separate, deliberate
+	// call — see LookupMedia.
+	body, err := i.fetch(ctx, fmt.Sprintf(
 		"business_discovery.username(%s){username,name,followers_count,media_count}", handle))
-	q.Set("access_token", i.cfg.AccessToken)
-
-	endpoint := fmt.Sprintf("%s/%s/%s?%s",
-		i.baseURL(), i.apiVersion(), i.cfg.BusinessAccountID, q.Encode())
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return Profile{}, err
-	}
-	resp, err := i.client().Do(req)
-	if err != nil {
-		return Profile{}, fmt.Errorf("instagram: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return Profile{}, err
 	}
@@ -185,4 +169,32 @@ func SamePerson(creatorName string, p Profile) bool {
 		}
 	}
 	return true
+}
+
+// fetch runs one business-discovery request and returns the raw body.
+// Shared so the profile and media calls cannot drift on the endpoint,
+// the version pin or the response size limit.
+func (i *Instagram) fetch(ctx context.Context, fields string) ([]byte, error) {
+	q := url.Values{}
+	q.Set("fields", fields)
+	q.Set("access_token", i.cfg.AccessToken)
+
+	endpoint := fmt.Sprintf("%s/%s/%s?%s",
+		i.baseURL(), i.apiVersion(), i.cfg.BusinessAccountID, q.Encode())
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := i.client().Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("instagram: %w", err)
+	}
+	defer resp.Body.Close()
+	return io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+}
+
+// cleanHandle normalises what a user typed into what the API takes.
+func cleanHandle(h string) string {
+	return strings.TrimPrefix(strings.TrimSpace(h), "@")
 }
