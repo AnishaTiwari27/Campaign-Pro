@@ -31,6 +31,10 @@ func full() creators.CreatorPerformance {
 		CostPerLakh: 42_000, CostIndex: 0.88, TierCostPeers: 9,
 		Consistency: 0.74, ConsistencyN: 6,
 		AudienceReachPct: 25.6, Flagged: 1,
+		Signals: creators.Signals{
+			Scanned: true, ScanAt: scanAt, BrandPosts: 4,
+			EngagementRate: 1.4, HasRate: true, PostsScanned: 25,
+		},
 	}
 }
 
@@ -195,5 +199,40 @@ func TestNoRowsStillRendersAHeader(t *testing.T) {
 	recs := parse(t, creators.RosterCSV(nil, creators.RosterColumns))
 	if len(recs) != 1 {
 		t.Fatalf("want the header alone, got %d records", len(recs))
+	}
+}
+
+// An unscanned creator must not export a zero brand-post count: that
+// is our backlog presented as a finding about them.
+func TestUnscannedSignalsExportBlank(t *testing.T) {
+	r := full()
+	r.Signals = creators.Signals{} // never scanned
+	recs := parse(t, creators.RosterCSV([]creators.CreatorPerformance{r},
+		[]string{"Name", "Brand posts", "Engagement rate", "Last scanned", "Stage"}))
+	for i, col := range []string{"Brand posts", "Engagement rate", "Last scanned"} {
+		if got := recs[1][i+1]; got != "" {
+			t.Errorf("%s = %q for an unscanned creator, want blank", col, got)
+		}
+	}
+	if recs[1][4] != "Not yet checked" {
+		t.Errorf("stage = %q, want it to say nobody has looked", recs[1][4])
+	}
+}
+
+// Scanned with nothing found is a real finding and exports as zero,
+// not as a blank.
+func TestAScannedCreatorWithNoBrandWorkExportsZero(t *testing.T) {
+	r := full()
+	r.Signals = creators.Signals{Scanned: true, ScanAt: scanAt, BrandPosts: 0, EngagementRate: 1.4, HasRate: true}
+	recs := parse(t, creators.RosterCSV([]creators.CreatorPerformance{r},
+		[]string{"Name", "Brand posts", "Engagement rate", "Stage"}))
+	if recs[1][1] != "0" {
+		t.Errorf("brand posts = %q, want an explicit 0", recs[1][1])
+	}
+	if recs[1][2] != "1.40%" {
+		t.Errorf("engagement = %q", recs[1][2])
+	}
+	if recs[1][3] != "None in recent posts" {
+		t.Errorf("stage = %q", recs[1][3])
 	}
 }

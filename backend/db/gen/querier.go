@@ -58,6 +58,10 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error)
 	GetUserForAuth(ctx context.Context, email string) (GetUserForAuthRow, error)
 	GrantCampaign(ctx context.Context, arg GrantCampaignParams) error
+	// The most recent snapshot for every creator, for the roster view.
+	// DISTINCT ON rather than a correlated subquery: one pass over the
+	// index that already orders by creator and date.
+	LatestSnapshotPerCreator(ctx context.Context, arg LatestSnapshotPerCreatorParams) ([]LatestSnapshotPerCreatorRow, error)
 	ListAllCreatives(ctx context.Context) ([]Creative, error)
 	ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error)
 	ListBenchmarkTrend(ctx context.Context, arg ListBenchmarkTrendParams) ([]ListBenchmarkTrendRow, error)

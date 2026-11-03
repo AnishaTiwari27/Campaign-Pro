@@ -10,6 +10,7 @@ import (
 	"campaigntrackerpro/services/creators"
 	"context"
 	"sort"
+	"time"
 
 	"campaigntrackerpro/services/creators/internal/store"
 )
@@ -164,11 +165,26 @@ func (c *Creators) List(ctx context.Context) ([]creators.CreatorPerformance, err
 	}
 	roster = visible
 
+	// Scan stamps come off the roster rows we already hold, so the
+	// signals load is two queries rather than one per creator.
+	scannedAt := map[string]time.Time{}
+	for _, cr := range roster {
+		if !cr.MediaScannedAt.IsZero() {
+			scannedAt[cr.ID] = cr.MediaScannedAt
+		}
+	}
+	signals, err := c.Store.SignalsByCreator(ctx, scannedAt)
+	if err != nil {
+		return nil, err
+	}
+
 	medians := tierMedians(roster, byCreator)
 	costMedians, costPeers := tierCostMedians(roster, byCreator)
 	out := make([]creators.CreatorPerformance, 0, len(roster))
 	for _, cr := range roster {
-		out = append(out, performanceFor(cr, byCreator[cr.ID], medians[cr.Tier], costMedians[cr.Tier], costPeers[cr.Tier]))
+		p := performanceFor(cr, byCreator[cr.ID], medians[cr.Tier], costMedians[cr.Tier], costPeers[cr.Tier])
+		p.Signals = signals[cr.ID]
+		out = append(out, p)
 	}
 	creators.RankCreators(out)
 	return out, nil

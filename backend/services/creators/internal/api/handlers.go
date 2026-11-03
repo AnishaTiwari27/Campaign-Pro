@@ -50,21 +50,22 @@ type CreatorDTO struct {
 
 type CreatorPerformanceDTO struct {
 	CreatorDTO
-	Campaigns        int     `json:"campaigns"`
-	LiveCampaigns    int     `json:"liveCampaigns"`
-	TotalReach       float64 `json:"totalReach"`
-	TotalSpend       int64   `json:"totalSpend"`
-	AvgReach         float64 `json:"avgReach"`
-	TierMedian       float64 `json:"tierMedian"`
-	TierIndex        float64 `json:"tierIndex"`
-	CostPerLakh      float64 `json:"costPerLakh"`
-	Consistency      float64 `json:"consistency"`
-	ConsistencyN     int     `json:"consistencyN"`
-	AudienceReachPct float64 `json:"audienceReachPct"`
-	TierCostMedian   float64 `json:"tierCostMedian"`
-	CostIndex        float64 `json:"costIndex"`
-	TierCostPeers    int     `json:"tierCostPeers"`
-	Flagged          int     `json:"flagged"`
+	Campaigns        int        `json:"campaigns"`
+	LiveCampaigns    int        `json:"liveCampaigns"`
+	TotalReach       float64    `json:"totalReach"`
+	TotalSpend       int64      `json:"totalSpend"`
+	AvgReach         float64    `json:"avgReach"`
+	TierMedian       float64    `json:"tierMedian"`
+	TierIndex        float64    `json:"tierIndex"`
+	CostPerLakh      float64    `json:"costPerLakh"`
+	Consistency      float64    `json:"consistency"`
+	ConsistencyN     int        `json:"consistencyN"`
+	AudienceReachPct float64    `json:"audienceReachPct"`
+	TierCostMedian   float64    `json:"tierCostMedian"`
+	CostIndex        float64    `json:"costIndex"`
+	TierCostPeers    int        `json:"tierCostPeers"`
+	Signals          SignalsDTO `json:"signals"`
+	Flagged          int        `json:"flagged"`
 }
 
 func creatorDTO(c creators.Creator) CreatorDTO {
@@ -88,7 +89,38 @@ func creatorPerformanceDTO(p creators.CreatorPerformance) CreatorPerformanceDTO 
 		TierMedian: p.TierMedian, TierIndex: p.TierIndex, CostPerLakh: p.CostPerLakh,
 		Consistency: p.Consistency, ConsistencyN: p.ConsistencyN, AudienceReachPct: p.AudienceReachPct, Flagged: p.Flagged,
 		TierCostMedian: p.TierCostMedian, CostIndex: p.CostIndex, TierCostPeers: p.TierCostPeers,
+		Signals: signalsDTO(p.Signals),
 	}
+}
+
+// SignalsDTO is the platform-derived half of a roster row.
+//
+// scanned travels to the client because every other field here is
+// meaningless without it: a brandPosts of 0 on an unscanned creator is
+// our own backlog, and the UI has to be able to tell the two apart.
+type SignalsDTO struct {
+	Scanned        bool    `json:"scanned"`
+	Stage          string  `json:"stage"`
+	StageLabel     string  `json:"stageLabel"`
+	BrandPosts     int     `json:"brandPosts"`
+	EngagementRate float64 `json:"engagementRate"`
+	HasRate        bool    `json:"hasRate"`
+	PostsScanned   int     `json:"postsScanned"`
+	// Empty where never scanned, rather than a zero date the client
+	// would have to know to special-case.
+	ScannedAt string `json:"scannedAt,omitempty"`
+}
+
+func signalsDTO(s creators.Signals) SignalsDTO {
+	d := SignalsDTO{
+		Scanned: s.Scanned, Stage: string(s.Stage()), StageLabel: creators.StageLabel(s.Stage()),
+		BrandPosts: s.BrandPosts, EngagementRate: s.EngagementRate,
+		HasRate: s.HasRate, PostsScanned: s.PostsScanned,
+	}
+	if !s.ScanAt.IsZero() {
+		d.ScannedAt = s.ScanAt.Format("2006-01-02")
+	}
+	return d
 }
 
 type LanguageReachDTO struct {

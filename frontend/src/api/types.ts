@@ -368,6 +368,27 @@ export interface CreatorPerformance extends Creator {
   /** How many priced creators the tier median came from. 1 means they are
    *  alone in their tier, so costIndex is 0 and nothing is shown. */
   tierCostPeers: number;
+  signals: Signals;
+}
+
+/** What the platform itself reports, filled by the media scan. Separate
+ *  from the campaign figures above because the two have different
+ *  standing: these are first-hand and current, those are ours. */
+export interface Signals {
+  /** Whether this creator's posts have ever been read. Every other field
+   *  here is meaningless without it — a brandPosts of 0 on an unscanned
+   *  creator is our own backlog, not a finding about them. */
+  scanned: boolean;
+  /** unknown | none | proven */
+  stage: "unknown" | "none" | "proven";
+  stageLabel: string;
+  brandPosts: number;
+  /** (likes + comments) / followers across recent organic posts, as a
+   *  percentage. Check hasRate rather than testing for zero. */
+  engagementRate: number;
+  hasRate: boolean;
+  postsScanned: number;
+  scannedAt?: string;
 }
 
 export interface LanguageReach {

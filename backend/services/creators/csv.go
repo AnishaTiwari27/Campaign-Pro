@@ -25,6 +25,10 @@ var RosterColumns = []string{
 	"Primary platform", "Languages", "Campaigns", "Live campaigns",
 	"Avg reach", "Tier median", "Tier index", "Cost per lakh",
 	"Cost index", "Consistency", "Audience reach", "Flagged",
+	// Platform-derived, from the media scan rather than our campaign
+	// history. Blank until a scan has run, which is what "Not yet
+	// checked" says in the Stage column.
+	"Stage", "Brand posts", "Engagement rate", "Last scanned",
 }
 
 func IsValidRosterColumn(col string) bool {
@@ -124,6 +128,25 @@ func rosterCell(r CreatorPerformance, column string) string {
 		return fmt.Sprintf("%.1f%%", r.AudienceReachPct)
 	case "Flagged":
 		return fmt.Sprintf("%d", r.Flagged)
+	case "Stage":
+		return StageLabel(r.Signals.Stage())
+	case "Brand posts":
+		// Blank rather than 0 for an unscanned creator: a zero here
+		// would export our backlog as a finding about them.
+		if !r.Signals.Scanned {
+			return ""
+		}
+		return fmt.Sprintf("%d", r.Signals.BrandPosts)
+	case "Engagement rate":
+		if !r.Signals.HasRate {
+			return ""
+		}
+		return fmt.Sprintf("%.2f%%", r.Signals.EngagementRate)
+	case "Last scanned":
+		if r.Signals.ScanAt.IsZero() {
+			return ""
+		}
+		return r.Signals.ScanAt.Format("2006-01-02")
 	default:
 		return ""
 	}

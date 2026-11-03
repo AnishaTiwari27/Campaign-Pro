@@ -73,9 +73,13 @@ type Creator struct {
 	// it may publish. Empty is the normal case, and renders the generated
 	// avatar — which is the correct likeness for someone whose photo the
 	// agency has no right to use, not a placeholder for a missing one.
-	ImageURL  string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ImageURL string
+	// MediaScannedAt is when the scan last read this creator's posts,
+	// zero where it never has. The zero is load-bearing: it separates
+	// "no brand work found" from "nobody looked".
+	MediaScannedAt time.Time
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // CreatorPerformance is everything the roster and detail views need, all
@@ -107,6 +111,11 @@ type CreatorPerformance struct {
 	// means the creator is alone in their tier and there is nothing to
 	// compare against, so CostIndex is 0 rather than a misleading 1.0.
 	TierCostPeers int
+
+	// Signals is what Instagram reports about them, filled by the
+	// media scan. Zero-valued and unscanned until that has run, which
+	// Signals.Scanned says explicitly.
+	Signals Signals
 }
 
 // TierMedianReach is the median campaign reach within a tier, the baseline

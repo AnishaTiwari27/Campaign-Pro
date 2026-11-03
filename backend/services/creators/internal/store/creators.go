@@ -25,6 +25,7 @@ func toDomainCreator(c gen.Creator) creators.Creator {
 		PrimaryPlatform: c.PrimaryPlatform,
 		Languages:       c.Languages,
 		ImageURL:        database.TextOrEmpty(c.ImageUrl),
+		MediaScannedAt:  database.TimeOf(c.MediaScannedAt),
 		CreatedAt:       database.TimeOf(c.CreatedAt),
 		UpdatedAt:       database.TimeOf(c.UpdatedAt),
 	}

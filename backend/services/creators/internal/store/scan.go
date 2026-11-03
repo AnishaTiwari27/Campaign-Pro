@@ -120,3 +120,44 @@ func (s *Store) FollowerHistory(ctx context.Context, creatorID string) ([]creato
 	}
 	return out, nil
 }
+
+// SignalsByCreator is the platform-derived half of the roster, in one
+// pass: the scan stamp from the creator row, the brand-post count, and
+// the figures from the most recent snapshot.
+//
+// A creator absent from the map has never been scanned. A creator
+// present with no brand posts has been scanned and had none found —
+// the distinction the whole Signals type exists for.
+func (s *Store) SignalsByCreator(ctx context.Context, scannedAt map[string]time.Time) (map[string]creators.Signals, error) {
+	counts, err := s.BrandPostCounts(ctx)
+	if err != nil {
+		return nil, err
+	}
+	sys, org := orgParams(ctx)
+	snaps, err := s.db.Queries.LatestSnapshotPerCreator(ctx,
+		gen.LatestSnapshotPerCreatorParams{OrgSystem: sys, OrgID: org})
+	if err != nil {
+		return nil, err
+	}
+
+	out := make(map[string]creators.Signals, len(scannedAt))
+	for id, at := range scannedAt {
+		out[id] = creators.Signals{Scanned: true, ScanAt: at, BrandPosts: counts[id]}
+	}
+	for _, r := range snaps {
+		sig := out[r.CreatorID]
+		// A snapshot exists only because a scan wrote it, so it is
+		// evidence of a scan in its own right — belt and braces
+		// against a creator row whose stamp was lost.
+		sig.Scanned = true
+		sig.PostsScanned = int(r.PostsScanned)
+		if r.EngagementRate.Valid {
+			sig.EngagementRate, sig.HasRate = r.EngagementRate.Float64, true
+		}
+		if sig.BrandPosts == 0 {
+			sig.BrandPosts = counts[r.CreatorID]
+		}
+		out[r.CreatorID] = sig
+	}
+	return out, nil
+}

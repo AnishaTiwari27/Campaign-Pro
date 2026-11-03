@@ -204,3 +204,24 @@ func CompareEngagement(a Audit, tierMedian float64) EngagementVerdict {
 	}
 	return v
 }
+
+// Signals is what the platform itself says about a creator, as opposed
+// to what our own campaign history says. Kept apart from the campaign
+// figures on the roster row because the two have different standing:
+// these are first-hand and current, those are ours and historical.
+type Signals struct {
+	// Scanned is whether this creator's media has ever been read. Every
+	// other field here is meaningless without it — a zero brand-post
+	// count on an unscanned creator is our backlog, not a fact about
+	// them.
+	Scanned bool
+	ScanAt  time.Time
+
+	BrandPosts     int
+	EngagementRate float64
+	HasRate        bool
+	PostsScanned   int
+}
+
+// Stage is the commercial axis: has anyone paid them yet.
+func (s Signals) Stage() Stage { return StageFor(s.Scanned, s.BrandPosts) }

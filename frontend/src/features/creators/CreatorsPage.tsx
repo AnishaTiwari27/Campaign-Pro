@@ -5,7 +5,8 @@ import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { SkeletonRows } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
 import { formatIndex, formatMoney, formatReach } from "../../lib/format";
-import { TierBadge, IndexBar, ConsistencyDots, formatFollowers } from "./CreatorBits";
+import { TierBadge, IndexBar, ConsistencyDots, StageBadge, EngagementRate, formatFollowers } from "./CreatorBits";
+import { engagementMediansByTier } from "./engagement";
 import { SubjectImage } from "../../components/SubjectImage";
 import "./CreatorsPage.css";
 
@@ -14,6 +15,7 @@ export function CreatorsPage() {
   const { data, isLoading } = useCreators();
   const navigate = useNavigate();
   const items = data?.items ?? [];
+  const engagementMedians = engagementMediansByTier(items);
 
   return (
     <div className="creators-page">
@@ -48,6 +50,7 @@ export function CreatorsPage() {
           <div className="creator-list-head">
             <span>Influencer</span>
             <span>Tier</span>
+            <span className="creator-col-num" title="Likes and comments against follower count, across recent organic posts. Ads are excluded — paid reach would inflate it.">Engagement</span>
             <span className="creator-col-num">vs tier</span>
             <span className="creator-col-num">Consistency</span>
             <span className="creator-col-num" title="Average campaign reach against their own follower count">Reach vs followers</span>
@@ -68,8 +71,15 @@ export function CreatorsPage() {
               </span>
 
               <span className="creator-tier-cell">
-                <TierBadge tier={c.tier} label={c.tierLabel} />
-                <span className="creator-followers mono">{formatFollowers(c.followers)}</span>
+                <span className="creator-tier-line">
+                  <TierBadge tier={c.tier} label={c.tierLabel} />
+                  <span className="creator-followers mono">{formatFollowers(c.followers)}</span>
+                </span>
+                <StageBadge signals={c.signals} />
+              </span>
+
+              <span className="creator-col-num">
+                <EngagementRate signals={c.signals} tierMedianRate={engagementMedians[c.tier]} />
               </span>
 
               <span className="creator-col-num">

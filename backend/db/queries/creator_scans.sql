@@ -54,3 +54,13 @@ SELECT * FROM creator_follower_snapshots
 WHERE creator_id = @creator_id::text
   AND (@org_system::bool OR org_id = @org_id::text)
 ORDER BY captured_on;
+
+-- name: LatestSnapshotPerCreator :many
+-- The most recent snapshot for every creator, for the roster view.
+-- DISTINCT ON rather than a correlated subquery: one pass over the
+-- index that already orders by creator and date.
+SELECT DISTINCT ON (creator_id)
+    creator_id, captured_on, followers, engagement_rate, posts_scanned
+FROM creator_follower_snapshots
+WHERE (@org_system::bool OR org_id = @org_id::text)
+ORDER BY creator_id, captured_on DESC;

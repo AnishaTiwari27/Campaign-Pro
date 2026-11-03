@@ -63,6 +63,56 @@ func (q *Queries) DismissBrandPost(ctx context.Context, arg DismissBrandPostPara
 	return err
 }
 
+const latestSnapshotPerCreator = `-- name: LatestSnapshotPerCreator :many
+SELECT DISTINCT ON (creator_id)
+    creator_id, captured_on, followers, engagement_rate, posts_scanned
+FROM creator_follower_snapshots
+WHERE ($1::bool OR org_id = $2::text)
+ORDER BY creator_id, captured_on DESC
+`
+
+type LatestSnapshotPerCreatorParams struct {
+	OrgSystem bool   `json:"org_system"`
+	OrgID     string `json:"org_id"`
+}
+
+type LatestSnapshotPerCreatorRow struct {
+	CreatorID      string        `json:"creator_id"`
+	CapturedOn     pgtype.Date   `json:"captured_on"`
+	Followers      int64         `json:"followers"`
+	EngagementRate pgtype.Float8 `json:"engagement_rate"`
+	PostsScanned   int32         `json:"posts_scanned"`
+}
+
+// The most recent snapshot for every creator, for the roster view.
+// DISTINCT ON rather than a correlated subquery: one pass over the
+// index that already orders by creator and date.
+func (q *Queries) LatestSnapshotPerCreator(ctx context.Context, arg LatestSnapshotPerCreatorParams) ([]LatestSnapshotPerCreatorRow, error) {
+	rows, err := q.db.Query(ctx, latestSnapshotPerCreator, arg.OrgSystem, arg.OrgID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LatestSnapshotPerCreatorRow
+	for rows.Next() {
+		var i LatestSnapshotPerCreatorRow
+		if err := rows.Scan(
+			&i.CreatorID,
+			&i.CapturedOn,
+			&i.Followers,
+			&i.EngagementRate,
+			&i.PostsScanned,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBrandPosts = `-- name: ListBrandPosts :many
 SELECT id, org_id, creator_id, brand, permalink, posted_at, matched_on, method, dismissed, confirmed_by, confirmed_at, detected_at FROM creator_brand_posts
 WHERE creator_id = $1::text AND NOT dismissed
