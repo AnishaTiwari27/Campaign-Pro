@@ -151,6 +151,11 @@ type Config struct {
 	// nothing — only their public professional profile is returned.
 	InstagramAccessToken     string
 	InstagramBusinessAccount string
+	// BrandHandles are the accounts worth recognising in a caption,
+	// comma separated. A handle not listed still counts its
+	// disclosure; it simply records no brand against it, which is
+	// honest where guessing one from the caption would not be.
+	BrandHandles []string
 
 	// Razorpay, for subscriptions. Off unless the key pair is set: a
 	// deployment with no processor should still run, and say so on the
@@ -212,6 +217,7 @@ func Load() Config {
 
 		InstagramAccessToken:     os.Getenv("INSTAGRAM_ACCESS_TOKEN"),
 		InstagramBusinessAccount: os.Getenv("INSTAGRAM_BUSINESS_ACCOUNT_ID"),
+		BrandHandles:             splitList(os.Getenv("BRAND_HANDLES")),
 
 		RazorpayKeyID:         os.Getenv("RAZORPAY_KEY_ID"),
 		RazorpayKeySecret:     os.Getenv("RAZORPAY_KEY_SECRET"),
@@ -339,6 +345,18 @@ func parsePairs(v string) map[string]string {
 		k, val = strings.TrimSpace(k), strings.TrimSpace(val)
 		if k != "" && val != "" {
 			out[k] = val
+		}
+	}
+	return out
+}
+
+// splitList reads a comma-separated environment value, dropping blanks
+// so a trailing comma does not become an empty entry.
+func splitList(raw string) []string {
+	var out []string
+	for _, p := range strings.Split(raw, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
 		}
 	}
 	return out

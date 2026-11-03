@@ -132,3 +132,15 @@ verify-ingest:
 #   make sync-followers
 sync-followers:
 	cd backend && go run ./cmd/syncfollowers
+
+# Read each creator's recent public posts and record what they
+# establish: today's follower and engagement snapshot, and evidence of
+# any disclosed brand work. Needs the same Instagram credentials as
+# sync-followers, plus an optional BRAND_HANDLES list.
+#
+# Worth scheduling. The snapshot history is the part a vendor charges
+# for, and it only accrues to whoever started taking it.
+#
+#   make scan-creators
+scan-creators:
+	cd backend && go run ./cmd/scancreators

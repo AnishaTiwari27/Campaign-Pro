@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BrandPostCountsByCreator(ctx context.Context, arg BrandPostCountsByCreatorParams) ([]BrandPostCountsByCreatorRow, error)
 	BulkUpdateApproval(ctx context.Context, arg BulkUpdateApprovalParams) ([]Campaign, error)
 	CountCreativesByCampaign(ctx context.Context, campaignID string) (int64, error)
 	// The scope predicate below is the one every aggregate has to carry.
@@ -34,6 +35,7 @@ type Querier interface {
 	DeleteReport(ctx context.Context, arg DeleteReportParams) error
 	DeleteSession(ctx context.Context, tokenHash []byte) error
 	DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error
+	DismissBrandPost(ctx context.Context, arg DismissBrandPostParams) error
 	// FestivalReach groups analysed creatives by the festival they were cut
 	// for. The empty-festival row is evergreen work, and is the baseline every
 	// tagged group gets compared against.
@@ -59,6 +61,7 @@ type Querier interface {
 	ListAllCreatives(ctx context.Context) ([]Creative, error)
 	ListAuditEventsByCampaign(ctx context.Context, campaignID pgtype.Text) ([]AuditEvent, error)
 	ListBenchmarkTrend(ctx context.Context, arg ListBenchmarkTrendParams) ([]ListBenchmarkTrendRow, error)
+	ListBrandPosts(ctx context.Context, arg ListBrandPostsParams) ([]CreatorBrandPost, error)
 	ListCampaigns(ctx context.Context, arg ListCampaignsParams) ([]Campaign, error)
 	ListCampaignsByCreator(ctx context.Context, arg ListCampaignsByCreatorParams) ([]Campaign, error)
 	// ListCampaignsFiltered applies every /campaigns filter in one query;
@@ -74,6 +77,7 @@ type Querier interface {
 	ListEnabledReports(ctx context.Context, arg ListEnabledReportsParams) ([]Report, error)
 	ListEnabledReportsByCadence(ctx context.Context, arg ListEnabledReportsByCadenceParams) ([]Report, error)
 	ListFlaggedCampaigns(ctx context.Context, arg ListFlaggedCampaignsParams) ([]Campaign, error)
+	ListFollowerSnapshots(ctx context.Context, arg ListFollowerSnapshotsParams) ([]CreatorFollowerSnapshot, error)
 	ListGrantsForUser(ctx context.Context, userID pgtype.UUID) ([]string, error)
 	ListIngestRuns(ctx context.Context, arg ListIngestRunsParams) ([]ListIngestRunsRow, error)
 	// first_seen_at and the outcome columns are deliberately absent from
@@ -92,12 +96,17 @@ type Querier interface {
 	ListSessionsForUser(ctx context.Context, userID pgtype.UUID) ([]ListSessionsForUserRow, error)
 	ListUnanalyzedCreatives(ctx context.Context, limit int32) ([]Creative, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	MarkMediaScanned(ctx context.Context, arg MarkMediaScannedParams) error
 	// OverviewTotals replaces loading every campaign and summing it in Go.
 	// One pass in the database instead of one row per campaign over the
 	// wire, decoded into a slice, walked once. At the current fixture size
 	// that is a wash; it is the shape that stops the overview getting
 	// slower in proportion to the book of business.
 	OverviewTotals(ctx context.Context, arg OverviewTotalsParams) (OverviewTotalsRow, error)
+	// One row per creator per day. A second scan the same day corrects it
+	// rather than adding a point, which would read as growth that never
+	// happened.
+	RecordFollowerSnapshot(ctx context.Context, arg RecordFollowerSnapshotParams) error
 	RecordLaunchOutcome(ctx context.Context, arg RecordLaunchOutcomeParams) error
 	// SessionUser resolves a session to its user in one round trip, and only
 	// when the session has not expired.
@@ -145,6 +154,11 @@ type Querier interface {
 	// arch test's org-owned list because the table did not exist when that
 	// list was written; it is added there in the same change.
 	UpsertBenchmarkSnapshot(ctx context.Context, arg UpsertBenchmarkSnapshotParams) error
+	// Evidence of one disclosed brand post. A re-scan re-detects the same
+	// caption, so this corrects the row rather than duplicating it — and
+	// never touches dismissed, or every human correction would be undone
+	// on the next run.
+	UpsertBrandPost(ctx context.Context, arg UpsertBrandPostParams) error
 	// The platform's own id is the match key. Names get edited and budgets
 	// change, so matching on either would create a duplicate the first time
 	// somebody renamed a campaign in the ad account.

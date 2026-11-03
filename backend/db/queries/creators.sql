@@ -24,7 +24,7 @@ UPDATE creators SET image_url = NULLIF($2, '') WHERE id = $1;
 -- those with a handle established. Ordered so a run that stops early
 -- resumes somewhere sensible rather than at the same few.
 -- name: ListCreatorsForFollowerSync :many
-SELECT id, name, instagram_handle
+SELECT id, name, instagram_handle, org_id
 FROM creators
 WHERE instagram_handle <> ''
   AND (@org_system::bool OR org_id = @org_id::text)

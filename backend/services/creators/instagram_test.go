@@ -176,3 +176,38 @@ func TestLookupMediaNotConfigured(t *testing.T) {
 		t.Fatal("an unconfigured client must refuse rather than call out")
 	}
 }
+
+func TestLookupMediaCarriesEngagementFigures(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write([]byte(`{"business_discovery":{"username":"mostlysane","name":"Prajakta Koli",
+			"followers_count":7200000,"media":{"data":[
+			{"caption":"reel","permalink":"https://instagram.com/p/a","like_count":48000,"comments_count":1200,"media_product_type":"REELS"},
+			{"caption":"promo","permalink":"https://instagram.com/p/b","like_count":9,"comments_count":1,"media_product_type":"AD"},
+			{"caption":"old one","permalink":"https://instagram.com/p/c","like_count":500,"comments_count":10}
+			]}},"id":"me"}`))
+	}))
+	defer srv.Close()
+
+	ig := creators.NewInstagram(creators.InstagramConfig{
+		AccessToken: "tok", BusinessAccountID: "acct",
+		BaseURL: srv.URL, HTTP: srv.Client(),
+	})
+	_, posts, err := ig.LookupMedia(t.Context(), "mostlysane", 25)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(posts) != 3 {
+		t.Fatalf("got %d posts", len(posts))
+	}
+	if posts[0].Likes != 48000 || posts[0].Comments != 1200 {
+		t.Errorf("engagement figures lost: %+v", posts[0])
+	}
+	if posts[0].Type != creators.MediaReels || posts[1].Type != creators.MediaAd {
+		t.Errorf("product types lost: %q %q", posts[0].Type, posts[1].Type)
+	}
+	// Older media can arrive without the field. Dropping it out of the
+	// organic figures would be worse than assuming a feed post.
+	if posts[2].Type != creators.MediaFeed {
+		t.Errorf("a missing product type became %q, want FEED", posts[2].Type)
+	}
+}

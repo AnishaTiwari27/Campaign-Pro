@@ -14,7 +14,7 @@ import (
 const createCreator = `-- name: CreateCreator :one
 INSERT INTO creators (id, name, role, initials, category, region, tier, followers, primary_platform, languages, org_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at
+RETURNING id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at, media_scanned_at
 `
 
 type CreateCreatorParams struct {
@@ -63,12 +63,13 @@ func (q *Queries) CreateCreator(ctx context.Context, arg CreateCreatorParams) (C
 		&i.OrgID,
 		&i.InstagramHandle,
 		&i.FollowersSyncedAt,
+		&i.MediaScannedAt,
 	)
 	return i, err
 }
 
 const getCreator = `-- name: GetCreator :one
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at FROM creators WHERE id = $1 AND ($2::bool OR org_id = $3::text)
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at, media_scanned_at FROM creators WHERE id = $1 AND ($2::bool OR org_id = $3::text)
 `
 
 type GetCreatorParams struct {
@@ -97,6 +98,7 @@ func (q *Queries) GetCreator(ctx context.Context, arg GetCreatorParams) (Creator
 		&i.OrgID,
 		&i.InstagramHandle,
 		&i.FollowersSyncedAt,
+		&i.MediaScannedAt,
 	)
 	return i, err
 }
@@ -159,7 +161,7 @@ func (q *Queries) ListCampaignsByCreator(ctx context.Context, arg ListCampaignsB
 }
 
 const listCreators = `-- name: ListCreators :many
-SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at FROM creators WHERE ($1::bool OR org_id = $2::text) ORDER BY followers DESC
+SELECT id, name, role, initials, category, region, tier, followers, primary_platform, languages, created_at, updated_at, image_url, org_id, instagram_handle, followers_synced_at, media_scanned_at FROM creators WHERE ($1::bool OR org_id = $2::text) ORDER BY followers DESC
 `
 
 type ListCreatorsParams struct {
@@ -193,6 +195,7 @@ func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]C
 			&i.OrgID,
 			&i.InstagramHandle,
 			&i.FollowersSyncedAt,
+			&i.MediaScannedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -205,7 +208,7 @@ func (q *Queries) ListCreators(ctx context.Context, arg ListCreatorsParams) ([]C
 }
 
 const listCreatorsForFollowerSync = `-- name: ListCreatorsForFollowerSync :many
-SELECT id, name, instagram_handle
+SELECT id, name, instagram_handle, org_id
 FROM creators
 WHERE instagram_handle <> ''
   AND ($1::bool OR org_id = $2::text)
@@ -221,6 +224,7 @@ type ListCreatorsForFollowerSyncRow struct {
 	ID              string `json:"id"`
 	Name            string `json:"name"`
 	InstagramHandle string `json:"instagram_handle"`
+	OrgID           string `json:"org_id"`
 }
 
 // ListCreatorsForFollowerSync is the roster the Instagram sync walks:
@@ -235,7 +239,12 @@ func (q *Queries) ListCreatorsForFollowerSync(ctx context.Context, arg ListCreat
 	var items []ListCreatorsForFollowerSyncRow
 	for rows.Next() {
 		var i ListCreatorsForFollowerSyncRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.InstagramHandle); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.InstagramHandle,
+			&i.OrgID,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

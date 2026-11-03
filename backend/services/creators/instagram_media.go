@@ -23,6 +23,16 @@ type Post struct {
 	// worth discarding the post over — the caption is the evidence and
 	// the permalink proves where it came from.
 	PostedAt time.Time
+
+	// The figures that make an engagement rate possible without a
+	// vendor. Both are counts the platform publishes about a
+	// professional account.
+	Likes    int64
+	Comments int64
+	// Type is media_product_type: FEED, REELS, STORY or AD. It is what
+	// separates a reel from a photo, and a paid placement from organic
+	// reach.
+	Type string
 }
 
 type mediaResponse struct {
@@ -33,9 +43,12 @@ type mediaResponse struct {
 		MediaCount     int64  `json:"media_count"`
 		Media          struct {
 			Data []struct {
-				Caption   string `json:"caption"`
-				Permalink string `json:"permalink"`
-				Timestamp string `json:"timestamp"`
+				Caption          string `json:"caption"`
+				Permalink        string `json:"permalink"`
+				Timestamp        string `json:"timestamp"`
+				LikeCount        int64  `json:"like_count"`
+				CommentsCount    int64  `json:"comments_count"`
+				MediaProductType string `json:"media_product_type"`
 			} `json:"data"`
 		} `json:"media"`
 	} `json:"business_discovery"`
@@ -67,7 +80,8 @@ func (i *Instagram) LookupMedia(ctx context.Context, handle string, limit int) (
 
 	body, err := i.fetch(ctx, fmt.Sprintf(
 		"business_discovery.username(%s){username,name,followers_count,media_count,"+
-			"media.limit(%d){caption,permalink,timestamp}}", handle, limit))
+			"media.limit(%d){caption,permalink,timestamp,like_count,comments_count,media_product_type}}",
+		handle, limit))
 	if err != nil {
 		return Profile{}, nil, err
 	}
@@ -90,8 +104,19 @@ func (i *Instagram) LookupMedia(ctx context.Context, handle string, limit int) (
 			// detection nobody can check is the thing this avoids.
 			continue
 		}
-		p := Post{Permalink: m.Permalink, Caption: m.Caption}
+		p := Post{
+			Permalink: m.Permalink, Caption: m.Caption,
+			Likes: m.LikeCount, Comments: m.CommentsCount,
+			Type: m.MediaProductType,
+		}
 		p.PostedAt = parseIGTime(m.Timestamp)
+		if p.Type == "" {
+			// Older media can come back without the field. Treating it
+			// as a feed post keeps it in the organic figures, which is
+			// the safe default: the alternative is silently dropping a
+			// real post out of the engagement rate.
+			p.Type = MediaFeed
+		}
 		posts = append(posts, p)
 	}
 	return Profile{

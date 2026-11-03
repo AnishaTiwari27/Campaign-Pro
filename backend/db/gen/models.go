@@ -628,6 +628,48 @@ type Creator struct {
 	OrgID             string             `json:"org_id"`
 	InstagramHandle   string             `json:"instagram_handle"`
 	FollowersSyncedAt pgtype.Timestamptz `json:"followers_synced_at"`
+	MediaScannedAt    pgtype.Timestamptz `json:"media_scanned_at"`
+}
+
+type CreatorBrandPost struct {
+	ID          string             `json:"id"`
+	OrgID       string             `json:"org_id"`
+	CreatorID   string             `json:"creator_id"`
+	Brand       string             `json:"brand"`
+	Permalink   string             `json:"permalink"`
+	PostedAt    pgtype.Timestamptz `json:"posted_at"`
+	MatchedOn   string             `json:"matched_on"`
+	Method      string             `json:"method"`
+	Dismissed   bool               `json:"dismissed"`
+	ConfirmedBy pgtype.UUID        `json:"confirmed_by"`
+	ConfirmedAt pgtype.Timestamptz `json:"confirmed_at"`
+	DetectedAt  pgtype.Timestamptz `json:"detected_at"`
+}
+
+type CreatorContact struct {
+	ID           string             `json:"id"`
+	OrgID        string             `json:"org_id"`
+	CreatorID    string             `json:"creator_id"`
+	Email        string             `json:"email"`
+	Role         string             `json:"role"`
+	Source       string             `json:"source"`
+	SourceDetail string             `json:"source_detail"`
+	LawfulBasis  string             `json:"lawful_basis"`
+	ConsentedAt  pgtype.Timestamptz `json:"consented_at"`
+	Purpose      []string           `json:"purpose"`
+	VerifiedAt   pgtype.Timestamptz `json:"verified_at"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
+type CreatorFollowerSnapshot struct {
+	OrgID          string        `json:"org_id"`
+	CreatorID      string        `json:"creator_id"`
+	CapturedOn     pgtype.Date   `json:"captured_on"`
+	Followers      int64         `json:"followers"`
+	MediaCount     int64         `json:"media_count"`
+	EngagementRate pgtype.Float8 `json:"engagement_rate"`
+	PostsScanned   int32         `json:"posts_scanned"`
 }
 
 type IngestRun struct {
@@ -666,6 +708,33 @@ type Organization struct {
 	ID        string             `json:"id"`
 	Name      string             `json:"name"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type OutreachBatch struct {
+	ID         string             `json:"id"`
+	OrgID      string             `json:"org_id"`
+	CampaignID pgtype.Text        `json:"campaign_id"`
+	Subject    string             `json:"subject"`
+	Body       string             `json:"body"`
+	Status     string             `json:"status"`
+	CreatedBy  string             `json:"created_by"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	StartedAt  pgtype.Timestamptz `json:"started_at"`
+	FinishedAt pgtype.Timestamptz `json:"finished_at"`
+}
+
+type OutreachMessage struct {
+	ID               string             `json:"id"`
+	OrgID            string             `json:"org_id"`
+	BatchID          string             `json:"batch_id"`
+	CreatorID        string             `json:"creator_id"`
+	Email            string             `json:"email"`
+	Status           string             `json:"status"`
+	SkipReason       string             `json:"skip_reason"`
+	UnsubscribeToken string             `json:"unsubscribe_token"`
+	SentAt           pgtype.Timestamptz `json:"sent_at"`
+	RepliedAt        pgtype.Timestamptz `json:"replied_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type Report struct {
@@ -710,6 +779,15 @@ type Subscription struct {
 	ProviderSubscriptionID string             `json:"provider_subscription_id"`
 	CreatedAt              pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt              pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Suppression struct {
+	ID        string             `json:"id"`
+	OrgID     pgtype.Text        `json:"org_id"`
+	Email     string             `json:"email"`
+	Reason    string             `json:"reason"`
+	Note      string             `json:"note"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }
 
 type User struct {

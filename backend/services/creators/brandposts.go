@@ -3,6 +3,7 @@ package creators
 import (
 	"regexp"
 	"strings"
+	"time"
 )
 
 // Brand-post detection: deciding, from a creator's own captions, whether
@@ -178,4 +179,31 @@ func StageLabel(s Stage) string {
 	default:
 		return "Not yet checked"
 	}
+}
+
+// BrandPostEvidence is one detection, with the post it came from. The
+// detection alone is an assertion; with the permalink it is something
+// a person can open and overturn.
+type BrandPostEvidence struct {
+	Detection
+	Permalink string
+	PostedAt  time.Time
+}
+
+// EvidenceFrom pairs each detection in a post with that post.
+func EvidenceFrom(p Post, brandHandles []string) []BrandPostEvidence {
+	var out []BrandPostEvidence
+	for _, d := range DetectBrandPost(p.Caption, brandHandles) {
+		out = append(out, BrandPostEvidence{Detection: d, Permalink: p.Permalink, PostedAt: p.PostedAt})
+	}
+	return out
+}
+
+// FollowerPoint is one day in a creator's growth series.
+type FollowerPoint struct {
+	On             time.Time
+	Followers      int64
+	EngagementRate float64
+	HasRate        bool
+	Posts          int
 }

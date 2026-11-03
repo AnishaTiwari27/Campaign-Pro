@@ -189,6 +189,11 @@ type SyncTarget struct {
 	ID              string
 	Name            string
 	InstagramHandle string
+	// OrgID is carried because the sync runs from the CLI under a
+	// system context that spans tenants. Reads may use the system
+	// bypass; a write has to name a real organisation, and the only
+	// right answer is the creator's own.
+	OrgID string
 }
 
 // SyncResult is what one run of the follower sync did.

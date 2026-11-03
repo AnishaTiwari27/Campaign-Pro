@@ -89,7 +89,7 @@ func (s *Store) ForFollowerSync(ctx context.Context) ([]creators.SyncTarget, err
 	out := make([]creators.SyncTarget, 0, len(rows))
 	for _, r := range rows {
 		out = append(out, creators.SyncTarget{
-			ID: r.ID, Name: r.Name, InstagramHandle: r.InstagramHandle,
+			ID: r.ID, Name: r.Name, InstagramHandle: r.InstagramHandle, OrgID: r.OrgID,
 		})
 	}
 	return out, nil

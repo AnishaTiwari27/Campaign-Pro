@@ -6,6 +6,7 @@ package module
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"campaigntrackerpro/platform/database"
 	"campaigntrackerpro/services/creators"
@@ -43,4 +44,13 @@ func (m *Module) Store() *store.Store { return m.store }
 // outside service.
 func (m *Module) SyncFollowers(ctx context.Context, ig service.ProfileLookup, logger *slog.Logger) (creators.SyncResult, error) {
 	return m.svc.SyncFollowers(ctx, ig, logger)
+}
+
+// ScanCreators reads each creator's recent posts and records what they
+// establish: today's snapshot, and the evidence of any disclosed brand
+// work. Heavier than SyncFollowers and kept a separate call for that
+// reason — reading someone's posts is a bigger ask than reading their
+// follower count.
+func (m *Module) ScanCreators(ctx context.Context, ig service.MediaReader, brandHandles []string, now time.Time, logger *slog.Logger) (service.ScanResult, error) {
+	return m.svc.ScanCreators(ctx, ig, brandHandles, now, logger)
 }
