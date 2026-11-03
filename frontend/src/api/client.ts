@@ -73,3 +73,10 @@ export function patch<T>(path: string, body?: unknown): Promise<T> {
 export function exportUrl(params: Record<string, string | number | undefined>): string {
   return `${BASE}/campaigns/export.csv${buildQuery(params)}`;
 }
+
+/** The roster export. Columns are left to the server's default rather
+ *  than listed here: the allow-list lives in one place, and a column
+ *  renamed on the server would otherwise silently drop out of the file. */
+export function creatorsExportUrl(): string {
+  return `${BASE}/creators/export.csv`;
+}

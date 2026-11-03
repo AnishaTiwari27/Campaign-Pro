@@ -25,6 +25,8 @@ func New(svc *service.Creators, logger *slog.Logger) *Handlers {
 func (h *Handlers) Routes(r chi.Router) {
 	r.Route("/creators", func(r chi.Router) {
 		r.Get("/", h.ListCreators)
+		// Before /{id}, or chi matches "export.csv" as a creator id.
+		r.Get("/export.csv", h.ExportCreators)
 		r.Get("/{id}", h.GetCreator)
 	})
 }

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useCreators } from "../../api/creators";
+import { creatorsExportUrl } from "../../api/client";
 import { useSetBreadcrumbs } from "../../app/BreadcrumbContext";
 import { SkeletonRows } from "../../components/Skeleton";
 import { EmptyState } from "../../components/EmptyState";
@@ -25,6 +26,17 @@ export function CreatorsPage() {
             expected; a micro creator beating their tier median is a find.
           </p>
         </div>
+        {items.length > 0 && (
+          <div className="page-header-actions">
+            {/* A plain link, not a fetch: the browser handles the
+                download, and the server's Content-Disposition names the
+                file. Going through fetch would mean holding the whole
+                CSV in memory to hand it back to the browser anyway. */}
+            <a className="btn" href={creatorsExportUrl()}>
+              Export CSV
+            </a>
+          </div>
+        )}
       </div>
 
       {isLoading ? (
